@@ -1,0 +1,54 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam component {
+  BackgroundColor #E8F0FE
+  BorderColor #1A73E8
+  FontSize 11
+}
+skinparam rectangle {
+  BackgroundColor #E8F0FE
+  BorderColor #1A73E8
+  FontSize 11
+}
+skinparam arrow {
+  Color #5F6368
+  FontSize 9
+}
+
+title "Core Platform - Component Diagram"
+
+rectangle EventBus as bus #1A73E8
+rectangle "Service<trait>" as service
+rectangle Logger as logger
+rectangle HealthMonitor as health
+rectangle Container as container
+
+service --> bus : publishes events
+bus --> service : dispatches events
+bus --> logger : forwards log events
+logger --> bus : publishes log records
+health --> bus : subscribes health checks
+bus --> health : delivers heartbeat
+container --> service : manages lifecycle
+container --> bus : publishes state changes
+health --> container : monitors
+
+note top of service
+  <size:11><b>Service Lifecycle</b></size>
+  init() -> start() -> stop()
+end note
+
+note right of health
+  <size:10>Periodic health pings</size>
+  <size:10>Failure detection</size>
+  <size:10>Graceful degradation</size>
+end note
+
+note left of container
+  <size:10>Service registry</size>
+  <size:10>Dependency injection</size>
+  <size:10>Lifecycle orchestration</size>
+end note
+
+@enduml

@@ -1,0 +1,84 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam component {
+  BackgroundColor #E3F2FD
+  BorderColor #0D47A1
+  FontSize 11
+}
+skinparam rectangle {
+  BackgroundColor #E3F2FD
+  BorderColor #0D47A1
+  FontSize 11
+}
+skinparam arrow {
+  Color #5F6368
+  FontSize 9
+}
+
+title "Brain Platform - Phase 6 Component Diagram"
+caption "Reasoning, planning, and knowledge architecture"
+
+package "Brain Platform" as brain_platform {
+  rectangle ReasoningEngine as re
+  rectangle DecisionMaker as dm
+  rectangle GoalManager as gm
+  rectangle IntentRecognizer as ir
+  rectangle KnowledgeGraph as kg
+}
+
+rectangle EventBus as bus #1A73E8
+
+' Internal data flow
+re --> dm : propose actions
+dm --> re : select plan
+re --> gm : decompose goals
+gm --> re : subgoals
+ir --> dm : intent signal
+ir --> re : context query
+kg --> re : factual knowledge
+re --> kg : new inferences
+dm --> bus : action commands
+gm --> bus : goal progress
+ir --> bus : recognized intent
+
+' Reasoning loop
+note right of re
+  <size:10><b>Think -> Act -> Observe</b></size>
+  ==
+  <size:10>1. Planner: decompose goal</size>
+  <size:10>2. Executor: run plan steps</size>
+  <size:10>3. Evaluator: assess results</size>
+  ==
+  <size:10>Feedback loop via EventBus</size>
+end note
+
+note left of dm
+  <size:10><b>Decision Maker</b></size>
+  Policy-based selection
+  Risk assessment
+  Priority arbitration
+end note
+
+note right of gm
+  <size:10><b>Goal Manager</b></size>
+  Goal tree hierarchy
+  Progress tracking
+  Dynamic reprioritization
+end note
+
+note right of ir
+  <size:10><b>Intent Recognizer</b></time>
+  NLU-based classification
+  Contextual disambiguation
+  Confidence scoring
+end note
+
+note left of kg
+  <size:10><b>Knowledge Graph</b></size>
+  Entity-relation store
+  Causal inference
+  Belief revision
+end note
+
+@enduml

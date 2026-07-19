@@ -1,0 +1,99 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam component {
+  BackgroundColor #F1F8E9
+  BorderColor #33691E
+  FontSize 11
+}
+skinparam rectangle {
+  BackgroundColor #F1F8E9
+  BorderColor #33691E
+  FontSize 11
+}
+skinparam actor {
+  BackgroundColor #E8EAF6
+  BorderColor #283593
+  FontSize 10
+}
+skinparam arrow {
+  Color #5F6368
+  FontSize 9
+}
+
+title "System Platform - Phase 4 Component Diagram"
+caption "Linux system integration layer bridging AI-native runtime to OS primitives"
+
+package "System Platform" as sys_platform {
+  rectangle SystemResourceManager as srm
+  rectangle ProcessManager as pm
+  rectangle FileSystemProvider as fsp
+  rectangle NetworkManager as nm
+  rectangle SystemEventCollector as sec
+  rectangle ServiceManager as svcm
+}
+
+rectangle EventBus as bus #1A73E8
+
+' Internal relationships
+srm --> pm : resource limits
+srm --> fsp : I/O quotas
+srm --> nm : bandwidth caps
+sec --> srm : resource events
+sec --> svcm : service events
+svcm --> pm : start/stop/restart
+pm --> bus : process events
+fsp --> bus : file events
+nm --> bus : network events
+sec --> bus : system events
+bus --> srm : config updates
+bus --> svcm : service commands
+
+' External system dependencies
+actor dbus as "D-Bus"
+actor systemd as "systemd"
+actor libc as "libc (syscalls)"
+actor inotify as "inotify"
+actor rtnetlink as "rtnetlink"
+
+pm --> libc : fork/exec/wait
+pm --> systemd : sd-notify
+fsp --> inotify : watch directories
+nm --> rtnetlink : link/addr/route
+sec --> dbus : system events
+svcm --> systemd : unit management
+
+note right of srm
+  <size:10>CPU/memory/disk</size>
+  <size:10>cgroup integration</size>
+end note
+
+note right of pm
+  <size:10>Process lifecycle</size>
+  <size:10>PID namespace</size>
+  <size:10>Signal handling</size>
+end note
+
+note left of fsp
+  <size:10>File watching</size>
+  <size:10>Path resolution</size>
+  <size:10>Access control</size>
+end note
+
+note left of nm
+  <size:10>Interface management</size>
+  <size:10>Firewall rules</size>
+  <size:10>DNS resolution</size>
+end note
+
+note bottom of sec
+  <size:10>udev, journald</size>
+  <size:10>Hardware events</size>
+end note
+
+note bottom of svcm
+  <size:10>systemd unit wrapper</size>
+  <size:10>Dependency ordering</size>
+end note
+
+@enduml

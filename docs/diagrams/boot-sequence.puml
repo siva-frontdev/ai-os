@@ -1,0 +1,122 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam participant {
+  BackgroundColor #E8F0FE
+  BorderColor #1A73E8
+  FontSize 11
+}
+skinparam actor {
+  BackgroundColor #E8F0FE
+  BorderColor #1A73E8
+  FontSize 11
+}
+skinparam arrow {
+  Color #5F6368
+  FontSize 9
+}
+skinparam note {
+  BackgroundColor #FFF8E1
+  BorderColor #F57F17
+  FontSize 10
+}
+
+title "AI-native OS - Boot Sequence Diagram"
+caption "Ordered initialization from kernel launch to ready signal"
+
+actor Main as main
+participant Container as container
+participant "ServiceManager\n(Core)" as svcm
+participant EventBus as bus
+participant "CoreServices\n(Logger, HealthMonitor)" as core
+participant "Runtime\nPlatform" as rt
+participant "System\nPlatform" as sys
+
+main -> container : load_config("/etc/ai-os/config.toml")
+activate container
+
+container -> container : parse TOML, validate schema
+note right of container
+  Load service graph
+  from configuration
+end note
+
+main -> container : init()
+note right of main
+  Phase transition:
+  Created -> Initializing
+end note
+
+container -> bus : EventBus::new()
+activate bus
+
+bus --> container : EventBus initialized
+
+container -> svcm : register_core_services()
+activate svcm
+
+svcm -> core : init(Logger)
+activate core
+core -> bus : register log channel
+core --> svcm : Logger ready
+deactivate core
+
+svcm -> core : init(HealthMonitor)
+activate core
+core -> bus : subscribe health checks
+core --> svcm : HealthMonitor ready
+deactivate core
+
+svcm --> container : core services registered
+deactivate svcm
+
+note right of container
+  Phase transition:
+  Initializing -> Running
+end note
+
+container -> rt : init()
+activate rt
+
+rt -> bus : subscribe runtime events
+rt -> rt : initialize Scheduler, Supervisor
+rt -> rt : start TaskManager
+rt --> container : Runtime ready
+deactivate rt
+
+container -> sys : init()
+activate sys
+
+sys -> bus : subscribe system events
+sys -> sys : init FileSystemProvider
+sys -> sys : init NetworkManager
+sys -> sys : init ProcessManager
+sys --> container : System ready
+deactivate sys
+
+container -> svcm : start_all_services()
+activate svcm
+
+loop for each service in dependency order
+  svcm -> core : start()
+  activate core
+  core -> bus : publish service status
+  core --> svcm : started
+  deactivate core
+end
+
+svcm --> container : all services running
+deactivate svcm
+
+container -> main : signal_ready()
+deactivate container
+
+main -> bus : publish SystemReady event
+note right of main
+  RuntimePhase: Running
+  System fully operational
+end note
+
+note over main : User sessions can now connect
+
+@enduml

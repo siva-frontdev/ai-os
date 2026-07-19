@@ -1,0 +1,100 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam component {
+  BackgroundColor #F3E5F5
+  BorderColor #6A1B9A
+  FontSize 11
+}
+skinparam rectangle {
+  BackgroundColor #F3E5F5
+  BorderColor #6A1B9A
+  FontSize 11
+}
+skinparam arrow {
+  Color #5F6368
+  FontSize 9
+}
+
+title "Perception Platform - Phase 7 Component Diagram"
+caption "Sensor-to-context pipeline for real-world awareness"
+
+package "Perception Platform" as perception_platform {
+  rectangle SensorAbstraction as sa
+  rectangle InputNormalizer as ni
+  rectangle EventClassifier as ec
+  rectangle AttentionMechanism as am
+  rectangle ContextEnricher as ce
+}
+
+rectangle EventBus as bus #1A73E8
+
+' Pipeline: Raw Input -> Normalized -> Classified -> Enriched -> EventBus
+sa --> ni : raw sensor data
+ni --> ec : normalized input
+ec --> am : classified percept
+am --> ce : attended percept
+ce --> bus : enriched context
+
+' Feedback and control
+bus --> sa : sensor config
+bus --> am : attention policy
+am --> sa : adjust sensitivity
+ce --> bus : context update
+
+note top of sa
+  <size:10><b>Sensor Abstraction</b></size>
+  File system watchers
+  Network listeners
+  Hardware sensors
+  Time-based triggers
+end note
+
+note right of ni
+  <size:10><b>Input Normalizer</b></size>
+  Schema validation
+  Unit conversion
+  Timestamp alignment
+end note
+
+note right of ec
+  <size:10><b>Event Classifier</b></size>
+  Priority tagging
+  Category assignment
+  Urgency scoring
+end note
+
+note top of am
+  <size:10><b>Attention Mechanism</b></size>
+  Salience filtering
+  Novelty detection
+  Cognitive load mgmt
+  Focus switching
+end note
+
+note left of ce
+  <size:10><b>Context Enricher</b></size>
+  Add temporal context
+  Attach provenance
+  Cross-reference KG
+  Format for bus
+end note
+
+' Pipeline annotation
+note bottom of sa
+  <size:11><b>Perception Pipeline</b></size>
+end note
+note bottom of ni
+  <size:11>|</size>
+end note
+note bottom of ec
+  <size:11>V</size>
+end note
+note bottom of am
+  <size:11>V</size>
+end note
+note bottom of ce
+  <size:11>V</size>
+end note
+
+@enduml

@@ -1,0 +1,96 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam component {
+  BackgroundColor #FCE4EC
+  BorderColor #880E4F
+  FontSize 11
+}
+skinparam rectangle {
+  BackgroundColor #FCE4EC
+  BorderColor #880E4F
+  FontSize 11
+}
+skinparam database {
+  BackgroundColor #F3E5F5
+  BorderColor #4A148C
+  FontSize 10
+}
+skinparam arrow {
+  Color #5F6368
+  FontSize 9
+}
+
+title "Memory Platform - Phase 5 Component Diagram"
+
+package "Memory Platform" as mem_platform {
+  rectangle ShortTermMemory as stm
+  rectangle LongTermStorage as lts
+  rectangle MemoryIndex as idx
+  rectangle MemoryRetriever as ret
+  rectangle ConsolidationEngine as ce
+  rectangle PruningEngine as pe
+}
+
+rectangle EventBus as bus #1A73E8
+
+database "RocksDB" as rocksdb
+database "Embeddings" as emb
+
+' Data flow
+bus --> stm : store percept/event
+bus --> ret : query request
+stm --> ce : trigger consolidation
+ce --> lts : persist consolidated
+ce --> idx : update index
+lts --> rocksdb : read/write
+idx --> emb : vector similarity
+ret --> idx : lookup
+ret --> stm : fast recall
+ret --> lts : deep recall
+ret --> bus : return result
+pe --> lts : prune expired
+pe --> idx : remove stale
+stm --> lts : evict on overflow
+
+note top of stm
+  <size:10><b>Short-Term Memory</b></size>
+  LRU cache, bounded capacity
+  Recent percept buffer
+end note
+
+note top of lts
+  <size:10><b>Long-Term Storage</b></size>
+  RocksDB-backed persistence
+  Episodic & semantic stores
+end note
+
+note right of idx
+  <size:10><b>Memory Index</b></size>
+  Embedding vectors
+  Timestamp index
+  Semantic tags
+end note
+
+note right of ret
+  <size:10><b>Retriever</b></size>
+  Multi-stage recall
+  Relevance scoring
+  Recency boost
+end note
+
+note bottom of ce
+  <size:10><b>Consolidation</b></size>
+  Sleep-cycle triggered
+  Merge & compress
+  Strengthen connections
+end note
+
+note bottom of pe
+  <size:10><b>Pruning</b></size>
+  TTL-based expiration
+  Importance scoring
+  Storage reclamation
+end note
+
+@enduml

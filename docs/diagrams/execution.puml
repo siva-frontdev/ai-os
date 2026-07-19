@@ -1,0 +1,107 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam component {
+  BackgroundColor #E8F5E9
+  BorderColor #1B5E20
+  FontSize 11
+}
+skinparam rectangle {
+  BackgroundColor #E8F5E9
+  BorderColor #1B5E20
+  FontSize 11
+}
+skinparam arrow {
+  Color #5F6368
+  FontSize 9
+}
+
+title "Execution Platform - Phase 8 Component Diagram"
+caption "Multi-runtime command execution pipeline"
+
+package "Execution Platform" as execution_platform {
+  rectangle CommandEngine as ce
+  rectangle OutputCapture as oc
+  rectangle TimeoutManager as tm
+  rectangle ResourceAccountant as ra
+  rectangle OutputRouter as or
+}
+
+rectangle EventBus as bus #1A73E8
+
+' CommandEngine internals together
+package "CommandEngine" as ce_internal {
+  rectangle "SubprocessRunner" as subp
+  rectangle "WasmRunner" as wasm
+  rectangle "ContainerRunner" as ctr
+}
+
+' Execution pipeline
+bus --> ce : dispatch command
+ce --> subp : fork + exec
+ce --> wasm : instantiate module
+ce --> ctr : spawn container
+ce --> oc : capture streams
+oc --> tm : monitor duration
+tm --> ce : timeout signal
+ce --> ra : track usage
+ra --> bus : resource report
+oc --> or : route output
+or --> bus : deliver result
+tm --> bus : timeout event
+ce --> bus : completion status
+
+note top of ce
+  <size:10><b>Command Engine</b></size>
+  Multi-runtime dispatcher
+  Protocol negotiation
+  Sandbox selection
+end note
+
+note left of subp
+  <size:10>tokio::process::Command</size>
+  <size:10>pty allocation</size>
+  <size:10>signal propagation</size>
+end note
+
+note left of wasm
+  <size:10>WASM runtime</size>
+  <size:10>Memory sandbox</size>
+  <size:10>Capability-limited</size>
+end note
+
+note left of ctr
+  <size:10>OCI container</size>
+  <size:10>Namespace isolation</size>
+  <size:10>cgroup limits</size>
+end note
+
+note right of oc
+  <size:10><b>Output Capture</b></size>
+  stdout/stderr/exit code
+  Streaming buffer
+  Structured output
+end note
+
+note right of tm
+  <size:10><b>Timeout Manager</b></size>
+  Per-command deadline
+  Graceful kill chain
+  Exponential backoff
+end note
+
+note right of ra
+  <size:10><b>Resource Accountant</b></size>
+  CPU time tracking
+  Memory watermark
+  I/O accounting
+end note
+
+note bottom of or
+  <size:10><b>Output Router</b></size>
+  Channel-based routing
+  Subscriber delivery
+  Backpressure handling
+end note
+
+@enduml

@@ -1,0 +1,107 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam component {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+  FontSize 11
+}
+skinparam rectangle {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+  FontSize 11
+}
+skinparam state {
+  BackgroundColor #FFF8E1
+  BorderColor #F57F17
+  FontSize 10
+}
+skinparam arrow {
+  Color #5F6368
+  FontSize 9
+}
+
+title "Runtime Platform - Component Diagram"
+
+package "Runtime Components" as runtime_comp {
+  rectangle Scheduler as sched
+  rectangle Supervisor as super
+  rectangle SessionManager as session
+  rectangle TaskManager as tm
+  rectangle ContextManager as ctx
+  rectangle StateMachine as sm
+  rectangle ResourceManager as res
+  rectangle PermissionChecker as perm
+}
+
+rectangle EventBus as bus #1A73E8
+
+' Data flow among runtime components
+sched --> tm : dispatch tasks
+tm --> super : notify completion/failure
+super --> sched : schedule restart
+tm --> ctx : attach trace context
+ctx --> tm : provide span
+session --> tm : submit tasks
+session --> perm : authorize
+perm --> session : grant/deny
+res --> sched : report capacity
+res --> tm : allocate quota
+sm --> sched : phase transitions
+sm --> tm : lifecycle signals
+tm --> bus : task events
+sched --> bus : schedule events
+
+note bottom of sched
+  <size:10>BinaryHeap priority queue</size>
+  <size:10>tokio::spawn scheduling</size>
+end note
+
+note bottom of super
+  <size:10><b>Restart Policies</b></size>
+  Never / OnFailure / Always
+end note
+
+note bottom of perm
+  <size:10><b>Roles</b></size>
+  admin / user / readonly
+end note
+
+' Task State Machine
+state "Pending" as pending
+state "Running" as running
+state "Completed" as completed
+state "Failed" as failed
+state "Cancelled" as cancelled
+
+pending --> running : sched.acquire()
+running --> completed : success
+running --> failed : error
+running --> cancelled : user abort
+failed --> pending : super.restart()
+
+note right of running
+  <size:10><b>Task State Machine</b></size>
+  Managed by TaskManager
+end note
+
+' Phase State Machine
+state "Created" as cr
+state "Initializing" as init
+state "Running" as run_phase
+state "Draining" as drain
+state "Stopped" as stop
+state "FailedPhase" as fail_phase
+
+cr --> init : Container.init()
+init --> run_phase : services started
+run_phase --> drain : shutdown signal
+drain --> stop : all services stopped
+run_phase --> fail_phase : critical error
+init --> fail_phase : init failure
+
+note left of cr
+  <size:10><b>RuntimePhase FSM</b></size>
+end note
+
+@enduml

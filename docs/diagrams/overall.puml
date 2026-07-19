@@ -1,0 +1,143 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam component {
+  BackgroundColor #E8F0FE
+  BorderColor #1A73E8
+  FontSize 11
+  FontColor #1A1A1A
+}
+skinparam rectangle {
+  BackgroundColor #F8F9FA
+  BorderColor #5F6368
+  FontSize 12
+  FontStyle bold
+}
+skinparam arrow {
+  Color #5F6368
+  FontSize 9
+}
+skinparam package {
+  BackgroundColor #FFFFFF
+  BorderColor #DADCE0
+  FontColor #1A73E8
+  FontSize 13
+  FontStyle bold
+}
+
+title "AI-native Operating Platform - Overall Architecture"
+legend right
+  <size:10>Dependency direction: bottom layers provide</size>
+  <size:10>services to upper layers via EventBus</size>
+end legend
+
+package "Intelligence Platform" as intelligence_platform #FFF8E1 {
+  rectangle "LLM Service" as llm
+  rectangle "RAG Engine" as rag
+  rectangle "Agent Framework" as agent
+}
+
+package "Execution Platform" as execution_platform #E8F5E9 {
+  rectangle "CommandEngine" as cmd_engine
+  rectangle "OutputCapture" as out_capture
+  rectangle "ResourceAccountant" as res_acct
+}
+
+package "Perception Platform" as perception_platform #F3E5F5 {
+  rectangle "SensorAbstraction" as sensor
+  rectangle "AttentionMechanism" as attention
+  rectangle "ContextEnricher" as enricher
+}
+
+package "Brain Platform" as brain_platform #E3F2FD {
+  rectangle "ReasoningEngine" as reason
+  rectangle "DecisionMaker" as decide
+  rectangle "GoalManager" as goal
+  rectangle "KnowledgeGraph" as kg
+}
+
+package "Memory Platform" as memory_platform #FCE4EC {
+  rectangle "ShortTermMemory" as stm
+  rectangle "LongTermStorage" as lts
+  rectangle "ConsolidationEngine" as consolidate
+}
+
+package "Runtime Platform" as runtime_platform #FFF3E0 {
+  rectangle "Scheduler" as sched
+  rectangle "Supervisor" as super
+  rectangle "TaskManager" as tm
+  rectangle "ContextManager" as ctx
+}
+
+package "Core Platform" as core_platform #E8F0FE {
+  rectangle "EventBus" as bus
+  rectangle "Service Lifecycle" as svc
+  rectangle "HealthMonitor" as health
+  rectangle "Container" as container
+}
+
+package "System Platform" as system_platform #F1F8E9 {
+  rectangle "FileSystemProvider" as fs
+  rectangle "NetworkManager" as net
+  rectangle "ProcessManager" as proc
+  rectangle "ServiceManager" as svc_mgr
+}
+
+' EventBus backbone - connects all layers
+rectangle EventBus as event_bus #1A73E8
+
+event_bus <.. bus : implements
+event_bus <.. sched : subscribes
+event_bus <.. tm : subscribes
+event_bus <.. ctx : publishes
+event_bus <.. fs : publishes
+event_bus <.. net : publishes
+event_bus <.. proc : publishes
+event_bus <.. svc_mgr : publishes
+event_bus <.. stm : reads/writes
+event_bus <.. lts : reads/writes
+event_bus <.. reason : queries
+event_bus <.. decide : queries
+event_bus <.. goal : publishes
+event_bus <.. sensor : publishes
+event_bus <.. attention : subscribes
+event_bus <.. cmd_engine : dispatches
+event_bus <.. llm : queries
+event_bus <.. rag : queries
+
+' Layer dependency arrows
+core_platform <-down- runtime_platform : depends on
+runtime_platform <-down- system_platform : depends on
+runtime_platform <-down- memory_platform : depends on
+memory_platform <-down- brain_platform : depends on
+brain_platform <-down- perception_platform : uses
+brain_platform <-down- execution_platform : triggers
+perception_platform <-down- intelligence_platform : feeds
+execution_platform <-down- intelligence_platform : reports to
+
+note top of intelligence_platform
+  <size:11><b>Phase 9 - Intelligence</b></size>
+  LLM integration, RAG, agent orchestration
+end note
+note top of execution_platform
+  <size:11><b>Phase 8 - Execution</b></size>
+  WASM, subprocess, container execution
+end note
+note top of perception_platform
+  <size:11><b>Phase 7 - Perception</b></size>
+  Sensors, attention, context enrichment
+end note
+note top of brain_platform
+  <size:11><b>Phase 6 - Brain</b></size>
+  Reasoning, planning, knowledge graph
+end note
+note top of memory_platform
+  <size:11><b>Phase 5 - Memory</b></size>
+  Short/long-term memory, embeddings
+end note
+note top of system_platform
+  <size:11><b>Phase 4 - System</b></size>
+  Linux system integration
+end note
+
+@enduml
