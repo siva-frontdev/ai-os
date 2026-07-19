@@ -14,9 +14,12 @@ members = [
     "crates/osal-users",
     "crates/osal-platform",
     "crates/osal-linux",
-    "crates/memory-core",
-    "crates/memory-storage",
-    "crates/memory-index",
+  "crates/memory-core",
+  "crates/memory-storage",
+  "crates/memory-index",
+  "crates/memory-working",
+  "crates/memory-context",
+  "crates/memory-cache",
 ]
 
 [workspace.package]

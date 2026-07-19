@@ -62,7 +62,7 @@ pub use event::MemoryEvent;
 pub use query::{QueryFilter, SortField, SortOrder, StorageStats, CapacityInfo};
 
 // Re-export record types
-pub use memory_object::MemoryObject;
+pub use memory_object::{MemoryObject, MemoryObjectBuilder};
 pub use relationship::Relationship;
 
 // Re-export traits
