@@ -1,0 +1,104 @@
+@startuml
+!theme plain
+skinparam defaultFontName Courier
+skinparam defaultFontSize 11
+skinparam classBorderThickness 2
+skinparam backgroundColor #FEFEFE
+
+title **OSAL Error Model**
+caption Unified error hierarchy across all subsystems
+
+enum "<b>OsalError</b>" as OE {
+    + FilesystemError(FilesystemError)
+    + ProcessError(ProcessError)
+    + TerminalError(TerminalError)
+    + NetworkError(NetworkError)
+    + MonitorError(MonitorError)
+    + DeviceError(DeviceError)
+    + UserError(UserError)
+    --
+    + CapabilityDenied { required }
+    + Timeout { operation, duration }
+    + Interrupted { operation, signal }
+    + ResourceExhausted { resource, requested, available }
+    + NotSupported { feature }
+    + PermissionDenied { path, uid, needed }
+    + IoError { source, context }
+    + Internal { message }
+}
+
+enum "<b>FilesystemError</b>" as FSE {
+    + NotFound { path }
+    + AlreadyExists { path }
+    + NotADirectory { path }
+    + IsADirectory { path }
+    + PermissionDenied { path }
+    + StorageFull { device, needed }
+    + ReadOnly { path }
+    + InvalidFilename { name }
+}
+
+enum "<b>ProcessError</b>" as PRE {
+    + NotFound { pid }
+    + AlreadyRunning { pid }
+    + NotRunning { pid }
+    + ExitFailure { pid, code }
+    + KilledBySignal { pid, signal }
+    + InvalidCommand { cmd }
+    + ResourceLimit { limit, value }
+}
+
+enum "<b>TerminalError</b>" as TE {
+    + NotATerminal { fd }
+    + BaudRateUnsupported { rate }
+    + InvalidTermios { field }
+    + WindowSizeFailed { fd }
+    + ProcessGroupFailed { pid, errno }
+}
+
+enum "<b>NetworkError</b>" as NE {
+    + ConnectionRefused { addr }
+    + ConnectionReset { fd }
+    + AddressInUse { addr }
+    + HostUnreachable { addr }
+    + DnsResolutionFailed { hostname }
+    + ProtocolNotSupported { proto }
+    + SocketOptionFailed { opt, errno }
+}
+
+enum "<b>MonitorError</b>" as MNE {
+    + CpuStatsUnavailable { reason }
+    + MemoryStatsUnavailable { reason }
+    + DiskStatsUnavailable { device, reason }
+    + NetworkStatsUnavailable { iface, reason }
+    + PermissionDenied { counter }
+}
+
+enum "<b>DeviceError</b>" as DVE {
+    + NotFound { dev }
+    + Busy { dev }
+    + IoError { dev, errno }
+    + NoDriver { dev_id }
+    + UnsupportedOperation { dev, op }
+    + Disconnected { dev }
+}
+
+enum "<b>UserError</b>" as UE {
+    + NotFound { uid }
+    + AlreadyExists { name }
+    + Locked { uid }
+    + InvalidCredentials { reason }
+    + GroupNotFound { gid }
+    + PasswordPolicyViolation { rule }
+}
+
+' --- Composition relationships ---
+OE o-left- FSE
+OE o-right- PRE
+OE o-right- TE
+OE o-left- NE
+OE o-down- MNE
+OE o-down- DVE
+OE o-down- UE
+
+@enduml

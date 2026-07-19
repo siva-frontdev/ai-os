@@ -1,0 +1,21 @@
+[package]
+name = "osal-users"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+osal-core = { path = "../osal-core" }
+osal-capabilities = { path = "../osal-capabilities" }
+serde = { version = "1", features = ["derive"] }
+chrono = { version = "0.4", features = ["serde"] }
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["async_tokio"] }
+serde_json = "1"
+
+[[bench]]
+name = "osal_users_bench"
+harness = false

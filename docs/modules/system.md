@@ -1,12 +1,13 @@
-# System Platform Module
+# OSAL Module — Operating System Abstraction Layer
 
 **Module:** `ai_os_system`
-**Status:** Planned (Phase 4)
+**Layer:** Layer 0 (lowest internal layer)
+**Status:** In Progress (Phase 4)
 **Crate:** Not yet created
 
 ## Purpose
 
-The System Platform module bridges the AI-native OS to the underlying Linux kernel and hardware. It provides managed access to system resources (CPU, memory, disk, network), process lifecycle, filesystem operations, device events, and systemd unit management. This module is the sole gateway through which platform-level system calls are issued.
+The OSAL module is the lowest internal layer of the AI-native OS platform. It bridges all higher layers to the underlying Linux kernel and hardware through abstract trait interfaces. It provides managed access to system resources (CPU, memory, disk, network), process lifecycle, filesystem operations, device events, and systemd unit management. This module is the sole gateway through which platform-level system calls are issued. No code in any layer above OSAL may reference Linux-specific types or call libc directly.
 
 ## Status Overview
 

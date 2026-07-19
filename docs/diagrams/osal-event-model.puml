@@ -1,0 +1,87 @@
+@startuml
+!theme plain
+skinparam defaultFontName Courier
+skinparam defaultFontSize 11
+skinparam classBorderThickness 2
+skinparam backgroundColor #FEFEFE
+
+title **OSAL Event Model**
+caption Hierarchical event types flowing through the system
+
+enum "<b>OsalEvent</b>" as OSD {
+    + FileEvent(FileEvent)
+    + ProcessEvent(ProcessEvent)
+    + NetworkEvent(NetworkEvent)
+    + DeviceEvent(DeviceEvent)
+    + MonitoringEvent(MonitoringEvent)
+    + UserEvent(UserEvent)
+}
+
+enum "<b>FileEvent</b>" as FE {
+    + FileOpened { path, pid }
+    + FileClosed { path, pid }
+    + FileRead { path, offset, len }
+    + FileWritten { path, offset, len }
+    + FileCreated { path, mode }
+    + FileDeleted { path }
+    + FileRenamed { from, to }
+    + PermissionChanged { path, new_mode }
+}
+
+enum "<b>ProcessEvent</b>" as PE {
+    + ProcessSpawned { pid, cmd }
+    + ProcessExited { pid, code }
+    + ProcessKilled { pid, signal }
+    + ProcessForked { parent, child }
+    + ProcessStateChanged { pid, state }
+}
+
+enum "<b>NetworkEvent</b>" as NE {
+    + ConnectionOpened { fd, addr }
+    + ConnectionClosed { fd }
+    + DataSent { fd, bytes }
+    + DataReceived { fd, bytes }
+    + BindCompleted { addr }
+    + ListenStarted { addr, backlog }
+}
+
+enum "<b>DeviceEvent</b>" as DE {
+    + DeviceAttached { dev, driver }
+    + DeviceDetached { dev }
+    + DeviceError { dev, errno }
+    + IoRequest { dev, req }
+    + IoComplete { dev, req, result }
+}
+
+enum "<b>MonitoringEvent</b>" as ME {
+    + CpuUsage { user, sys, idle }
+    + MemoryPressure { used, avail, swap }
+    + DiskIo { read_bps, write_bps }
+    + LoadAverage { l1, l5, l15 }
+}
+
+enum "<b>UserEvent</b>" as UE {
+    + UserLoggedIn { uid, method }
+    + UserLoggedOut { uid }
+    + UserCreated { uid, name }
+    + UserDeleted { uid }
+    + GroupModified { gid, members }
+}
+
+' --- Event flow direction ---
+rectangle "<b>osal-linux</b>\n(Event Source)" as SRC
+rectangle "<b>Subsystem Traits</b>" as TRAITS
+rectangle "<b>EventBus</b>" as BUS
+
+SRC -down-> TRAITS : emits
+TRAITS -down-> BUS : forwards
+
+' --- Compositon ---
+OSD o-left- FE
+OSD o-left- PE
+OSD o-right- NE
+OSD o-right- DE
+OSD o-down- ME
+OSD o-down- UE
+
+@enduml

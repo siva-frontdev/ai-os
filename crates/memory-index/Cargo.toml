@@ -1,0 +1,20 @@
+[package]
+name = "memory-index"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[dev-dependencies]
+criterion = { workspace = true }
+tokio = { version = "1", features = ["rt", "macros"] }
+tokio-test = "0.4"
+
+[[bench]]
+name = "index_bench"
+harness = false
+
+[dependencies]
+memory-core = { path = "../memory-core" }
+async-trait = "0.1"
+tokio = { version = "1", features = ["sync"] }
+uuid = { version = "1", features = ["v7"] }

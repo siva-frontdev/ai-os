@@ -127,43 +127,47 @@ All components reside in a single process space, with the EventBus as the sole c
 
 ## Layered Architecture
 
-The platform is organized into nine development phases, each corresponding to an architectural layer. Only three are completed or in progress; the remaining six are planned.
+The platform is organized into nine development phases. The critical architectural boundary is the **Operating System Abstraction Layer (OSAL)** — it insulates all higher layers from Linux-specific details.
 
 ```
-Layer 0 (Phase 1): Dev Environment
-    Toolchain, CI/CD, build system, dev container
+Platform Manifest (platform.toml)
+    Boot process reads this file first. Determines which modules to load.
         |
         v
-Layer 1 (Phase 2): Core Platform [Completed]
-    EventBus, Service Lifecycle, Logger, HealthMonitor, Container, Registry, Config
+Layer 7: Intelligence Integration (planned)
         |
         v
-Layer 2 (Phase 3): Runtime Platform [Completed]
-    Scheduler, Supervisor, SessionManager, TaskManager, ContextManager,
-    StateMachine, ResourceManager, PermissionChecker
+Layer 6: Execution Platform (planned)
         |
         v
-Layer 3 (Phase 4): System Platform [In Progress]
-    SystemResourceManager, ProcessManager, FileSystemProvider, NetworkManager,
-    SystemEventCollector, ServiceManager (systemd integration)
+Layer 5: Brain Platform (planned)
         |
-        +-------+--------+
-        |       |        |
-        v       v        v
-Layer 4-6: Memory, Brain, Perception (planned)
-        |       |        |
-        +-------+--------+
-                |
-                v
-Layer 7: Execution (planned)
-                |
-                v
-Layer 8: Intelligence Integration (planned)
+        v
+Layer 4: Perception Platform (planned)
+        |
+        v
+Layer 3: Memory Platform (planned)
+        |
+        v
+Layer 2: Runtime Platform [Completed]
+    Scheduler, Supervisor, Session, Task, Context, State, Resource, Permission
+        |
+        v
+Layer 1: Core Platform [Completed]
+    EventBus, Service, Logger, HealthMonitor, Container, Registry, Config
+        |
+        v
+Layer 0: Operating System Abstraction Layer — OSAL [In Progress]
+    SystemResource, Process, FileSystem, Network, EventCollector, ServiceManager
+    ═══════════════════════════════════════════════════════════════
+    Linux Kernel / Hardware (external)
 ```
+
+The horizontal line below OSAL is the **platform boundary**. Everything above OSAL is OS-independent. All Linux-specific logic (syscalls, procfs, dbus, inotify, systemd, rtnetlink) lives behind OSAL trait interfaces. This allows future ports to non-Linux hosts without modifying any layer above OSAL.
 
 ### Dependency Rule
 
-Source code dependencies must point downward. Code in the Runtime Platform may import Core Platform types. Code in the System Platform may import Runtime and Core types. The reverse is never permitted. This rule is enforced by Cargo workspace dependency configuration and verified in CI.
+Source code dependencies must point downward. Code in the Runtime Platform may import Core Platform types. Code in either Core or Runtime may import OSAL types. The reverse is never permitted — OSAL never imports Core, Runtime, or any higher layer. This rule is enforced by Cargo workspace dependency configuration and verified in CI.
 
 ---
 
@@ -486,7 +490,7 @@ Key principles:
 
 - [Core Platform Deep Dive](core.md)
 - [Runtime Platform Deep Dive](runtime.md)
-- [System Platform Blueprint](system.md)
+- [OSAL Deep Dive](system.md)
 - [Design Principles](../principles.md)
 - [Glossary](../glossary.md)
 - [Roadmap](../roadmap.md)

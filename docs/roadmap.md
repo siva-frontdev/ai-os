@@ -11,7 +11,7 @@ The phases correspond to the architectural layers:
 | Phase 1 | Dev Environment | Completed |
 | Phase 2 | Core Platform | Completed |
 | Phase 3 | Runtime Platform | Completed |
-| Phase 4 | System Platform | In Progress |
+| Phase 4 | OSAL (Operating System Abstraction Layer) | In Progress |
 | Phase 5 | Memory Platform | Planned |
 | Phase 6 | Brain Platform | Planned |
 | Phase 7 | Perception Platform | Planned |
@@ -133,7 +133,7 @@ The Runtime Platform represents the operational backbone of AI-native OS. Every 
 
 ---
 
-## Phase 4: System Platform
+## Phase 4: OSAL — Operating System Abstraction Layer
 
 **Status**: In Progress
 

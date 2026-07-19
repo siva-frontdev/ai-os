@@ -1,8 +1,28 @@
 [workspace]
 resolver = "2"
-members = ["core", "runtime"]
+members = [
+    "core",
+    "runtime",
+    "crates/osal-core",
+    "crates/osal-capabilities",
+    "crates/osal-filesystem",
+    "crates/osal-process",
+    "crates/osal-terminal",
+    "crates/osal-network",
+    "crates/osal-monitoring",
+    "crates/osal-devices",
+    "crates/osal-users",
+    "crates/osal-platform",
+    "crates/osal-linux",
+    "crates/memory-core",
+    "crates/memory-storage",
+    "crates/memory-index",
+]
 
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
+
+[workspace.dependencies]
+criterion = { version = "0.5", features = ["async_tokio"] }

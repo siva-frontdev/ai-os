@@ -1,0 +1,77 @@
+# AI-native OS — Platform Manifest
+#
+# This file is read by the boot process to determine platform identity,
+# module configuration, and which subsystems to load. Every deployment
+# has exactly one platform.toml.
+#
+# The boot sequence loads this file before any other initialization.
+# See docs/specification.md §5 for the complete boot protocol.
+
+name = "AI-native Operating Platform"
+version = "0.3.0"
+edition = "2026"
+
+[platform]
+# Human-readable label for this deployment instance.
+label = "development"
+# Architecture target.
+arch = "x86_64"
+
+[system]
+# The Operating System Abstraction Layer (OSAL) provides the boundary
+# between platform code and the host OS. All kernel-specific logic
+# lives behind this layer.
+os = "Arch Linux"
+kernel = "LTS"
+# OSAL subsystems to enable. Each maps to a subsystem in the system crate.
+# Disabled subsystems are not loaded by the boot process.
+[system.subsystems]
+system_resource = true
+process = true
+filesystem = true
+network = true
+event_collector = false
+service_manager = false
+
+[runtime]
+# The Runtime Platform manages task lifecycle, scheduling, and supervision.
+enabled = true
+scheduler = "priority-queue"
+event_bus = "core"
+# Maximum number of concurrent supervised tasks.
+max_concurrent_tasks = 1000
+
+[memory]
+enabled = false
+# Backend provider for long-term storage.
+provider = "builtin"
+# Working memory capacity (number of entries).
+working_memory_capacity = 10000
+# Long-term storage path. Relative paths are relative to the platform data directory.
+storage_path = "data/memory"
+
+[brain]
+enabled = false
+# Reasoning strategy: "means-ends", "forward-chaining", "backward-chaining".
+reasoning_strategy = "means-ends"
+# Knowledge graph backend: "in-memory", "persisted".
+knowledge_graph = "in-memory"
+
+[perception]
+enabled = false
+# Sensor backends to load.
+sensors = []
+
+[execution]
+enabled = false
+# Execution backends: "subprocess", "wasm", "container".
+backends = ["subprocess"]
+# Default command timeout in seconds.
+default_timeout_seconds = 30
+
+[intelligence]
+enabled = false
+# LLM provider: "openai", "anthropic", "local".
+llm_provider = ""
+# Prompt templates directory.
+prompt_templates = "configs/prompts"

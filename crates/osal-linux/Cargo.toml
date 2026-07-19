@@ -1,0 +1,24 @@
+[package]
+name = "osal-linux"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+osal-core = { path = "../osal-core" }
+osal-capabilities = { path = "../osal-capabilities" }
+osal-filesystem = { path = "../osal-filesystem" }
+osal-process = { path = "../osal-process" }
+osal-terminal = { path = "../osal-terminal" }
+osal-network = { path = "../osal-network" }
+osal-monitoring = { path = "../osal-monitoring" }
+osal-devices = { path = "../osal-devices" }
+osal-users = { path = "../osal-users" }
+osal-platform = { path = "../osal-platform" }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+thiserror = "1"
+chrono = { version = "0.4", features = ["serde"] }
+async-trait = "0.1"
+libc = "0.2"
+inotify = "0.10"

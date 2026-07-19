@@ -1,0 +1,136 @@
+@startuml
+!theme plain
+skinparam defaultFontName Courier
+skinparam defaultFontSize 11
+skinparam packageBorderThickness 2
+skinparam packageFontSize 12
+skinparam packageFontStyle bold
+skinparam rectangleBorderThickness 2
+skinparam arrowThickness 2
+skinparam backgroundColor #FEFEFE
+
+title **OSAL Module Structure**
+caption Internal file organisation per crate with re-export chains
+
+' --- Colors ---
+!define CORE_BG #D4E6F1
+!define SUBSYS_BG #D5E8D4
+!define IMPL_BG #FFE0B2
+
+' ====== Foundation Crates ======
+package "<b>osal-core</b>" as CORE_PKG #CORE_BG {
+    rectangle "lib.rs" as C_LIB
+    rectangle "<b>traits.rs</b>" as C_TRAITS
+    rectangle "<b>types.rs</b>" as C_TYPES
+    rectangle "<b>error.rs</b>" as C_ERR
+    rectangle "<b>events.rs</b>" as C_EV
+    C_LIB --> C_TRAITS : pub mod
+    C_LIB --> C_TYPES : pub mod
+    C_LIB --> C_ERR : pub mod
+    C_LIB --> C_EV : pub mod
+    note right of C_LIB : Re-exports all\npublic types\nvia prelude
+}
+
+package "<b>osal-capabilities</b>" as CAP_PKG #CORE_BG {
+    rectangle "lib.rs" as CAP_LIB
+    rectangle "<b>traits.rs</b>" as CAP_TRAITS
+    rectangle "<b>types.rs</b>" as CAP_TYPES
+    rectangle "<b>error.rs</b>" as CAP_ERR
+    CAP_LIB --> CAP_TRAITS : pub mod
+    CAP_LIB --> CAP_TYPES : pub mod
+    CAP_LIB --> CAP_ERR : pub mod
+    note right of CAP_LIB : CapabilityChecker,\nCapabilitySet,\nCapability enum
+}
+
+' ====== Subsystem Crates ======
+package "<b>osal-filesystem</b>" as FS_PKG #SUBSYS_BG {
+    rectangle "lib.rs" as FS_LIB
+    rectangle "<b>traits.rs</b>" as FS_TRAITS
+    FS_LIB --> FS_TRAITS : pub mod
+    note right of FS_LIB : FileSystem trait\nre-exported
+}
+
+package "<b>osal-process</b>" as PROC_PKG #SUBSYS_BG {
+    rectangle "lib.rs" as PROC_LIB
+    rectangle "<b>traits.rs</b>" as PROC_TRAITS
+    PROC_LIB --> PROC_TRAITS : pub mod
+}
+
+package "<b>osal-terminal</b>" as TERM_PKG #SUBSYS_BG {
+    rectangle "lib.rs" as TERM_LIB
+    rectangle "<b>traits.rs</b>" as TERM_TRAITS
+    TERM_LIB --> TERM_TRAITS : pub mod
+}
+
+package "<b>osal-network</b>" as NET_PKG #SUBSYS_BG {
+    rectangle "lib.rs" as NET_LIB
+    rectangle "<b>traits.rs</b>" as NET_TRAITS
+    NET_LIB --> NET_TRAITS : pub mod
+}
+
+package "<b>osal-monitoring</b>" as MON_PKG #SUBSYS_BG {
+    rectangle "lib.rs" as MON_LIB
+    rectangle "<b>traits.rs</b>" as MON_TRAITS
+    MON_LIB --> MON_TRAITS : pub mod
+}
+
+package "<b>osal-devices</b>" as DEV_PKG #SUBSYS_BG {
+    rectangle "lib.rs" as DEV_LIB
+    rectangle "<b>traits.rs</b>" as DEV_TRAITS
+    DEV_LIB --> DEV_TRAITS : pub mod
+}
+
+package "<b>osal-users</b>" as USR_PKG #SUBSYS_BG {
+    rectangle "lib.rs" as USR_LIB
+    rectangle "<b>traits.rs</b>" as USR_TRAITS
+    USR_LIB --> USR_TRAITS : pub mod
+}
+
+package "<b>osal-platform</b>" as PLAT_PKG #SUBSYS_BG {
+    rectangle "lib.rs" as PLAT_LIB
+    rectangle "<b>traits.rs</b>" as PLAT_TRAITS
+    PLAT_LIB --> PLAT_TRAITS : pub mod
+}
+
+' ====== Implementation Crate ======
+package "<b>osal-linux</b>" as LINUX_PKG #IMPL_BG {
+    rectangle "lib.rs" as LNX_LIB
+    rectangle "<b>filesystem.rs</b>" as LNX_FS
+    rectangle "<b>process.rs</b>" as LNX_PROC
+    rectangle "<b>terminal.rs</b>" as LNX_TERM
+    rectangle "<b>network.rs</b>" as LNX_NET
+    rectangle "<b>monitoring.rs</b>" as LNX_MON
+    rectangle "<b>devices.rs</b>" as LNX_DEV
+    rectangle "<b>users.rs</b>" as LNX_USR
+    rectangle "<b>platform.rs</b>" as LNX_PLAT
+    rectangle "<b>sys.rs</b>" as LNX_SYS
+    LNX_LIB --> LNX_FS : mod
+    LNX_LIB --> LNX_PROC : mod
+    LNX_LIB --> LNX_TERM : mod
+    LNX_LIB --> LNX_NET : mod
+    LNX_LIB --> LNX_MON : mod
+    LNX_LIB --> LNX_DEV : mod
+    LNX_LIB --> LNX_USR : mod
+    LNX_LIB --> LNX_PLAT : mod
+    LNX_LIB --> LNX_SYS : mod
+    note right of LNX_LIB : impl Trait for\nKernelFacade.\nExports LinuxFacade.
+    note right of LNX_SYS : Raw libc bindings,\nprocfs parsing,\nsyscall wrappers.
+}
+
+' ====== Dependency arrows between crates ======
+FS_PKG -up-> CORE_PKG : depends on
+FS_PKG -up-> CAP_PKG : depends on
+
+PROC_PKG -up-> CORE_PKG : depends on
+PROC_PKG -up-> CAP_PKG : depends on
+
+LINUX_PKG -up-> FS_PKG : depends on
+LINUX_PKG -up-> PROC_PKG : depends on
+LINUX_PKG -up-> TERM_PKG : depends on
+LINUX_PKG -up-> NET_PKG : depends on
+LINUX_PKG -up-> MON_PKG : depends on
+LINUX_PKG -up-> DEV_PKG : depends on
+LINUX_PKG -up-> USR_PKG : depends on
+LINUX_PKG -up-> PLAT_PKG : depends on
+
+@enduml

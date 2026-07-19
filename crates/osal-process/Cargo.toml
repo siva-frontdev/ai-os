@@ -1,0 +1,22 @@
+[package]
+name = "osal-process"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+thiserror = "1"
+chrono = { version = "0.4", features = ["serde"] }
+tokio = { version = "1", features = ["sync", "process"] }
+async-trait = "0.1"
+osal-core = { path = "../osal-core" }
+osal-capabilities = { path = "../osal-capabilities" }
+
+[dev-dependencies]
+criterion = { workspace = true }
+serde_json = "1"
+
+[[bench]]
+name = "osal_process_bench"
+harness = false

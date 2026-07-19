@@ -1,0 +1,84 @@
+@startuml
+!theme plain
+skinparam defaultFontName Courier
+skinparam defaultFontSize 11
+skinparam padding 8
+skinparam packageBorderColor Black
+skinparam packageFontSize 13
+skinparam packageFontStyle bold
+skinparam rectangleBorderThickness 2
+skinparam componentBorderThickness 2
+skinparam arrowThickness 2
+skinparam backgroundColor #FEFEFE
+
+title **OSAL Architecture Overview**
+caption (c) AI-Native OS Platform
+
+' --- Colors ---
+!define OSAL_GREEN #D5E8D4
+!define OSAL_BORDER #388E3C
+!define LINUX_GRAY #E0E0E0
+!define LINUX_BORDER #616161
+!define CORE_BLUE #D4E6F1
+!define CORE_BORDER #1A5276
+!define PLATFORM_PURPLE #E8DAEF
+!define PLATFORM_BORDER #7D3C98
+!define BOUNDARY_DASH #666666
+
+' --- Packages (Layers) ---
+package "Runtime & Core Platform" as PLATFORM_LAYER #PLATFORM_PURPLE {
+    rectangle "<size:14><b>Core Platform</b></size>" as CORE_PLATFORM #CORE_BLUE
+    rectangle "<size:14><b>Runtime Platform</b></size>" as RUNTIME_PLATFORM #CORE_BLUE
+}
+
+package "Operating System Abstraction Layer (OSAL)" as OSAL_LAYER #OSAL_GREEN {
+    rectangle "<size:14><b>KernelFacade</b></size>" as KERNEL_FACADE #OSAL_GREEN
+
+    rectangle "FileSystem" as FS #OSAL_GREEN
+    rectangle "ProcessManager" as PM #OSAL_GREEN
+    rectangle "Terminal" as TERM #OSAL_GREEN
+    rectangle "NetworkManager" as NET #OSAL_GREEN
+    rectangle "SystemMonitor" as MON #OSAL_GREEN
+    rectangle "DeviceManager" as DEV #OSAL_GREEN
+    rectangle "UserManager" as USR #OSAL_GREEN
+    rectangle "PlatformInfo" as PLAT #OSAL_GREEN
+}
+
+package "Linux Implementation" as LINUX_LAYER #LINUX_GRAY {
+    rectangle "<size:14><b>osal-linux</b></size>" as OSAL_LINUX #LINUX_GRAY
+}
+
+rectangle "<size:12><b>Linux Kernel</b></size>" as LINUX_KERNEL #BDBDBD
+
+' --- Connections ---
+CORE_PLATFORM -down-> KERNEL_FACADE : uses
+RUNTIME_PLATFORM -down-> KERNEL_FACADE : uses
+
+KERNEL_FACADE -right-> FS
+KERNEL_FACADE -right-> PM
+KERNEL_FACADE -right-> TERM
+KERNEL_FACADE -right-> NET
+KERNEL_FACADE -right-> MON
+KERNEL_FACADE -right-> DEV
+KERNEL_FACADE -right-> USR
+KERNEL_FACADE -right-> PLAT
+
+FS -down-> OSAL_LINUX : implements
+PM -down-> OSAL_LINUX : implements
+TERM -down-> OSAL_LINUX : implements
+NET -down-> OSAL_LINUX : implements
+MON -down-> OSAL_LINUX : implements
+DEV -down-> OSAL_LINUX : implements
+USR -down-> OSAL_LINUX : implements
+PLAT -down-> OSAL_LINUX : implements
+
+OSAL_LINUX -down-> LINUX_KERNEL : libc / syscalls / procfs
+
+' --- Dashed boundary lines ---
+skinparam dashedLineColor BOUNDARY_DASH
+skinparam dashedLineThickness 1
+
+rectangle "Platform Boundary" as PB #transparent; line.dashed; line.color=BOUNDARY_DASH
+PB -down-- KERNEL_FACADE
+
+@enduml

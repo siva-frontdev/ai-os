@@ -1,0 +1,76 @@
+@startuml
+!theme plain
+skinparam defaultFontName Courier
+skinparam defaultFontSize 11
+skinparam padding 12
+skinparam packageBorderThickness 2
+skinparam arrowThickness 2
+skinparam backgroundColor #FEFEFE
+
+title **OSAL Crate Dependency Graph**
+caption 11 crates organised in three tiers
+
+' --- Colors ---
+!define CORE_COLOR #D4E6F1
+!define CORE_BORDER #1A5276
+!define SUBSYS_COLOR #D5E8D4
+!define SUBSYS_BORDER #388E3C
+!define IMPL_COLOR #FFE0B2
+!define IMPL_BORDER #E65100
+
+' ====== TIER 1: Foundation ======
+package "Foundation" as FOUNDATION {
+    package "<size:13><b>osal-core</b></size>" as CORE #CORE_COLOR {
+    }
+    package "<size:13><b>osal-capabilities</b></size>" as CAP #CORE_COLOR {
+    }
+}
+
+' ====== TIER 2: Subsystem Traits ======
+package "Subsystem Traits" as SUBSYSTEMS {
+    package "<size:12>osal-filesystem</size>" as FS #SUBSYS_COLOR
+    package "<size:12>osal-process</size>" as PROC #SUBSYS_COLOR
+    package "<size:12>osal-terminal</size>" as TERM #SUBSYS_COLOR
+    package "<size:12>osal-network</size>" as NET #SUBSYS_COLOR
+    package "<size:12>osal-monitoring</size>" as MON #SUBSYS_COLOR
+    package "<size:12>osal-devices</size>" as DEV #SUBSYS_COLOR
+    package "<size:12>osal-users</size>" as USR #SUBSYS_COLOR
+    package "<size:12>osal-platform</size>" as PLAT #SUBSYS_COLOR
+}
+
+' ====== TIER 3: Implementation ======
+package "Implementation" as IMPLS {
+    package "<size:14><b>osal-linux</b></size>" as LINUX #IMPL_COLOR
+}
+
+' ====== Arrows: Foundation -> nothing internal (standalone) ======
+
+' ====== Arrows: Subsystems depend on Foundation ======
+FS --> CORE : depends
+FS --> CAP : depends
+PROC --> CORE : depends
+PROC --> CAP : depends
+TERM --> CORE : depends
+TERM --> CAP : depends
+NET --> CORE : depends
+NET --> CAP : depends
+MON --> CORE : depends
+MON --> CAP : depends
+DEV --> CORE : depends
+DEV --> CAP : depends
+USR --> CORE : depends
+USR --> CAP : depends
+PLAT --> CORE : depends
+PLAT --> CAP : depends
+
+' ====== Arrows: osal-linux depends on all subsystems ======
+LINUX --> FS : depends
+LINUX --> PROC : depends
+LINUX --> TERM : depends
+LINUX --> NET : depends
+LINUX --> MON : depends
+LINUX --> DEV : depends
+LINUX --> USR : depends
+LINUX --> PLAT : depends
+
+@enduml

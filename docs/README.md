@@ -8,6 +8,8 @@ The project spans nine development phases, from foundational environment setup t
 
 AI-native OS is designed to be modular, observable, secure by default, and extensible through a plugin architecture. All intra-system communication flows through an EventBus, enabling loose coupling between components and comprehensive observability via distributed tracing.
 
+Platform identity and module configuration are defined in `platform.toml` at the workspace root. The boot process reads this file before any other initialization to determine which subsystems to load. See the [Specification](specification.md) for the complete boot protocol.
+
 ### Core Tenets
 
 - **Intelligence is a platform primitive**, not an application-layer concern. Memory, perception, reasoning, and execution are first-class abstractions provided by the operating platform.
@@ -23,7 +25,7 @@ AI-native OS is designed to be modular, observable, secure by default, and exten
 | Phase 1 (Dev Environment) | Completed |
 | Phase 2 (Core Platform) | Completed |
 | Phase 3 (Runtime Platform) | Completed |
-| Phase 4 (System Platform) | In Progress |
+| Phase 4 (OSAL) | In Progress |
 | Phases 5-9 (Intelligence) | Planned |
 | Rust toolchain | Stable, latest |
 | Async runtime | Tokio (multi-threaded) |
@@ -35,11 +37,14 @@ AI-native OS is designed to be modular, observable, secure by default, and exten
 
 | Document | Description |
 |---|---|
+| [Specification](specification.md) | Master specification — the constitution. Every module must satisfy this. |
 | [Vision](vision.md) | Project philosophy, long-term goals, what success looks like |
 | [Architecture](architecture.md) | Layered clean architecture, event-driven design, module dependency graph |
 | [Principles](principles.md) | Twelve design principles with explanations and examples |
 | [Roadmap](roadmap.md) | Complete phase-by-phase development roadmap with timeline |
 | [Glossary](glossary.md) | Comprehensive terminology reference (40+ terms) |
+| [RFC Index](rfc/README.md) | Request for Comments — proposed changes before implementation |
+| [ADR Index](adr/README.md) | Architecture Decision Records — why decisions were made |
 
 ---
 
@@ -137,9 +142,47 @@ Each crate contains a `src/` directory with the module source code, a `tests/` d
 
 ## Documentation Structure
 
-The documentation is organized into six root-level files, each serving a distinct purpose within the project's information architecture. They are designed to be read both sequentially (as a learning path) and independently (as reference material).
+The documentation follows a tiered hierarchy. Each tier serves a distinct purpose and has a different change frequency.
+
+### Documentation Tiers
+
+| Tier | Documents | Changes | Purpose |
+|---|---|---|---|
+| **Constitution** | [Specification](specification.md) | Rare, requires ADR | Fundamental contracts that every module must satisfy |
+| **Why** | [Vision](vision.md), [Principles](principles.md) | Yearly | Project philosophy and decision framework |
+| **Proposals** | [RFCs](rfc/README.md) | Weekly to monthly | Proposed changes, reviewed before implementation |
+| **Records** | [ADRs](adr/README.md) | Per implementation | Decisions recorded after implementation |
+| **What** | [Architecture](architecture.md), modules, diagrams | Per phase | System structure, component design, visual models |
+| **When** | [Roadmap](roadmap.md) | Per phase | Development progress and timeline |
+| **Process** | Build, test, release, security, deployment guides | As needed | How to work with the platform |
+| **Reference** | [Glossary](glossary.md) | As needed | Terminology |
+
+### The Documentation Flow
+
+Changes to the platform follow this path through the documentation hierarchy:
+
+```
+Idea (problem or opportunity identified)
+  │
+  ▼
+RFC (Request for Comments — docs/rfc/)
+  │  Proposed design reviewed and accepted before coding begins
+  ▼
+Implementation (code written against the accepted RFC)
+  │
+  ▼
+ADR (Architecture Decision Record — docs/adr/)
+  │  What was actually decided during implementation
+  ▼
+Specification (docs/specification.md)
+  Only if the change affects fundamental contracts
+```
+
+This prevents architectural drift. An RFC proposes what to build and why. An ADR records what was actually decided. The Specification changes only when fundamental contracts are affected.
 
 ### Conceptual Documentation
+
+- **[specification.md](specification.md)** — The constitution of the platform. Defines project mission, non-functional requirements, performance goals, security goals, boot requirements, AI lifecycle, event lifecycle, memory lifecycle, runtime lifecycle, failure recovery, and module/coding contracts. Every module must satisfy this specification. Read this before any other document.
 
 - **[vision.md](vision.md)** — Defines the "why" of the project. Read this first to understand the motivation, philosophy, and long-term aspirations that guide every technical decision. The vision document answers: What problem does this project solve? Why does it exist? What does success look like on a 10-year horizon?
 
@@ -151,6 +194,17 @@ The documentation is organized into six root-level files, each serving a distinc
 
 - **[roadmap.md](roadmap.md)** — Defines the "when" of the project. Tracks development progress across all nine phases with objectives, deliverables, dependencies, and effort estimates. Includes a visual timeline, risk assessment, and milestone targets.
 
+### Process Documentation
+
+- **[coding-standards.md](coding-standards.md)** — Rust coding conventions, formatting, linting, error handling patterns, and module structure guidelines.
+- **[build.md](build.md)** — Build prerequisites, configuration, and troubleshooting.
+- **[development.md](development.md)** — Development environment setup, tools, and workflows.
+- **[testing.md](testing.md)** — Test philosophy, types, running tests, and coverage requirements.
+- **[release.md](release.md)** — Versioning, changelog, tagging, and publishing process.
+- **[security.md](security.md)** — Threat model, secure coding, secrets management, and vulnerability response.
+- **[deployment.md](deployment.md)** — Deployment architecture, systemd configuration, and operations.
+- **[contributing.md](contributing.md)** — How to contribute code and documentation.
+
 ### Reference Documentation
 
 - **[glossary.md](glossary.md)** — Defines the terminology used throughout the project. Standardized vocabulary ensures that design discussions, code reviews, and documentation remain consistent. Refer to this when encountering unfamiliar terms. Contains 40+ entries with definitions and cross-references.
@@ -159,35 +213,46 @@ The documentation is organized into six root-level files, each serving a distinc
 
 The recommended learning path for new contributors:
 
-1. Start with [Vision](vision.md) (15 minutes) to understand project motivation and philosophy.
-2. Read [Principles](principles.md) (20 minutes) to understand the design philosophy and decision framework.
-3. Study [Architecture](architecture.md) (30 minutes) to understand system structure, communication patterns, and component responsibilities.
-4. Review [Roadmap](roadmap.md) (15 minutes) to see current development status and upcoming work.
-5. Refer to [Glossary](glossary.md) as needed (5 minutes per lookup) for term definitions when reading other documents.
-6. Return to this [README](README.md) as the navigation hub for finding specific information.
+1. Start with [Specification](specification.md) (30 minutes) to understand the constitutional contracts.
+2. Read [Vision](vision.md) (15 minutes) to understand project motivation and philosophy.
+3. Read [Principles](principles.md) (20 minutes) to understand the design philosophy and decision framework.
+4. Study [Architecture](architecture.md) (30 minutes) to understand system structure, communication patterns, and component responsibilities.
+5. Review [Roadmap](roadmap.md) (15 minutes) to see current development status and upcoming work.
+6. Refer to [Glossary](glossary.md) as needed (5 minutes per lookup) for term definitions when reading other documents.
+7. Return to this [README](README.md) as the navigation hub for finding specific information.
 
 ### Document Map
 
 ```
-                      +------------------+
-                      |    README.md      |  (Navigation hub)
-                      +------------------+
-                              |
-            +-----------------+------------------+
-            |                 |                  |
-            v                 v                  v
-    +--------------+  +--------------+  +------------------+
-    |  vision.md   |  | principles.md|  | architecture.md  |
-    |  (Why)       |  |  (How)       |  |  (What)          |
-    +--------------+  +--------------+  +------------------+
-                                                  |
-            +-----------------+------------------+
-            |                 |
-            v                 v
-    +--------------+  +--------------+
-    |  roadmap.md  |  |  glossary.md |
-    |  (When)      |  |  (Terms)     |
-    +--------------+  +--------------+
+                          +------------------+
+                          |    README.md      |  (Navigation hub)
+                          +------------------+
+                                  |
+            +---------------------+------------------------+
+            |                     |                         |
+            v                     v                         v
+    +------------------+  +--------------+          +--------------+
+    | specification.md  |  |  vision.md   |          | principles.md|
+    |  (Constitution)   |  |  (Why)       |          |  (How)       |
+    +------------------+  +--------------+          +--------------+
+            |                     |
+            v                     v
+    +------------------+  +--------------+
+    |  architecture.md  |  |  roadmap.md  |
+    |  (What)           |  |  (When)      |
+    +------------------+  +--------------+
+            |
+            v
+    +------------------+  +--------------+  +------------------+
+    |  rfc/             |  |  adr/        |  |  modules/        |
+    |  (Proposals)      |  |  (Records)   |  |  (Deep dives)    |
+    +------------------+  +--------------+  +------------------+
+            |
+            v
+    +------------------+  +--------------+  +------------------+
+    |  process docs     |  |  glossary.md |  |  diagrams/       |
+    |  (How to work)    |  |  (Terms)     |  |  (Visual)        |
+    +------------------+  +--------------+  +------------------+
 ```
 
 ### File Conventions
@@ -351,7 +416,7 @@ No special hardware is required. AI-native OS runs on standard x86-64 hardware. 
 
 ### Is AI-native OS production-ready?
 
-Not yet. Phases 1-3 (Core and Runtime Platform) are complete and tested, but the system is not recommended for production use until Phase 4 (System Platform) is complete and the platform has undergone security hardening.
+Not yet. Phases 1-3 (Core and Runtime Platform) are complete and tested, but the system is not recommended for production use until Phase 4 (OSAL) is complete and the platform has undergone security hardening.
 
 ### How is AI-native OS different from Kubernetes?
 

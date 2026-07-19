@@ -1,0 +1,57 @@
+@startuml
+!theme plain
+skinparam defaultFontName Courier
+skinparam defaultFontSize 11
+skinparam participantPadding 20
+skinparam boxPadding 10
+skinparam sequenceArrowThickness 2
+skinparam backgroundColor #FEFEFE
+
+title **Capability Check Flow**
+caption Capability-gated operation lifecycle in OSAL
+
+actor "Higher Layer\n(Core / Runtime)" as HIGHER
+participant "KernelFacade" as FACADE
+participant "FileSystem" as FS
+participant "CapabilityChecker" as CHECKER
+participant "LinuxImpl\n(osal-linux)" as LINUX
+
+' --- Activation ---
+HIGHER -> FACADE ++ : filesystem.read(path, ctx)
+activate FACADE
+
+FACADE -> FS ++ : read(path, ctx)
+activate FS
+
+FS -> CHECKER ++ : ctx.capabilities.check(FileRead(path))
+activate CHECKER
+
+' --- Alt: Granted ---
+alt Capability granted
+
+CHECKER --> FS -- : Ok(())
+
+FS -> LINUX ++ : read(path)
+activate LINUX
+
+LINUX --> FS -- : Ok(data)
+
+FS --> FACADE -- : Ok(data)
+
+FACADE --> HIGHER -- : Ok(data)
+
+' --- Alt: Denied ---
+else Capability denied
+
+CHECKER --> FS -- : Err(OsalError::CapabilityDenied)
+
+FS --> FACADE -- : Err(OsalError::CapabilityDenied)
+
+FACADE --> HIGHER -- : Err(OsalError::CapabilityDenied)
+
+end
+
+deactivate FACADE
+deactivate FS
+
+@enduml

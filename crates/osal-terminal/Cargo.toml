@@ -1,0 +1,21 @@
+[package]
+name = "osal-terminal"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+chrono = { version = "0.4", features = ["serde"] }
+tokio = { version = "1", features = ["sync"] }
+async-trait = "0.1"
+osal-core = { path = "../osal-core" }
+osal-capabilities = { path = "../osal-capabilities" }
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+serde_json = "1"
+
+[[bench]]
+name = "osal_terminal_bench"
+harness = false

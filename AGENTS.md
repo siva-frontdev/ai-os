@@ -94,21 +94,25 @@ This is not an operating system that runs AI workloads. It is an operating syste
 
 ### Layered Architecture
 
-The platform has eight layers, each depending only on the layer directly beneath it:
+The platform has nine layers, each depending only on the layer directly beneath it:
 
 ```
-Layer 8: Intelligence Integration  (future)
-Layer 7: Execution Platform        (future)
-Layer 6: Brain Platform            (future)
-Layer 5: Perception Platform       (future)
-Layer 4: Memory Platform           (future)
-Layer 3: Runtime Platform          (completed)
-Layer 2: Core Platform             (completed)
-Layer 1: System Platform           (in progress)
-Layer 0: Linux Kernel / Hardware   (external)
+Layer 8: Intelligence Integration          (future, Phase 9)
+Layer 7: Execution Platform                (future, Phase 8)
+Layer 6: Brain Platform                    (future, Phase 6)
+Layer 5: Perception Platform               (future, Phase 7)
+Layer 4: Memory Platform                   (future, Phase 5)
+Layer 3: Runtime Platform                  (completed, Phase 3)
+Layer 2: Core Platform                     (completed, Phase 2)
+Layer 1: Operating System Abstraction      (in progress, Phase 4)
+         Layer (OSAL)
+         ═══════════════════════════════════════════
+Layer 0: Linux Kernel / Hardware           (external)
 ```
 
-Each layer uses only the layer below and the EventBus for cross-cutting communication.
+The horizontal line below OSAL is the **platform boundary**. Everything above OSAL is OS-independent. All Linux-specific logic (syscalls, procfs, dbus, inotify, systemd, rtnetlink, libc) lives behind OSAL trait interfaces. No code in any layer above OSAL may reference Linux-specific types or call libc directly.
+
+The boot process reads `platform.toml` (at the workspace root) to determine platform identity and which subsystems to enable. This file is loaded before any other initialization.
 
 ### EventBus
 
@@ -173,9 +177,9 @@ Depends on Core. Task lifecycle, scheduling, and agent management.
 | `resource` | Per-task resource usage tracking, saturating CPU clamp, limit enforcement |
 | `permission` | Role-based access control (admin/user/readonly), permission sets |
 
-### System (`system/` — Phase 4, in progress)
+### OSAL — Operating System Abstraction Layer (`system/` — Phase 4, in progress)
 
-Depends on Core and Runtime. Abstracts Linux kernel interfaces.
+The lowest internal layer of the platform. Depends on nothing except the Linux kernel and standard Rust crates. Core and Runtime depend on OSAL, not the reverse. All Linux-specific logic is confined to this layer.
 
 | Planned Submodule | Responsibility |
 |---|---|
@@ -199,7 +203,7 @@ Depends on Core and Runtime. Abstracts Linux kernel interfaces.
 | `/` | Workspace root. `Cargo.toml` defines workspace members. |
 | `core/` | Core Platform crate (`ai_os_core`). Foundational services. |
 | `runtime/` | Runtime Platform crate (`ai_os_runtime`). Task lifecycle and agent management. |
-| `system/` | System Platform crate placeholder (Phase 4). |
+| `system/` | OSAL crate placeholder (Phase 4). Operating System Abstraction Layer. |
 | `memory/` | Memory Platform crate placeholder (Phase 5). |
 | `brain/` | Brain Platform crate placeholder (Phase 6). |
 | `perception/` | Perception Platform crate placeholder (Phase 7). |
@@ -398,6 +402,14 @@ cargo test -- --nocapture
 - Cross-link between docs using `[`TypeName`]`. Doc `/// Links to [`EventBus`].`
 - Keep doc comments concise. Explain what the function does, not how it does it.
 - Examples in doc comments must compile and run (they become doc tests).
+
+### Request for Comments (RFCs)
+
+- Every significant change or new module must have an accepted RFC in `docs/rfc/` before implementation begins.
+- Use the template at `docs/rfc/template.md`.
+- RFC statuses: Draft → Review → Accepted / Rejected / Postponed.
+- RFCs propose what to build and why. ADRs record what was actually decided during implementation.
+- Current RFCs: 0001 (System Platform), 0002 (Memory Platform), 0003 (Brain Platform).
 
 ### Architecture Decision Records
 

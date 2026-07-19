@@ -44,7 +44,7 @@ The architecture is event-driven, async-first, and modular. All inter-component 
                               |
                               v
 +-------------------------------------------------------------------+
-|                        System Platform                             |
+|              OSAL (Operating System Abstraction Layer)              |
 |  (Phase 4 - In Progress)                                          |
 |  Daemon Manager | Policy Engine | Capability Discovery | Config   |
 +-------------------------------------------------------------------+
@@ -316,7 +316,7 @@ All components follow the Fail Fast and Graceful principle:
 | 1 (Dev Environment) | Foundation | None | Toolchain, CI/CD, Dev container |
 | 2 (Core Platform) | L0 | Phase 1 | EventBus, Lifecycle, Logger, Health, Container |
 | 3 (Runtime Platform) | L1 | Phase 2 | Scheduler, Supervisor, Session, Task, Context, StateMachine, Resource, Permission |
-| 4 (System Platform) | L2 | Phase 3 | Daemon, Policy, Capability, Config, Plugin |
+| 4 (OSAL) | L0 | Phase 3 | SystemResource, Process, FileSystem, Network, EventCollector, ServiceManager |
 | 5 (Memory Platform) | L3 | Phase 4 | Persistent stores, Pattern storage, Query engine |
 | 6 (Brain Platform) | L4 | Phase 5 | Reasoning, Decision, State modeling, Learning |
 | 7 (Perception Platform) | L5 | Phase 6 | Sensor integration, Signal processing, Pattern recognition |
