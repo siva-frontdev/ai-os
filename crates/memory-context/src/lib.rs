@@ -24,14 +24,16 @@
 //! Critical sections are short (single hash map lookups) and never held
 //! across `.await` points.
 
-mod error;
-mod event;
 pub mod context_manager;
 pub mod context_provider;
 pub mod context_snapshot;
+mod error;
+mod event;
 
+pub use context_manager::{
+    ContextManager, ContextManagerStats, DefaultContextManager, TreeContextManager,
+};
+pub use context_provider::{ContextProvider, DefaultContextProvider, StaticContextProvider};
+pub use context_snapshot::{ContextSnapshot, ContextSnapshotId, DefaultContextSnapshot};
 pub use error::{ContextManagerError, ContextManagerResult};
 pub use event::ContextEvent;
-pub use context_manager::{ContextManager, DefaultContextManager, ContextManagerStats, TreeContextManager};
-pub use context_provider::{ContextProvider, DefaultContextProvider, StaticContextProvider};
-pub use context_snapshot::{ContextSnapshot, DefaultContextSnapshot, ContextSnapshotId};

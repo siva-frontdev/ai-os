@@ -41,9 +41,7 @@ async fn full_integration_session_to_task() {
     let (app, rt) = setup().await;
 
     // 1. Create a session
-    let session = rt
-        .session_manager
-        .create_session(HashMap::new());
+    let session = rt.session_manager.create_session(HashMap::new());
     assert_eq!(rt.session_manager.session_count(), 1);
 
     // 2. Check permissions
@@ -57,9 +55,9 @@ async fn full_integration_session_to_task() {
         .is_err());
 
     // 3. Create a task
-    let task = rt
-        .task_manager
-        .create_task(Some(session.id.clone()), Priority::NORMAL, HashMap::new());
+    let task =
+        rt.task_manager
+            .create_task(Some(session.id.clone()), Priority::NORMAL, HashMap::new());
     assert_eq!(rt.task_manager.task_count(), 1);
     assert_eq!(task.state, ai_os_runtime::task::TaskState::Pending);
 
@@ -80,16 +78,10 @@ async fn full_integration_session_to_task() {
 
     // 6. Mark as running → completed
     rt.task_manager
-        .update_state(
-            &task.id,
-            ai_os_runtime::task::TaskState::Running,
-        )
+        .update_state(&task.id, ai_os_runtime::task::TaskState::Running)
         .unwrap();
     rt.task_manager
-        .update_state(
-            &task.id,
-            ai_os_runtime::task::TaskState::Completed,
-        )
+        .update_state(&task.id, ai_os_runtime::task::TaskState::Completed)
         .unwrap();
     assert!(rt
         .task_manager
@@ -125,10 +117,7 @@ async fn supervisor_restarts_on_failure() {
 
     // Supervise with OnFailure policy
     rt.supervisor
-        .supervise(
-            task.id.clone(),
-            RestartPolicy::OnFailure { max_retries: 2 },
-        )
+        .supervise(task.id.clone(), RestartPolicy::OnFailure { max_retries: 2 })
         .unwrap();
 
     // Record a failure
@@ -272,7 +261,9 @@ async fn event_bus_runtime_events() {
 
     typed_subscribe::<ai_os_runtime::state::RuntimePhaseChanged, PhaseHandler>(
         app.event_bus().as_ref(),
-        Arc::new(PhaseHandler { flag: fired.clone() }),
+        Arc::new(PhaseHandler {
+            flag: fired.clone(),
+        }),
     )
     .unwrap();
 
@@ -292,10 +283,7 @@ async fn runtime_implements_core_service() {
     let rt = Runtime::new(app.event_bus().clone(), app.logger().clone());
 
     // Register as a Core service
-    app.lifecycle()
-        .register(Arc::new(rt))
-        .await
-        .unwrap();
+    app.lifecycle().register(Arc::new(rt)).await.unwrap();
 
     app.run().await.unwrap();
     app.shutdown().await.unwrap();

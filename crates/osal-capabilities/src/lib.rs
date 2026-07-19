@@ -125,7 +125,10 @@ mod tests {
     fn test_capability_display() {
         assert_eq!(format!("{}", Capability::ProcessSpawn), "ProcessSpawn");
         assert_eq!(format!("{}", Capability::Admin), "Admin");
-        assert_eq!(format!("{}", Capability::FileRead("/tmp".into())), "FileRead(/tmp)");
+        assert_eq!(
+            format!("{}", Capability::FileRead("/tmp".into())),
+            "FileRead(/tmp)"
+        );
         assert_eq!(format!("{}", Capability::SystemShutdown), "SystemShutdown");
     }
 

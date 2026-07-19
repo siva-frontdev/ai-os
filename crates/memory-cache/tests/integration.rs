@@ -17,13 +17,21 @@ async fn full_lifecycle() {
 
     cache.set("k1".into(), obj.clone(), None).await.unwrap();
 
-    let hit = cache.get(&"k1".into()).await.unwrap().expect("should be a hit");
+    let hit = cache
+        .get(&"k1".into())
+        .await
+        .unwrap()
+        .expect("should be a hit");
     assert_eq!(hit.object.content, vec![1, 2, 3]);
 
     let obj2 = make_obj(vec![4, 5, 6]);
     cache.set("k1".into(), obj2.clone(), None).await.unwrap();
 
-    let hit2 = cache.get(&"k1".into()).await.unwrap().expect("should still be a hit");
+    let hit2 = cache
+        .get(&"k1".into())
+        .await
+        .unwrap()
+        .expect("should still be a hit");
     assert_eq!(hit2.object.content, vec![4, 5, 6]);
 
     cache.remove(&"k1".into()).await.unwrap();

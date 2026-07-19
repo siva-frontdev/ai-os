@@ -2,8 +2,8 @@ use criterion::{criterion_group, criterion_main, Criterion};
 
 use osal_capabilities::CapabilityContext;
 use osal_network::{
-    ConnectivityStatus, DefaultNetworkManager, DnsConfig, InterfaceFlags,
-    NetworkInterface, PingResult, TcpConnection,
+    ConnectivityStatus, DefaultNetworkManager, DnsConfig, InterfaceFlags, NetworkInterface,
+    PingResult, TcpConnection,
 };
 
 fn context() -> CapabilityContext {
@@ -44,8 +44,7 @@ fn bench_default_dns_lookup(c: &mut Criterion) {
     let ctx = context();
 
     c.bench_function("DefaultNetworkManager::dns_lookup", |b| {
-        b.to_async(&rt)
-            .iter(|| mgr.dns_lookup(&ctx, "example.com"))
+        b.to_async(&rt).iter(|| mgr.dns_lookup(&ctx, "example.com"))
     });
 }
 

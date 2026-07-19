@@ -12,7 +12,7 @@ pub mod events;
 pub mod types;
 
 pub use events::FileEvent;
-pub use types::{FileMetadata, DirEntry, TempFile};
+pub use types::{DirEntry, FileMetadata, TempFile};
 
 /// Re-export of the core filesystem error type.
 pub use osal_core::FilesystemError;

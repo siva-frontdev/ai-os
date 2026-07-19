@@ -70,7 +70,12 @@ pub trait ContextManager: Send + Sync + std::fmt::Debug {
     async fn destroy_context(&self, id: &ContextId) -> ContextManagerResult<()>;
 
     /// Set a key-value pair in a context. Overrides any inherited value.
-    async fn set_value(&self, ctx: &ContextId, key: &str, value: Vec<u8>) -> ContextManagerResult<()>;
+    async fn set_value(
+        &self,
+        ctx: &ContextId,
+        key: &str,
+        value: Vec<u8>,
+    ) -> ContextManagerResult<()>;
 
     /// Get a value from a context. Traverses up the tree if not found locally.
     async fn get_value(&self, ctx: &ContextId, key: &str) -> ContextManagerResult<Option<Vec<u8>>>;
@@ -186,7 +191,9 @@ impl ContextManager for TreeContextManager {
         let mut contexts = self.contexts.write().unwrap();
 
         for did in &to_destroy {
-            let node = contexts.remove(did).ok_or_else(|| ContextManagerError::ContextNotFound(*did))?;
+            let node = contexts
+                .remove(did)
+                .ok_or_else(|| ContextManagerError::ContextNotFound(*did))?;
 
             if let Some(pid) = node.parent_id {
                 if let Some(parent) = contexts.get_mut(&pid) {
@@ -198,16 +205,25 @@ impl ContextManager for TreeContextManager {
         Ok(())
     }
 
-    async fn set_value(&self, ctx: &ContextId, key: &str, value: Vec<u8>) -> ContextManagerResult<()> {
+    async fn set_value(
+        &self,
+        ctx: &ContextId,
+        key: &str,
+        value: Vec<u8>,
+    ) -> ContextManagerResult<()> {
         let mut contexts = self.contexts.write().unwrap();
-        let node = contexts.get_mut(ctx).ok_or_else(|| ContextManagerError::ContextNotFound(*ctx))?;
+        let node = contexts
+            .get_mut(ctx)
+            .ok_or_else(|| ContextManagerError::ContextNotFound(*ctx))?;
         node.values.insert(key.to_string(), value);
         Ok(())
     }
 
     async fn get_value(&self, ctx: &ContextId, key: &str) -> ContextManagerResult<Option<Vec<u8>>> {
         let contexts = self.contexts.read().unwrap();
-        let node = contexts.get(ctx).ok_or_else(|| ContextManagerError::ContextNotFound(*ctx))?;
+        let node = contexts
+            .get(ctx)
+            .ok_or_else(|| ContextManagerError::ContextNotFound(*ctx))?;
 
         if let Some(val) = node.values.get(key) {
             return Ok(Some(val.clone()));
@@ -216,7 +232,9 @@ impl ContextManager for TreeContextManager {
         // Walk up parent chain (inheritance)
         let mut current_id = node.parent_id;
         while let Some(pid) = current_id {
-            let parent = contexts.get(&pid).ok_or_else(|| ContextManagerError::ParentNotFound(pid))?;
+            let parent = contexts
+                .get(&pid)
+                .ok_or_else(|| ContextManagerError::ParentNotFound(pid))?;
             if let Some(val) = parent.values.get(key) {
                 return Ok(Some(val.clone()));
             }
@@ -228,20 +246,24 @@ impl ContextManager for TreeContextManager {
 
     async fn delete_value(&self, ctx: &ContextId, key: &str) -> ContextManagerResult<()> {
         let mut contexts = self.contexts.write().unwrap();
-        let node = contexts.get_mut(ctx).ok_or_else(|| ContextManagerError::ContextNotFound(*ctx))?;
+        let node = contexts
+            .get_mut(ctx)
+            .ok_or_else(|| ContextManagerError::ContextNotFound(*ctx))?;
         node.values.remove(key);
         Ok(())
     }
 
     async fn snapshot(&self, ctx: &ContextId) -> ContextManagerResult<Vec<u8>> {
         let contexts = self.contexts.read().unwrap();
-        let node = contexts.get(ctx).ok_or_else(|| ContextManagerError::ContextNotFound(*ctx))?;
+        let node = contexts
+            .get(ctx)
+            .ok_or_else(|| ContextManagerError::ContextNotFound(*ctx))?;
         serde_json::to_vec(node).map_err(|e| ContextManagerError::SerializationError(e.to_string()))
     }
 
     async fn restore(&self, snapshot: &[u8]) -> ContextManagerResult<ContextId> {
-        let mut node: ContextNode =
-            serde_json::from_slice(snapshot).map_err(|e| ContextManagerError::SerializationError(e.to_string()))?;
+        let mut node: ContextNode = serde_json::from_slice(snapshot)
+            .map_err(|e| ContextManagerError::SerializationError(e.to_string()))?;
 
         // Assign a fresh ID so restore always creates a new context tree.
         let new_id = Uuid::now_v7();
@@ -272,11 +294,16 @@ impl ContextManager for TreeContextManager {
     async fn merge(&self, target: &ContextId, source: &ContextId) -> ContextManagerResult<()> {
         let source_node = {
             let contexts = self.contexts.read().unwrap();
-            contexts.get(source).ok_or_else(|| ContextManagerError::ContextNotFound(*source))?.clone()
+            contexts
+                .get(source)
+                .ok_or_else(|| ContextManagerError::ContextNotFound(*source))?
+                .clone()
         };
 
         let mut contexts = self.contexts.write().unwrap();
-        let target_node = contexts.get_mut(target).ok_or_else(|| ContextManagerError::ContextNotFound(*target))?;
+        let target_node = contexts
+            .get_mut(target)
+            .ok_or_else(|| ContextManagerError::ContextNotFound(*target))?;
 
         // Merge values (source overwrites target on conflict)
         for (k, v) in source_node.values {
@@ -302,7 +329,8 @@ impl ContextManager for TreeContextManager {
         let contexts = self.contexts.read().unwrap();
         let total_contexts = contexts.len() as u64;
         let total_values: u64 = contexts.values().map(|n| n.values.len() as u64).sum();
-        let contexts_with_parents = contexts.values().filter(|n| n.parent_id.is_some()).count() as u64;
+        let contexts_with_parents =
+            contexts.values().filter(|n| n.parent_id.is_some()).count() as u64;
 
         let mut max_depth = 0usize;
         for id in contexts.keys() {
@@ -326,34 +354,63 @@ pub struct DefaultContextManager;
 #[async_trait]
 impl ContextManager for DefaultContextManager {
     async fn create_context(&self, _parent: Option<ContextId>) -> ContextManagerResult<ContextId> {
-        Err(ContextManagerError::Internal("DefaultContextManager not configured".into()))
+        Err(ContextManagerError::Internal(
+            "DefaultContextManager not configured".into(),
+        ))
     }
     async fn destroy_context(&self, _id: &ContextId) -> ContextManagerResult<()> {
-        Err(ContextManagerError::Internal("DefaultContextManager not configured".into()))
+        Err(ContextManagerError::Internal(
+            "DefaultContextManager not configured".into(),
+        ))
     }
-    async fn set_value(&self, _ctx: &ContextId, _key: &str, _value: Vec<u8>) -> ContextManagerResult<()> {
-        Err(ContextManagerError::Internal("DefaultContextManager not configured".into()))
+    async fn set_value(
+        &self,
+        _ctx: &ContextId,
+        _key: &str,
+        _value: Vec<u8>,
+    ) -> ContextManagerResult<()> {
+        Err(ContextManagerError::Internal(
+            "DefaultContextManager not configured".into(),
+        ))
     }
-    async fn get_value(&self, _ctx: &ContextId, _key: &str) -> ContextManagerResult<Option<Vec<u8>>> {
-        Err(ContextManagerError::Internal("DefaultContextManager not configured".into()))
+    async fn get_value(
+        &self,
+        _ctx: &ContextId,
+        _key: &str,
+    ) -> ContextManagerResult<Option<Vec<u8>>> {
+        Err(ContextManagerError::Internal(
+            "DefaultContextManager not configured".into(),
+        ))
     }
     async fn delete_value(&self, _ctx: &ContextId, _key: &str) -> ContextManagerResult<()> {
-        Err(ContextManagerError::Internal("DefaultContextManager not configured".into()))
+        Err(ContextManagerError::Internal(
+            "DefaultContextManager not configured".into(),
+        ))
     }
     async fn snapshot(&self, _ctx: &ContextId) -> ContextManagerResult<Vec<u8>> {
-        Err(ContextManagerError::Internal("DefaultContextManager not configured".into()))
+        Err(ContextManagerError::Internal(
+            "DefaultContextManager not configured".into(),
+        ))
     }
     async fn restore(&self, _snapshot: &[u8]) -> ContextManagerResult<ContextId> {
-        Err(ContextManagerError::Internal("DefaultContextManager not configured".into()))
+        Err(ContextManagerError::Internal(
+            "DefaultContextManager not configured".into(),
+        ))
     }
     async fn merge(&self, _target: &ContextId, _source: &ContextId) -> ContextManagerResult<()> {
-        Err(ContextManagerError::Internal("DefaultContextManager not configured".into()))
+        Err(ContextManagerError::Internal(
+            "DefaultContextManager not configured".into(),
+        ))
     }
     async fn active_contexts(&self) -> ContextManagerResult<Vec<ContextId>> {
-        Err(ContextManagerError::Internal("DefaultContextManager not configured".into()))
+        Err(ContextManagerError::Internal(
+            "DefaultContextManager not configured".into(),
+        ))
     }
     async fn stats(&self) -> ContextManagerResult<ContextManagerStats> {
-        Err(ContextManagerError::Internal("DefaultContextManager not configured".into()))
+        Err(ContextManagerError::Internal(
+            "DefaultContextManager not configured".into(),
+        ))
     }
 }
 
@@ -378,21 +435,33 @@ mod tests {
     async fn test_value_inheritance() {
         let mgr = make_manager();
         let parent = mgr.create_context(None).await.unwrap();
-        mgr.set_value(&parent, "color", b"blue".to_vec()).await.unwrap();
+        mgr.set_value(&parent, "color", b"blue".to_vec())
+            .await
+            .unwrap();
 
         let child = mgr.create_context(Some(parent)).await.unwrap();
-        assert_eq!(mgr.get_value(&child, "color").await.unwrap(), Some(b"blue".to_vec()));
+        assert_eq!(
+            mgr.get_value(&child, "color").await.unwrap(),
+            Some(b"blue".to_vec())
+        );
     }
 
     #[tokio::test]
     async fn test_value_override() {
         let mgr = make_manager();
         let parent = mgr.create_context(None).await.unwrap();
-        mgr.set_value(&parent, "color", b"blue".to_vec()).await.unwrap();
+        mgr.set_value(&parent, "color", b"blue".to_vec())
+            .await
+            .unwrap();
 
         let child = mgr.create_context(Some(parent)).await.unwrap();
-        mgr.set_value(&child, "color", b"red".to_vec()).await.unwrap();
-        assert_eq!(mgr.get_value(&child, "color").await.unwrap(), Some(b"red".to_vec()));
+        mgr.set_value(&child, "color", b"red".to_vec())
+            .await
+            .unwrap();
+        assert_eq!(
+            mgr.get_value(&child, "color").await.unwrap(),
+            Some(b"red".to_vec())
+        );
     }
 
     #[tokio::test]
@@ -404,7 +473,10 @@ mod tests {
         let snap = mgr.snapshot(&id).await.unwrap();
         let restored_id = mgr.restore(&snap).await.unwrap();
 
-        assert_eq!(mgr.get_value(&restored_id, "key1").await.unwrap(), Some(b"val1".to_vec()));
+        assert_eq!(
+            mgr.get_value(&restored_id, "key1").await.unwrap(),
+            Some(b"val1".to_vec())
+        );
     }
 
     #[tokio::test]
@@ -413,12 +485,22 @@ mod tests {
         let target = mgr.create_context(None).await.unwrap();
         let child = mgr.create_context(Some(target)).await.unwrap();
 
-        mgr.set_value(&child, "from_child", b"yes".to_vec()).await.unwrap();
-        mgr.set_value(&target, "from_target", b"origin".to_vec()).await.unwrap();
+        mgr.set_value(&child, "from_child", b"yes".to_vec())
+            .await
+            .unwrap();
+        mgr.set_value(&target, "from_target", b"origin".to_vec())
+            .await
+            .unwrap();
 
         mgr.merge(&target, &child).await.unwrap();
-        assert_eq!(mgr.get_value(&target, "from_child").await.unwrap(), Some(b"yes".to_vec()));
-        assert_eq!(mgr.get_value(&target, "from_target").await.unwrap(), Some(b"origin".to_vec()));
+        assert_eq!(
+            mgr.get_value(&target, "from_child").await.unwrap(),
+            Some(b"yes".to_vec())
+        );
+        assert_eq!(
+            mgr.get_value(&target, "from_target").await.unwrap(),
+            Some(b"origin".to_vec())
+        );
     }
 
     #[tokio::test]

@@ -1,5 +1,5 @@
-use async_trait::async_trait;
 use crate::error::{ContextManagerError, ContextManagerResult};
+use async_trait::async_trait;
 use std::collections::HashMap;
 
 /// Provides context values from external sources (runtime, OSAL, env vars, config).
@@ -101,9 +101,14 @@ mod tests {
     #[tokio::test]
     async fn test_static_provider_returns_values() {
         let mut p = StaticContextProvider::from_map(
-            vec![("hostname".into(), b"ai-os".to_vec())].into_iter().collect(),
+            vec![("hostname".into(), b"ai-os".to_vec())]
+                .into_iter()
+                .collect(),
         );
-        let result = p.provide_context(&["hostname".into(), "missing".into()]).await.unwrap();
+        let result = p
+            .provide_context(&["hostname".into(), "missing".into()])
+            .await
+            .unwrap();
         assert_eq!(result.get("hostname").unwrap(), b"ai-os");
         assert!(!result.contains_key("missing"));
     }

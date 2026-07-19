@@ -44,8 +44,16 @@ async fn test_batch_end_to_end() {
             MemoryObject::builder()
                 .content_type(format!("type-{}", i))
                 .content(vec![i as u8])
-                .tier(if i % 2 == 0 { MemoryTier::Working } else { MemoryTier::Episodic })
-                .memory_type(if i < 5 { MemoryType::Working } else { MemoryType::Episodic })
+                .tier(if i % 2 == 0 {
+                    MemoryTier::Working
+                } else {
+                    MemoryTier::Episodic
+                })
+                .memory_type(if i < 5 {
+                    MemoryType::Working
+                } else {
+                    MemoryType::Episodic
+                })
                 .build()
         })
         .collect();

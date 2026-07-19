@@ -7,11 +7,9 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use osal_capabilities::CapabilityContext;
-use osal_core::{
-    Terminal, PtyHandle, TerminalError, Signal, OsalEvent,
-};
-use tokio::sync::{Mutex, mpsc};
+use osal_core::{OsalEvent, PtyHandle, Signal, Terminal, TerminalError};
 use tokio::sync::mpsc::Receiver;
+use tokio::sync::{mpsc, Mutex};
 
 /// Internal state for an open PTY.
 struct PtyState {
@@ -25,7 +23,9 @@ impl Drop for PtyState {
         // master_fd was opened by posix_openpt in open_pty and is guaranteed
         // to be a valid fd at that point. We never duplicate or close it
         // before dropping.
-        unsafe { libc::close(self.master_fd); }
+        unsafe {
+            libc::close(self.master_fd);
+        }
     }
 }
 
@@ -76,7 +76,9 @@ impl Terminal for LinuxTerminal {
             let ret = unsafe { libc::grantpt(fd) };
             if ret != 0 {
                 // SAFETY: fd is still a valid master pty fd; close before returning error.
-                unsafe { libc::close(fd); }
+                unsafe {
+                    libc::close(fd);
+                }
                 return Err(TerminalError::NotAvailable(format!(
                     "grantpt failed: {}",
                     std::io::Error::last_os_error()
@@ -88,7 +90,9 @@ impl Terminal for LinuxTerminal {
             let ret = unsafe { libc::unlockpt(fd) };
             if ret != 0 {
                 // SAFETY: fd is still a valid master pty fd; close before returning error.
-                unsafe { libc::close(fd); }
+                unsafe {
+                    libc::close(fd);
+                }
                 return Err(TerminalError::NotAvailable(format!(
                     "unlockpt failed: {}",
                     std::io::Error::last_os_error()
@@ -102,7 +106,9 @@ impl Terminal for LinuxTerminal {
             let name_ptr = unsafe { libc::ptsname(fd) };
             if name_ptr.is_null() {
                 // SAFETY: fd is still valid; close it before returning error.
-                unsafe { libc::close(fd); }
+                unsafe {
+                    libc::close(fd);
+                }
                 return Err(TerminalError::NotAvailable(format!(
                     "ptsname failed: {}",
                     std::io::Error::last_os_error()
@@ -175,11 +181,7 @@ impl Terminal for LinuxTerminal {
         .map_err(|e| TerminalError::Io(e.to_string()))?
     }
 
-    async fn read_pty(
-        &self,
-        _ctx: &CapabilityContext,
-        id: &str,
-    ) -> Result<Vec<u8>, TerminalError> {
+    async fn read_pty(&self, _ctx: &CapabilityContext, id: &str) -> Result<Vec<u8>, TerminalError> {
         let fd = {
             let ptys = self.ptys.lock().await;
             let state = ptys
@@ -194,13 +196,7 @@ impl Terminal for LinuxTerminal {
             // mutable buffer of 4096 bytes. read() writes up to 4096 bytes
             // into the buffer and returns the number of bytes read (0 for EOF,
             // -1 on error).
-            let ret = unsafe {
-                libc::read(
-                    fd,
-                    buf.as_mut_ptr() as *mut libc::c_void,
-                    buf.len(),
-                )
-            };
+            let ret = unsafe { libc::read(fd, buf.as_mut_ptr() as *mut libc::c_void, buf.len()) };
             if ret < 0 {
                 return Err(TerminalError::Io(
                     std::io::Error::last_os_error().to_string(),
@@ -291,7 +287,9 @@ impl Terminal for LinuxTerminal {
             let pgid = unsafe { libc::tcgetpgrp(slave_fd) };
 
             // SAFETY: close() is safe to call on valid file descriptors.
-            unsafe { libc::close(slave_fd); }
+            unsafe {
+                libc::close(slave_fd);
+            }
 
             if pgid < 0 {
                 return Err(TerminalError::NotAvailable(

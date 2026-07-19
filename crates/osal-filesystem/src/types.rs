@@ -1,7 +1,7 @@
-use std::path::PathBuf;
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
 use osal_core::FileKind;
+use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileMetadata {

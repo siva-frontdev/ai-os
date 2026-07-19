@@ -1,6 +1,6 @@
+use osal_core::PlatformInfo;
 use std::fmt;
 use std::time::Duration;
-use osal_core::PlatformInfo;
 
 pub struct LinuxPlatformInfo {
     os_name: String,
@@ -31,8 +31,7 @@ impl fmt::Debug for LinuxPlatformInfo {
 }
 
 fn read_os_release_value(key: &str) -> String {
-    let content = std::fs::read_to_string("/etc/os-release")
-        .unwrap_or_default();
+    let content = std::fs::read_to_string("/etc/os-release").unwrap_or_default();
     for line in content.lines() {
         if let Some(val) = line.strip_prefix(key) {
             if let Some(rest) = val.strip_prefix('=') {
@@ -63,7 +62,11 @@ fn read_hostname() -> String {
 
 fn read_num_cpus() -> usize {
     let n = unsafe { libc::sysconf(libc::_SC_NPROCESSORS_ONLN) };
-    if n > 0 { n as usize } else { 1 }
+    if n > 0 {
+        n as usize
+    } else {
+        1
+    }
 }
 
 fn read_total_memory() -> u64 {

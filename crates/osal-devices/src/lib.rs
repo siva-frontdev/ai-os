@@ -13,8 +13,8 @@
 
 mod types;
 
-pub use types::{DeviceType, InputSubType, DeviceStatus};
-pub use osal_core::{DeviceManager, DeviceError, DeviceInfo, DeviceHandle};
+pub use osal_core::{DeviceError, DeviceHandle, DeviceInfo, DeviceManager};
+pub use types::{DeviceStatus, DeviceType, InputSubType};
 
 use async_trait::async_trait;
 use osal_capabilities::CapabilityContext;
@@ -110,7 +110,10 @@ mod tests {
     #[test]
     fn test_device_type_display() {
         assert_eq!(format!("{:?}", DeviceType::Camera), "Camera");
-        assert_eq!(format!("{:?}", DeviceType::Input(InputSubType::Mouse)), "Input(Mouse)");
+        assert_eq!(
+            format!("{:?}", DeviceType::Input(InputSubType::Mouse)),
+            "Input(Mouse)"
+        );
     }
 
     #[test]

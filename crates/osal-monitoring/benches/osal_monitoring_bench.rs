@@ -1,12 +1,11 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
-use osal_monitoring::{
-    CpuCore, CpuSnapshot, DiskSnapshot, MemorySnapshot, NetworkIoSnapshot,
-    OsInfo, ResourceThreshold, ResourceType, SystemLoad, TemperatureSnapshot,
-    ThresholdOperator, DefaultSystemMonitor,
-};
-use osal_core::SystemMonitor;
 use osal_capabilities::CapabilityContext;
+use osal_core::SystemMonitor;
+use osal_monitoring::{
+    CpuCore, CpuSnapshot, DefaultSystemMonitor, DiskSnapshot, MemorySnapshot, NetworkIoSnapshot,
+    OsInfo, ResourceThreshold, ResourceType, SystemLoad, TemperatureSnapshot, ThresholdOperator,
+};
 
 fn dummy_ctx() -> CapabilityContext {
     CapabilityContext::new("bench")

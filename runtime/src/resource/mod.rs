@@ -92,9 +92,10 @@ impl Default for DefaultResourceManager {
 
 impl ResourceManager for DefaultResourceManager {
     fn track(&self, task_id: &TaskId, usage: ResourceUsage) -> Result<(), RuntimeError> {
-        let mut guard = self.usage.write().map_err(|_| {
-            RuntimeError::Resource("lock poisoned".into())
-        })?;
+        let mut guard = self
+            .usage
+            .write()
+            .map_err(|_| RuntimeError::Resource("lock poisoned".into()))?;
         guard.insert(task_id.clone(), usage);
         Ok(())
     }
@@ -120,9 +121,10 @@ impl ResourceManager for DefaultResourceManager {
     }
 
     fn set_limits(&self, limits: ResourceLimits) -> Result<(), RuntimeError> {
-        let mut guard = self.limits.write().map_err(|_| {
-            RuntimeError::Resource("lock poisoned".into())
-        })?;
+        let mut guard = self
+            .limits
+            .write()
+            .map_err(|_| RuntimeError::Resource("lock poisoned".into()))?;
         *guard = limits;
         Ok(())
     }
@@ -148,12 +150,13 @@ impl ResourceManager for DefaultResourceManager {
     }
 
     fn reset(&self, task_id: &TaskId) -> Result<(), RuntimeError> {
-        let mut guard = self.usage.write().map_err(|_| {
-            RuntimeError::Resource("lock poisoned".into())
-        })?;
-        guard.remove(task_id).ok_or_else(|| {
-            RuntimeError::Resource(format!("task {} not tracked", task_id))
-        })?;
+        let mut guard = self
+            .usage
+            .write()
+            .map_err(|_| RuntimeError::Resource("lock poisoned".into()))?;
+        guard
+            .remove(task_id)
+            .ok_or_else(|| RuntimeError::Resource(format!("task {} not tracked", task_id)))?;
         Ok(())
     }
 }
@@ -181,8 +184,22 @@ mod tests {
     #[test]
     fn total_usage_sums() {
         let rm = DefaultResourceManager::new();
-        rm.track(&TaskId::new(), ResourceUsage { cpu_percent: 10.0, memory_bytes: 512 }).unwrap();
-        rm.track(&TaskId::new(), ResourceUsage { cpu_percent: 20.0, memory_bytes: 1024 }).unwrap();
+        rm.track(
+            &TaskId::new(),
+            ResourceUsage {
+                cpu_percent: 10.0,
+                memory_bytes: 512,
+            },
+        )
+        .unwrap();
+        rm.track(
+            &TaskId::new(),
+            ResourceUsage {
+                cpu_percent: 20.0,
+                memory_bytes: 1024,
+            },
+        )
+        .unwrap();
         let total = rm.total_usage();
         assert!((total.cpu_percent - 30.0).abs() < 1e-6);
         assert_eq!(total.memory_bytes, 1536);
@@ -243,8 +260,14 @@ mod tests {
 
     #[test]
     fn saturating_add_clamps_cpu() {
-        let a = ResourceUsage { cpu_percent: 60.0, memory_bytes: 100 };
-        let b = ResourceUsage { cpu_percent: 50.0, memory_bytes: 200 };
+        let a = ResourceUsage {
+            cpu_percent: 60.0,
+            memory_bytes: 100,
+        };
+        let b = ResourceUsage {
+            cpu_percent: 50.0,
+            memory_bytes: 200,
+        };
         let c = a.saturating_add(&b);
         assert!((c.cpu_percent - 100.0).abs() < 1e-6);
         assert_eq!(c.memory_bytes, 300);

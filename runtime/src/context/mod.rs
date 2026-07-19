@@ -182,7 +182,8 @@ mod tests {
         let result = run_with_context(ctx, async {
             let current = CURRENT_CONTEXT.try_with(|c| c.clone()).unwrap();
             current.metadata.get("key").cloned()
-        }).await;
+        })
+        .await;
         assert_eq!(result, Some("val".into()));
     }
 

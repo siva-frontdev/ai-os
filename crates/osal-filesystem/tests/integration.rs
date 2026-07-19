@@ -1,7 +1,7 @@
-use std::path::PathBuf;
 use chrono::Utc;
-use osal_core::{FileKind, FilesystemError, FileSystem};
+use osal_core::{FileKind, FileSystem, FilesystemError};
 use osal_filesystem::{DirEntry, FileEvent, FileMetadata, TempFile};
+use std::path::PathBuf;
 
 #[test]
 fn test_file_kind_re_export() {
@@ -32,7 +32,10 @@ fn test_file_system_trait_is_object_safe() {
 #[test]
 fn test_file_event_osal_roundtrip() {
     let ts = Utc::now();
-    let ev = FileEvent::Created { path: "/tmp/x".into(), timestamp: ts };
+    let ev = FileEvent::Created {
+        path: "/tmp/x".into(),
+        timestamp: ts,
+    };
     let osal = ev.to_osal_event().unwrap();
     match osal {
         osal_core::OsalEvent::FileCreated { path, .. } => {
@@ -45,7 +48,10 @@ fn test_file_event_osal_roundtrip() {
 #[test]
 fn test_file_event_try_from() {
     let ts = Utc::now();
-    let ev = FileEvent::Deleted { path: "/tmp/d".into(), timestamp: ts };
+    let ev = FileEvent::Deleted {
+        path: "/tmp/d".into(),
+        timestamp: ts,
+    };
     let osal: Result<osal_core::OsalEvent, _> = ev.try_into();
     assert!(osal.is_ok());
 }

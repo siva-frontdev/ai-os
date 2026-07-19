@@ -1,14 +1,14 @@
-use std::sync::Arc;
 use osal_core::KernelFacade;
+use std::sync::Arc;
 
+use crate::devices::LinuxDeviceManager;
 use crate::filesystem::LinuxFileSystem;
+use crate::monitoring::LinuxSystemMonitor;
+use crate::network::LinuxNetworkManager;
+use crate::platform::LinuxPlatformInfo;
 use crate::process::LinuxProcessManager;
 use crate::terminal::LinuxTerminal;
-use crate::network::LinuxNetworkManager;
-use crate::monitoring::LinuxSystemMonitor;
-use crate::devices::LinuxDeviceManager;
 use crate::users::LinuxUserManager;
-use crate::platform::LinuxPlatformInfo;
 
 /// Linux implementation of `KernelFacade`.
 ///

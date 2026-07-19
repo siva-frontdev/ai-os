@@ -44,16 +44,21 @@ fn test_relationship_graph() {
     let obj_b = MemoryObject::builder()
         .content_type("text")
         .content(b"fact B (derived from A)".to_vec())
-        .relationships(vec![
-            Relationship::new(obj_a.id, RelationType::DerivesFrom, 1.0),
-        ])
+        .relationships(vec![Relationship::new(
+            obj_a.id,
+            RelationType::DerivesFrom,
+            1.0,
+        )])
         .build();
 
     assert!(obj_a.validate().is_ok());
     assert!(obj_b.validate().is_ok());
     assert_eq!(obj_b.relationships.len(), 1);
     assert_eq!(obj_b.relationships[0].target_id, obj_a.id);
-    assert_eq!(obj_b.relationships[0].relation_type, RelationType::DerivesFrom);
+    assert_eq!(
+        obj_b.relationships[0].relation_type,
+        RelationType::DerivesFrom
+    );
 }
 
 #[test]
@@ -110,11 +115,9 @@ fn test_timestamp_ordering() {
 
 #[test]
 fn test_metadata_from_iterator() {
-    let meta: Metadata = vec![
-        ("key1", "value1"),
-        ("key2", "value2"),
-        ("key3", "value3"),
-    ].into_iter().collect();
+    let meta: Metadata = vec![("key1", "value1"), ("key2", "value2"), ("key3", "value3")]
+        .into_iter()
+        .collect();
 
     assert_eq!(meta.len(), 3);
     assert_eq!(meta.get("key1"), Some("value1"));

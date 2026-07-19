@@ -9,9 +9,7 @@ use tokio::fs;
 use tokio::process::Command;
 use tokio::sync::mpsc::{self, Receiver};
 
-use osal_core::{
-    InterfaceInfo, NetworkConfig, NetworkError, NetworkManager, OsalEvent,
-};
+use osal_core::{InterfaceInfo, NetworkConfig, NetworkError, NetworkManager, OsalEvent};
 
 pub struct LinuxNetworkManager;
 
@@ -29,14 +27,21 @@ impl fmt::Debug for LinuxNetworkManager {
 
 #[async_trait]
 impl NetworkManager for LinuxNetworkManager {
-    async fn interfaces(&self, _ctx: &CapabilityContext) -> Result<Vec<InterfaceInfo>, NetworkError> {
+    async fn interfaces(
+        &self,
+        _ctx: &CapabilityContext,
+    ) -> Result<Vec<InterfaceInfo>, NetworkError> {
         let mut entries = fs::read_dir("/sys/class/net")
             .await
             .map_err(|e| NetworkError::Io(format!("cannot read /sys/class/net: {e}")))?;
 
         let mut ip_map: HashMap<String, Vec<IpAddr>> = HashMap::new();
 
-        if let Ok(output) = Command::new("ip").args(["-o", "addr", "show"]).output().await {
+        if let Ok(output) = Command::new("ip")
+            .args(["-o", "addr", "show"])
+            .output()
+            .await
+        {
             if output.status.success() {
                 let stdout = String::from_utf8_lossy(&output.stdout);
                 for line in stdout.lines() {

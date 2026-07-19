@@ -36,11 +36,7 @@ pub struct ServiceEntry {
 /// A directory of named services.
 pub trait ServiceRegistry: Debug + Send + Sync {
     /// Register `service` with the given metadata.
-    fn register(
-        &self,
-        service: Arc<dyn Service>,
-        entry: ServiceEntry,
-    ) -> Result<(), CoreError>;
+    fn register(&self, service: Arc<dyn Service>, entry: ServiceEntry) -> Result<(), CoreError>;
 
     /// Look up a service by name.
     fn resolve(&self, name: &str) -> Result<Arc<dyn Service>, CoreError>;
@@ -75,11 +71,7 @@ impl DefaultServiceRegistry {
 }
 
 impl ServiceRegistry for DefaultServiceRegistry {
-    fn register(
-        &self,
-        service: Arc<dyn Service>,
-        entry: ServiceEntry,
-    ) -> Result<(), CoreError> {
+    fn register(&self, service: Arc<dyn Service>, entry: ServiceEntry) -> Result<(), CoreError> {
         let name = entry.name.clone();
         let mut guard = self.services.write().map_err(|_| CoreError::LockPoisoned)?;
 
@@ -115,7 +107,11 @@ impl ServiceRegistry for DefaultServiceRegistry {
     }
 
     fn contains(&self, name: &str) -> bool {
-        let guard = self.services.read().map(|g| g.contains_key(name)).unwrap_or(false);
+        let guard = self
+            .services
+            .read()
+            .map(|g| g.contains_key(name))
+            .unwrap_or(false);
         guard
     }
 }
@@ -170,9 +166,7 @@ mod tests {
     #[test]
     fn duplicate_fails() {
         let reg = DefaultServiceRegistry::new();
-        let svc: Arc<dyn Service> = Arc::new(MockService {
-            name: "dup".into(),
-        });
+        let svc: Arc<dyn Service> = Arc::new(MockService { name: "dup".into() });
         reg.register(svc.clone(), make_entry("dup")).unwrap();
         let result = reg.register(svc, make_entry("dup"));
         assert!(result.is_err());
@@ -188,16 +182,10 @@ mod tests {
     #[test]
     fn list_returns_all() {
         let reg = DefaultServiceRegistry::new();
-        reg.register(
-            Arc::new(MockService { name: "a".into() }),
-            make_entry("a"),
-        )
-        .unwrap();
-        reg.register(
-            Arc::new(MockService { name: "b".into() }),
-            make_entry("b"),
-        )
-        .unwrap();
+        reg.register(Arc::new(MockService { name: "a".into() }), make_entry("a"))
+            .unwrap();
+        reg.register(Arc::new(MockService { name: "b".into() }), make_entry("b"))
+            .unwrap();
 
         let entries = reg.list();
         assert_eq!(entries.len(), 2);
@@ -209,11 +197,8 @@ mod tests {
     #[test]
     fn contains_works() {
         let reg = DefaultServiceRegistry::new();
-        reg.register(
-            Arc::new(MockService { name: "x".into() }),
-            make_entry("x"),
-        )
-        .unwrap();
+        reg.register(Arc::new(MockService { name: "x".into() }), make_entry("x"))
+            .unwrap();
         assert!(reg.contains("x"));
         assert!(!reg.contains("y"));
     }

@@ -3,8 +3,7 @@ use std::time::Duration;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use osal_terminal::{
-    CommandConfig, CommandOutput, PtyConfig, TerminalOutput,
-    TerminalOutputEventType,
+    CommandConfig, CommandOutput, PtyConfig, TerminalOutput, TerminalOutputEventType,
 };
 
 fn bench_command_config_serde(c: &mut Criterion) {
@@ -89,9 +88,7 @@ fn bench_terminal_output_serde(c: &mut Criterion) {
 }
 
 fn bench_pty_config_default(c: &mut Criterion) {
-    c.bench_function("pty_config_default", |b| {
-        b.iter(|| PtyConfig::default())
-    });
+    c.bench_function("pty_config_default", |b| b.iter(|| PtyConfig::default()));
 }
 
 fn bench_command_config_new(c: &mut Criterion) {

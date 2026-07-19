@@ -48,11 +48,9 @@ impl<T: ConfigProvider + ?Sized> ConfigExt for T {
         match self.get_raw(key)? {
             None => Ok(None),
             Some(raw) => {
-                let val: Ty = serde_json::from_value(raw).map_err(|e| {
-                    CoreError::ConfigParse {
-                        key: key.to_string(),
-                        detail: e.to_string(),
-                    }
+                let val: Ty = serde_json::from_value(raw).map_err(|e| CoreError::ConfigParse {
+                    key: key.to_string(),
+                    detail: e.to_string(),
                 })?;
                 Ok(Some(val))
             }
@@ -120,7 +118,8 @@ impl ConfigProvider for InMemoryConfigProvider {
 
     fn set_raw(&self, _key: &str, _value: serde_json::Value) -> Result<(), CoreError> {
         Err(CoreError::General(
-            "InMemoryConfigProvider is immutable via the trait; use ThreadsafeConfigProvider".into(),
+            "InMemoryConfigProvider is immutable via the trait; use ThreadsafeConfigProvider"
+                .into(),
         ))
     }
 
@@ -158,10 +157,7 @@ impl ConfigProvider for ThreadsafeConfigProvider {
     }
 
     fn keys(&self) -> Vec<String> {
-        self.inner
-            .read()
-            .map(|g| g.keys())
-            .unwrap_or_default()
+        self.inner.read().map(|g| g.keys()).unwrap_or_default()
     }
 }
 
@@ -199,7 +195,9 @@ impl ConfigProvider for LayeredConfigProvider {
     }
 
     fn set_raw(&self, _key: &str, _value: serde_json::Value) -> Result<(), CoreError> {
-        Err(CoreError::General("LayeredConfigProvider is read-only".into()))
+        Err(CoreError::General(
+            "LayeredConfigProvider is read-only".into(),
+        ))
     }
 
     fn keys(&self) -> Vec<String> {
@@ -221,13 +219,18 @@ mod tests {
 
     #[test]
     fn in_memory_get_raw() {
-        let provider = InMemoryConfigProvider::from_str(r#"{"host": "localhost", "port": 8080}"#).unwrap();
-        assert_eq!(provider.get_raw("host").unwrap(), Some(serde_json::json!("localhost")));
+        let provider =
+            InMemoryConfigProvider::from_str(r#"{"host": "localhost", "port": 8080}"#).unwrap();
+        assert_eq!(
+            provider.get_raw("host").unwrap(),
+            Some(serde_json::json!("localhost"))
+        );
     }
 
     #[test]
     fn typed_access_via_extension() {
-        let provider = InMemoryConfigProvider::from_str(r#"{"host": "localhost", "port": 8080}"#).unwrap();
+        let provider =
+            InMemoryConfigProvider::from_str(r#"{"host": "localhost", "port": 8080}"#).unwrap();
         let host: Option<String> = provider.get("host").unwrap();
         assert_eq!(host, Some("localhost".into()));
         let port: Option<u16> = provider.get("port").unwrap();

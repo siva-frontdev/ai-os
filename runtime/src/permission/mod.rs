@@ -164,7 +164,9 @@ mod tests {
     fn default_checker_passes_admin() {
         let checker = DefaultPermissionChecker::new();
         let ctx = roles::admin("sess-4");
-        assert!(checker.check(&ctx, &[Permission::Admin, Permission::Read]).is_ok());
+        assert!(checker
+            .check(&ctx, &[Permission::Admin, Permission::Read])
+            .is_ok());
     }
 
     #[test]

@@ -1,9 +1,9 @@
 //! Caching policies that control what gets cached, for how long, and at what priority.
 
-use std::time::Duration;
 use async_trait::async_trait;
 use memory_core::MemoryObject;
 use serde::{Deserialize, Serialize};
+use std::time::Duration;
 
 use crate::error::MemoryCacheResult;
 
@@ -14,7 +14,11 @@ pub trait CachePolicy: Send + Sync + std::fmt::Debug {
     async fn should_cache(&self, key: &str, object: &MemoryObject) -> MemoryCacheResult<bool>;
 
     /// Returns the TTL for the given object, or `None` for no expiration.
-    async fn ttl_for(&self, key: &str, object: &MemoryObject) -> MemoryCacheResult<Option<Duration>>;
+    async fn ttl_for(
+        &self,
+        key: &str,
+        object: &MemoryObject,
+    ) -> MemoryCacheResult<Option<Duration>>;
 
     /// Returns the priority for the given object (0 = lowest, 255 = highest).
     async fn priority_for(&self, key: &str, object: &MemoryObject) -> MemoryCacheResult<u8>;
@@ -34,7 +38,11 @@ impl CachePolicy for DefaultCachePolicy {
         Ok(true)
     }
 
-    async fn ttl_for(&self, _key: &str, _object: &MemoryObject) -> MemoryCacheResult<Option<Duration>> {
+    async fn ttl_for(
+        &self,
+        _key: &str,
+        _object: &MemoryObject,
+    ) -> MemoryCacheResult<Option<Duration>> {
         Ok(Some(Duration::from_secs(60)))
     }
 
@@ -57,7 +65,11 @@ impl CachePolicy for AlwaysCachePolicy {
         Ok(true)
     }
 
-    async fn ttl_for(&self, _key: &str, _object: &MemoryObject) -> MemoryCacheResult<Option<Duration>> {
+    async fn ttl_for(
+        &self,
+        _key: &str,
+        _object: &MemoryObject,
+    ) -> MemoryCacheResult<Option<Duration>> {
         Ok(None)
     }
 

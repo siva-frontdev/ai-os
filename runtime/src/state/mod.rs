@@ -65,7 +65,7 @@ static TRANSITIONS: &[(RuntimePhase, RuntimePhase)] = &[
     (RuntimePhase::Initializing, RuntimePhase::Failed),
     (RuntimePhase::Running, RuntimePhase::Draining),
     (RuntimePhase::Running, RuntimePhase::Failed),
-    (RuntimePhase::Draining, RuntimePhase::Running),    // resume
+    (RuntimePhase::Draining, RuntimePhase::Running), // resume
     (RuntimePhase::Draining, RuntimePhase::Stopped),
     (RuntimePhase::Draining, RuntimePhase::Failed),
 ];
@@ -117,9 +117,10 @@ impl RuntimeStateMachine for DefaultRuntimeState {
     }
 
     fn transition(&self, to: RuntimePhase) -> Result<RuntimePhase, RuntimeError> {
-        let mut guard = self.phase.write().map_err(|_| {
-            RuntimeError::State("lock poisoned".into())
-        })?;
+        let mut guard = self
+            .phase
+            .write()
+            .map_err(|_| RuntimeError::State("lock poisoned".into()))?;
         let from = *guard;
         if !valid_transition(from, to) {
             return Err(RuntimeError::State(format!(

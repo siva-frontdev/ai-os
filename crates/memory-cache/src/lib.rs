@@ -5,9 +5,9 @@
 //! size limits, hit ratio tracking, and prefetch hooks. Sits in front of the
 //! retrieval path to accelerate repeated access.
 
+pub mod cache;
 mod error;
 mod event;
-pub mod cache;
 pub mod policy;
 pub mod statistics;
 

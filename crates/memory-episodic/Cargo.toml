@@ -1,0 +1,25 @@
+[package]
+name = "memory-episodic"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[dev-dependencies]
+criterion = { workspace = true }
+tokio = { version = "1", features = ["rt", "macros", "time"] }
+tokio-test = "0.4"
+proptest = "1"
+
+[[bench]]
+name = "episodic_bench"
+harness = false
+
+[dependencies]
+memory-core = { path = "../memory-core" }
+memory-storage = { path = "../memory-storage" }
+async-trait = "0.1"
+tokio = { version = "1", features = ["sync", "time"] }
+uuid = { version = "1", features = ["v4", "v7"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"

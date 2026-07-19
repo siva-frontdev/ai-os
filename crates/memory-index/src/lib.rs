@@ -21,11 +21,11 @@
 //! implementations are provided by specialized crates.
 
 mod metadata_index;
-mod tag_index;
 mod relationship_index;
+mod tag_index;
 mod time_index;
 
-pub use metadata_index::{MetadataIndex, DefaultMetadataIndex};
-pub use tag_index::{TagIndex, DefaultTagIndex};
-pub use relationship_index::{RelationshipIndex, DefaultRelationshipIndex};
-pub use time_index::{TimeIndex, DefaultTimeIndex};
+pub use metadata_index::{DefaultMetadataIndex, MetadataIndex};
+pub use relationship_index::{DefaultRelationshipIndex, RelationshipIndex};
+pub use tag_index::{DefaultTagIndex, TagIndex};
+pub use time_index::{DefaultTimeIndex, TimeIndex};

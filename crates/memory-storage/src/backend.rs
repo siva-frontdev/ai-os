@@ -37,18 +37,26 @@ pub struct DefaultStorageBackend;
 #[async_trait]
 impl StorageBackend for DefaultStorageBackend {
     async fn get(&self, _key: &[u8]) -> MemoryResult<Option<Vec<u8>>> {
-        Err(MemoryError::StorageBackendError("DefaultStorageBackend: not configured".into()))
+        Err(MemoryError::StorageBackendError(
+            "DefaultStorageBackend: not configured".into(),
+        ))
     }
 
     async fn put(&self, _key: &[u8], _value: &[u8]) -> MemoryResult<()> {
-        Err(MemoryError::StorageBackendError("DefaultStorageBackend: not configured".into()))
+        Err(MemoryError::StorageBackendError(
+            "DefaultStorageBackend: not configured".into(),
+        ))
     }
 
     async fn delete(&self, _key: &[u8]) -> MemoryResult<()> {
-        Err(MemoryError::StorageBackendError("DefaultStorageBackend: not configured".into()))
+        Err(MemoryError::StorageBackendError(
+            "DefaultStorageBackend: not configured".into(),
+        ))
     }
 
     async fn flush(&self) -> MemoryResult<()> {
-        Err(MemoryError::StorageBackendError("DefaultStorageBackend: not configured".into()))
+        Err(MemoryError::StorageBackendError(
+            "DefaultStorageBackend: not configured".into(),
+        ))
     }
 }

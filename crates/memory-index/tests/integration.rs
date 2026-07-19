@@ -13,16 +13,38 @@ async fn test_all_indices_composition() {
     let id = MemoryId::new();
 
     // All should accept index operations without error
-    assert!(metadata_idx.index_metadata(&id, "key", "value").await.is_ok());
+    assert!(
+        metadata_idx
+            .index_metadata(&id, "key", "value")
+            .await
+            .is_ok()
+    );
     assert!(tag_idx.index_tags(&id, &["test".into()]).await.is_ok());
-    assert!(rel_idx.index_relationship(&id, &MemoryId::new(), &RelationType::References).await.is_ok());
+    assert!(
+        rel_idx
+            .index_relationship(&id, &MemoryId::new(), &RelationType::References)
+            .await
+            .is_ok()
+    );
     assert!(time_idx.index_time(&id, Timestamp::now()).await.is_ok());
 
     // All search methods should return empty (not error)
-    assert!(metadata_idx.search_by_metadata("key", "value").await.unwrap().is_empty());
+    assert!(
+        metadata_idx
+            .search_by_metadata("key", "value")
+            .await
+            .unwrap()
+            .is_empty()
+    );
     assert!(tag_idx.search_by_tag("test").await.unwrap().is_empty());
     assert!(rel_idx.find_related(&id, None).await.unwrap().is_empty());
-    assert!(time_idx.search_by_time_range(&(Timestamp::MIN..Timestamp::MAX)).await.unwrap().is_empty());
+    assert!(
+        time_idx
+            .search_by_time_range(&(Timestamp::MIN..Timestamp::MAX))
+            .await
+            .unwrap()
+            .is_empty()
+    );
 
     // All should accept remove and rebuild
     assert!(metadata_idx.remove_object(&id).await.is_ok());
@@ -62,7 +84,9 @@ async fn test_relationship_index_direction() {
     let a = MemoryId::new();
     let b = MemoryId::new();
 
-    idx.index_relationship(&a, &b, &RelationType::References).await.unwrap();
+    idx.index_relationship(&a, &b, &RelationType::References)
+        .await
+        .unwrap();
 
     // Outgoing from A should include B (but default returns empty)
     let outgoing = idx.find_related(&a, None).await.unwrap();
@@ -88,7 +112,10 @@ async fn test_time_index_temporal_queries() {
     assert!(idx.oldest_timestamp().await.unwrap().is_none());
 
     // Range query returns empty
-    let results = idx.search_by_time_range(&(now..Timestamp::MAX)).await.unwrap();
+    let results = idx
+        .search_by_time_range(&(now..Timestamp::MAX))
+        .await
+        .unwrap();
     assert!(results.is_empty());
 }
 
@@ -97,9 +124,14 @@ async fn test_metadata_index_prefix_search() {
     let idx = DefaultMetadataIndex;
     let id = MemoryId::new();
 
-    idx.index_metadata(&id, "path", "/home/user/docs/file.txt").await.unwrap();
+    idx.index_metadata(&id, "path", "/home/user/docs/file.txt")
+        .await
+        .unwrap();
 
     // Prefix search returns empty for default
-    let results = idx.search_by_metadata_prefix("path", "/home/user").await.unwrap();
+    let results = idx
+        .search_by_metadata_prefix("path", "/home/user")
+        .await
+        .unwrap();
     assert!(results.is_empty());
 }

@@ -17,7 +17,11 @@ pub trait MetadataIndex: Send + Sync + std::fmt::Debug {
 
     /// Find all object IDs that have the given metadata key with a value
     /// matching the given prefix.
-    async fn search_by_metadata_prefix(&self, key: &str, value_prefix: &str) -> MemoryResult<Vec<MemoryId>>;
+    async fn search_by_metadata_prefix(
+        &self,
+        key: &str,
+        value_prefix: &str,
+    ) -> MemoryResult<Vec<MemoryId>>;
 
     /// Remove all metadata entries for a memory object.
     async fn remove_object(&self, id: &MemoryId) -> MemoryResult<()>;
@@ -51,7 +55,11 @@ impl MetadataIndex for DefaultMetadataIndex {
         Ok(Vec::new())
     }
 
-    async fn search_by_metadata_prefix(&self, _key: &str, _value_prefix: &str) -> MemoryResult<Vec<MemoryId>> {
+    async fn search_by_metadata_prefix(
+        &self,
+        _key: &str,
+        _value_prefix: &str,
+    ) -> MemoryResult<Vec<MemoryId>> {
         Ok(Vec::new())
     }
 

@@ -1,6 +1,6 @@
 //! System-wide event types emitted by OSAL subsystems.
+use crate::types::{ExitStatus, Pid, UserId};
 use chrono::{DateTime, Utc};
-use crate::types::{Pid, ExitStatus, UserId};
 
 /// Every observable OS event is represented by a variant of `OsalEvent`.
 ///

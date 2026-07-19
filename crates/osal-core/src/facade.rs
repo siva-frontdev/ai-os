@@ -165,25 +165,52 @@ pub struct GroupInfo {
 pub trait FileSystem: Send + Sync {
     async fn read(&self, ctx: &CapabilityContext, path: &str) -> Result<Vec<u8>, FilesystemError>;
 
-    async fn write(&self, ctx: &CapabilityContext, path: &str, data: &[u8]) -> Result<(), FilesystemError>;
+    async fn write(
+        &self,
+        ctx: &CapabilityContext,
+        path: &str,
+        data: &[u8],
+    ) -> Result<(), FilesystemError>;
 
     async fn delete(&self, ctx: &CapabilityContext, path: &str) -> Result<(), FilesystemError>;
 
     async fn create_dir(&self, ctx: &CapabilityContext, path: &str) -> Result<(), FilesystemError>;
 
-    async fn metadata(&self, ctx: &CapabilityContext, path: &str) -> Result<FileMetadata, FilesystemError>;
+    async fn metadata(
+        &self,
+        ctx: &CapabilityContext,
+        path: &str,
+    ) -> Result<FileMetadata, FilesystemError>;
 
-    async fn list(&self, ctx: &CapabilityContext, path: &str) -> Result<Vec<DirEntry>, FilesystemError>;
+    async fn list(
+        &self,
+        ctx: &CapabilityContext,
+        path: &str,
+    ) -> Result<Vec<DirEntry>, FilesystemError>;
 
-    async fn watch(&self, ctx: &CapabilityContext, path: &str) -> Result<Receiver<OsalEvent>, FilesystemError>;
+    async fn watch(
+        &self,
+        ctx: &CapabilityContext,
+        path: &str,
+    ) -> Result<Receiver<OsalEvent>, FilesystemError>;
 }
 
 /// Process manager — spawn, kill, suspend, resume, enumerate processes.
 #[async_trait]
 pub trait ProcessManager: Send + Sync {
-    async fn spawn(&self, ctx: &CapabilityContext, command: &str, args: &[&str]) -> Result<ChildHandle, ProcessError>;
+    async fn spawn(
+        &self,
+        ctx: &CapabilityContext,
+        command: &str,
+        args: &[&str],
+    ) -> Result<ChildHandle, ProcessError>;
 
-    async fn kill(&self, ctx: &CapabilityContext, pid: Pid, signal: Signal) -> Result<(), ProcessError>;
+    async fn kill(
+        &self,
+        ctx: &CapabilityContext,
+        pid: Pid,
+        signal: Signal,
+    ) -> Result<(), ProcessError>;
 
     async fn suspend(&self, ctx: &CapabilityContext, pid: Pid) -> Result<(), ProcessError>;
 
@@ -201,13 +228,29 @@ pub trait ProcessManager: Send + Sync {
 pub trait Terminal: Send + Sync {
     async fn open_pty(&self, ctx: &CapabilityContext) -> Result<PtyHandle, TerminalError>;
 
-    async fn write_pty(&self, ctx: &CapabilityContext, id: &str, data: &[u8]) -> Result<(), TerminalError>;
+    async fn write_pty(
+        &self,
+        ctx: &CapabilityContext,
+        id: &str,
+        data: &[u8],
+    ) -> Result<(), TerminalError>;
 
     async fn read_pty(&self, ctx: &CapabilityContext, id: &str) -> Result<Vec<u8>, TerminalError>;
 
-    async fn resize_pty(&self, ctx: &CapabilityContext, id: &str, rows: u16, cols: u16) -> Result<(), TerminalError>;
+    async fn resize_pty(
+        &self,
+        ctx: &CapabilityContext,
+        id: &str,
+        rows: u16,
+        cols: u16,
+    ) -> Result<(), TerminalError>;
 
-    async fn signal_pty(&self, ctx: &CapabilityContext, id: &str, signal: Signal) -> Result<(), TerminalError>;
+    async fn signal_pty(
+        &self,
+        ctx: &CapabilityContext,
+        id: &str,
+        signal: Signal,
+    ) -> Result<(), TerminalError>;
 
     fn events(&self) -> Receiver<OsalEvent>;
 }
@@ -215,13 +258,24 @@ pub trait Terminal: Send + Sync {
 /// Network management — interfaces, configuration, DNS.
 #[async_trait]
 pub trait NetworkManager: Send + Sync {
-    async fn interfaces(&self, ctx: &CapabilityContext) -> Result<Vec<InterfaceInfo>, NetworkError>;
+    async fn interfaces(&self, ctx: &CapabilityContext)
+        -> Result<Vec<InterfaceInfo>, NetworkError>;
 
-    async fn configure(&self, ctx: &CapabilityContext, interface: &str, config: NetworkConfig) -> Result<(), NetworkError>;
+    async fn configure(
+        &self,
+        ctx: &CapabilityContext,
+        interface: &str,
+        config: NetworkConfig,
+    ) -> Result<(), NetworkError>;
 
-    async fn dns_lookup(&self, ctx: &CapabilityContext, host: &str) -> Result<IpAddr, NetworkError>;
+    async fn dns_lookup(&self, ctx: &CapabilityContext, host: &str)
+        -> Result<IpAddr, NetworkError>;
 
-    async fn set_hostname(&self, ctx: &CapabilityContext, hostname: &str) -> Result<(), NetworkError>;
+    async fn set_hostname(
+        &self,
+        ctx: &CapabilityContext,
+        hostname: &str,
+    ) -> Result<(), NetworkError>;
 
     fn events(&self) -> Receiver<OsalEvent>;
 }
@@ -233,13 +287,18 @@ pub trait SystemMonitor: Send + Sync {
 
     async fn memory_info(&self, ctx: &CapabilityContext) -> Result<MemoryInfo, MonitorError>;
 
-    async fn disk_info(&self, ctx: &CapabilityContext, path: &str) -> Result<DiskInfo, MonitorError>;
+    async fn disk_info(
+        &self,
+        ctx: &CapabilityContext,
+        path: &str,
+    ) -> Result<DiskInfo, MonitorError>;
 
     async fn network_io(&self, ctx: &CapabilityContext) -> Result<NetworkIO, MonitorError>;
 
     async fn temperature(&self, ctx: &CapabilityContext) -> Result<f64, MonitorError>;
 
-    async fn process_list(&self, ctx: &CapabilityContext) -> Result<Vec<ProcessInfo>, MonitorError>;
+    async fn process_list(&self, ctx: &CapabilityContext)
+        -> Result<Vec<ProcessInfo>, MonitorError>;
 
     fn events(&self) -> Receiver<OsalEvent>;
 }
@@ -249,7 +308,11 @@ pub trait SystemMonitor: Send + Sync {
 pub trait DeviceManager: Send + Sync {
     async fn enumerate(&self, ctx: &CapabilityContext) -> Result<Vec<DeviceInfo>, DeviceError>;
 
-    async fn access(&self, ctx: &CapabilityContext, path: &str) -> Result<DeviceHandle, DeviceError>;
+    async fn access(
+        &self,
+        ctx: &CapabilityContext,
+        path: &str,
+    ) -> Result<DeviceHandle, DeviceError>;
 
     fn events(&self) -> Receiver<OsalEvent>;
 }
@@ -263,9 +326,14 @@ pub trait UserManager: Send + Sync {
 
     async fn enumerate_groups(&self, ctx: &CapabilityContext) -> Result<Vec<GroupInfo>, UserError>;
 
-    async fn switch_user(&self, ctx: &CapabilityContext, user_id: &UserId) -> Result<(), UserError>;
+    async fn switch_user(&self, ctx: &CapabilityContext, user_id: &UserId)
+        -> Result<(), UserError>;
 
-    async fn get_user_by_uid(&self, ctx: &CapabilityContext, uid: Uid) -> Result<UserInfo, UserError>;
+    async fn get_user_by_uid(
+        &self,
+        ctx: &CapabilityContext,
+        uid: Uid,
+    ) -> Result<UserInfo, UserError>;
 
     fn events(&self) -> Receiver<OsalEvent>;
 }
@@ -323,7 +391,9 @@ pub mod mock {
 
     pub struct MockFileSystem;
     impl MockFileSystem {
-        pub fn new() -> Self { Self }
+        pub fn new() -> Self {
+            Self
+        }
     }
     impl std::fmt::Debug for MockFileSystem {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -332,31 +402,52 @@ pub mod mock {
     }
     #[async_trait]
     impl FileSystem for MockFileSystem {
-        async fn read(&self, _ctx: &CapabilityContext, path: &str) -> Result<Vec<u8>, FilesystemError> {
+        async fn read(
+            &self,
+            _ctx: &CapabilityContext,
+            path: &str,
+        ) -> Result<Vec<u8>, FilesystemError> {
             if path.is_empty() {
                 Err(FilesystemError::NotFound(path.to_string()))
             } else {
                 Ok(vec![])
             }
         }
-        async fn write(&self, _ctx: &CapabilityContext, _path: &str, _data: &[u8]) -> Result<(), FilesystemError> {
+        async fn write(
+            &self,
+            _ctx: &CapabilityContext,
+            _path: &str,
+            _data: &[u8],
+        ) -> Result<(), FilesystemError> {
             Ok(())
         }
-        async fn delete(&self, _ctx: &CapabilityContext, path: &str) -> Result<(), FilesystemError> {
+        async fn delete(
+            &self,
+            _ctx: &CapabilityContext,
+            path: &str,
+        ) -> Result<(), FilesystemError> {
             if path.is_empty() {
                 Err(FilesystemError::NotFound(path.to_string()))
             } else {
                 Ok(())
             }
         }
-        async fn create_dir(&self, _ctx: &CapabilityContext, path: &str) -> Result<(), FilesystemError> {
+        async fn create_dir(
+            &self,
+            _ctx: &CapabilityContext,
+            path: &str,
+        ) -> Result<(), FilesystemError> {
             if path.is_empty() {
                 Err(FilesystemError::InvalidPath(path.to_string()))
             } else {
                 Ok(())
             }
         }
-        async fn metadata(&self, _ctx: &CapabilityContext, path: &str) -> Result<FileMetadata, FilesystemError> {
+        async fn metadata(
+            &self,
+            _ctx: &CapabilityContext,
+            path: &str,
+        ) -> Result<FileMetadata, FilesystemError> {
             if path.is_empty() {
                 Err(FilesystemError::NotFound(path.to_string()))
             } else {
@@ -372,21 +463,31 @@ pub mod mock {
                 })
             }
         }
-        async fn list(&self, _ctx: &CapabilityContext, path: &str) -> Result<Vec<DirEntry>, FilesystemError> {
+        async fn list(
+            &self,
+            _ctx: &CapabilityContext,
+            path: &str,
+        ) -> Result<Vec<DirEntry>, FilesystemError> {
             if path.is_empty() {
                 Err(FilesystemError::NotFound(path.to_string()))
             } else {
                 Ok(vec![])
             }
         }
-        async fn watch(&self, _ctx: &CapabilityContext, _path: &str) -> Result<Receiver<OsalEvent>, FilesystemError> {
+        async fn watch(
+            &self,
+            _ctx: &CapabilityContext,
+            _path: &str,
+        ) -> Result<Receiver<OsalEvent>, FilesystemError> {
             Ok(closed_rx())
         }
     }
 
     pub struct MockProcessManager;
     impl MockProcessManager {
-        pub fn new() -> Self { Self }
+        pub fn new() -> Self {
+            Self
+        }
     }
     impl std::fmt::Debug for MockProcessManager {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -395,7 +496,12 @@ pub mod mock {
     }
     #[async_trait]
     impl ProcessManager for MockProcessManager {
-        async fn spawn(&self, _ctx: &CapabilityContext, command: &str, _args: &[&str]) -> Result<ChildHandle, ProcessError> {
+        async fn spawn(
+            &self,
+            _ctx: &CapabilityContext,
+            command: &str,
+            _args: &[&str],
+        ) -> Result<ChildHandle, ProcessError> {
             if command.is_empty() {
                 Err(ProcessError::ExecutionFailed("empty command".to_string()))
             } else {
@@ -403,7 +509,12 @@ pub mod mock {
                 Ok(ChildHandle { pid })
             }
         }
-        async fn kill(&self, _ctx: &CapabilityContext, pid: Pid, _signal: Signal) -> Result<(), ProcessError> {
+        async fn kill(
+            &self,
+            _ctx: &CapabilityContext,
+            pid: Pid,
+            _signal: Signal,
+        ) -> Result<(), ProcessError> {
             if pid.0 == 0 {
                 Err(ProcessError::NotFound(pid))
             } else {
@@ -427,7 +538,11 @@ pub mod mock {
         async fn list(&self, _ctx: &CapabilityContext) -> Result<Vec<ProcessInfo>, ProcessError> {
             Ok(vec![])
         }
-        async fn wait(&self, _ctx: &CapabilityContext, pid: Pid) -> Result<ExitStatus, ProcessError> {
+        async fn wait(
+            &self,
+            _ctx: &CapabilityContext,
+            pid: Pid,
+        ) -> Result<ExitStatus, ProcessError> {
             if pid.0 == 0 {
                 Err(ProcessError::NotFound(pid))
             } else {
@@ -441,7 +556,9 @@ pub mod mock {
 
     pub struct MockTerminal;
     impl MockTerminal {
-        pub fn new() -> Self { Self }
+        pub fn new() -> Self {
+            Self
+        }
     }
     impl std::fmt::Debug for MockTerminal {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -451,18 +568,41 @@ pub mod mock {
     #[async_trait]
     impl Terminal for MockTerminal {
         async fn open_pty(&self, _ctx: &CapabilityContext) -> Result<PtyHandle, TerminalError> {
-            Ok(PtyHandle { id: "mock-pty".into(), pid: None })
+            Ok(PtyHandle {
+                id: "mock-pty".into(),
+                pid: None,
+            })
         }
-        async fn write_pty(&self, _ctx: &CapabilityContext, _id: &str, _data: &[u8]) -> Result<(), TerminalError> {
+        async fn write_pty(
+            &self,
+            _ctx: &CapabilityContext,
+            _id: &str,
+            _data: &[u8],
+        ) -> Result<(), TerminalError> {
             Ok(())
         }
-        async fn read_pty(&self, _ctx: &CapabilityContext, _id: &str) -> Result<Vec<u8>, TerminalError> {
+        async fn read_pty(
+            &self,
+            _ctx: &CapabilityContext,
+            _id: &str,
+        ) -> Result<Vec<u8>, TerminalError> {
             Ok(vec![])
         }
-        async fn resize_pty(&self, _ctx: &CapabilityContext, _id: &str, _rows: u16, _cols: u16) -> Result<(), TerminalError> {
+        async fn resize_pty(
+            &self,
+            _ctx: &CapabilityContext,
+            _id: &str,
+            _rows: u16,
+            _cols: u16,
+        ) -> Result<(), TerminalError> {
             Ok(())
         }
-        async fn signal_pty(&self, _ctx: &CapabilityContext, _id: &str, _signal: Signal) -> Result<(), TerminalError> {
+        async fn signal_pty(
+            &self,
+            _ctx: &CapabilityContext,
+            _id: &str,
+            _signal: Signal,
+        ) -> Result<(), TerminalError> {
             Ok(())
         }
         fn events(&self) -> Receiver<OsalEvent> {
@@ -472,7 +612,9 @@ pub mod mock {
 
     pub struct MockNetworkManager;
     impl MockNetworkManager {
-        pub fn new() -> Self { Self }
+        pub fn new() -> Self {
+            Self
+        }
     }
     impl std::fmt::Debug for MockNetworkManager {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -481,20 +623,36 @@ pub mod mock {
     }
     #[async_trait]
     impl NetworkManager for MockNetworkManager {
-        async fn interfaces(&self, _ctx: &CapabilityContext) -> Result<Vec<InterfaceInfo>, NetworkError> {
+        async fn interfaces(
+            &self,
+            _ctx: &CapabilityContext,
+        ) -> Result<Vec<InterfaceInfo>, NetworkError> {
             Ok(vec![])
         }
-        async fn configure(&self, _ctx: &CapabilityContext, _interface: &str, _config: NetworkConfig) -> Result<(), NetworkError> {
+        async fn configure(
+            &self,
+            _ctx: &CapabilityContext,
+            _interface: &str,
+            _config: NetworkConfig,
+        ) -> Result<(), NetworkError> {
             Ok(())
         }
-        async fn dns_lookup(&self, _ctx: &CapabilityContext, host: &str) -> Result<IpAddr, NetworkError> {
+        async fn dns_lookup(
+            &self,
+            _ctx: &CapabilityContext,
+            host: &str,
+        ) -> Result<IpAddr, NetworkError> {
             if host.is_empty() {
                 Err(NetworkError::DnsFailed("empty hostname".to_string()))
             } else {
                 Ok("127.0.0.1".parse().unwrap())
             }
         }
-        async fn set_hostname(&self, _ctx: &CapabilityContext, _hostname: &str) -> Result<(), NetworkError> {
+        async fn set_hostname(
+            &self,
+            _ctx: &CapabilityContext,
+            _hostname: &str,
+        ) -> Result<(), NetworkError> {
             Ok(())
         }
         fn events(&self) -> Receiver<OsalEvent> {
@@ -504,7 +662,9 @@ pub mod mock {
 
     pub struct MockSystemMonitor;
     impl MockSystemMonitor {
-        pub fn new() -> Self { Self }
+        pub fn new() -> Self {
+            Self
+        }
     }
     impl std::fmt::Debug for MockSystemMonitor {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -517,18 +677,41 @@ pub mod mock {
             Ok(0.0)
         }
         async fn memory_info(&self, _ctx: &CapabilityContext) -> Result<MemoryInfo, MonitorError> {
-            Ok(MemoryInfo { total: 1_000, used: 500, free: 400, cached: 100 })
+            Ok(MemoryInfo {
+                total: 1_000,
+                used: 500,
+                free: 400,
+                cached: 100,
+            })
         }
-        async fn disk_info(&self, _ctx: &CapabilityContext, _path: &str) -> Result<DiskInfo, MonitorError> {
-            Ok(DiskInfo { total: 10_000, used: 3_000, free: 7_000, mount_point: "/".into(), filesystem: "ext4".into() })
+        async fn disk_info(
+            &self,
+            _ctx: &CapabilityContext,
+            _path: &str,
+        ) -> Result<DiskInfo, MonitorError> {
+            Ok(DiskInfo {
+                total: 10_000,
+                used: 3_000,
+                free: 7_000,
+                mount_point: "/".into(),
+                filesystem: "ext4".into(),
+            })
         }
         async fn network_io(&self, _ctx: &CapabilityContext) -> Result<NetworkIO, MonitorError> {
-            Ok(NetworkIO { bytes_sent: 0, bytes_received: 0, packets_sent: 0, packets_received: 0 })
+            Ok(NetworkIO {
+                bytes_sent: 0,
+                bytes_received: 0,
+                packets_sent: 0,
+                packets_received: 0,
+            })
         }
         async fn temperature(&self, _ctx: &CapabilityContext) -> Result<f64, MonitorError> {
             Ok(45.0)
         }
-        async fn process_list(&self, _ctx: &CapabilityContext) -> Result<Vec<ProcessInfo>, MonitorError> {
+        async fn process_list(
+            &self,
+            _ctx: &CapabilityContext,
+        ) -> Result<Vec<ProcessInfo>, MonitorError> {
             Ok(vec![])
         }
         fn events(&self) -> Receiver<OsalEvent> {
@@ -538,7 +721,9 @@ pub mod mock {
 
     pub struct MockDeviceManager;
     impl MockDeviceManager {
-        pub fn new() -> Self { Self }
+        pub fn new() -> Self {
+            Self
+        }
     }
     impl std::fmt::Debug for MockDeviceManager {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -547,14 +732,24 @@ pub mod mock {
     }
     #[async_trait]
     impl DeviceManager for MockDeviceManager {
-        async fn enumerate(&self, _ctx: &CapabilityContext) -> Result<Vec<DeviceInfo>, DeviceError> {
+        async fn enumerate(
+            &self,
+            _ctx: &CapabilityContext,
+        ) -> Result<Vec<DeviceInfo>, DeviceError> {
             Ok(vec![])
         }
-        async fn access(&self, _ctx: &CapabilityContext, path: &str) -> Result<DeviceHandle, DeviceError> {
+        async fn access(
+            &self,
+            _ctx: &CapabilityContext,
+            path: &str,
+        ) -> Result<DeviceHandle, DeviceError> {
             if path.is_empty() {
                 Err(DeviceError::NotFound(path.to_string()))
             } else {
-                Ok(DeviceHandle { path: path.to_string(), fd: Fd(3) })
+                Ok(DeviceHandle {
+                    path: path.to_string(),
+                    fd: Fd(3),
+                })
             }
         }
         fn events(&self) -> Receiver<OsalEvent> {
@@ -564,7 +759,9 @@ pub mod mock {
 
     pub struct MockUserManager;
     impl MockUserManager {
-        pub fn new() -> Self { Self }
+        pub fn new() -> Self {
+            Self
+        }
     }
     impl std::fmt::Debug for MockUserManager {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -574,23 +771,49 @@ pub mod mock {
     #[async_trait]
     impl UserManager for MockUserManager {
         async fn current_user(&self, _ctx: &CapabilityContext) -> Result<UserInfo, UserError> {
-            Ok(UserInfo { uid: Uid(1000), gid: Gid(1000), username: "test".into(), home_dir: "/home/test".into(), shell: "/bin/bash".into() })
+            Ok(UserInfo {
+                uid: Uid(1000),
+                gid: Gid(1000),
+                username: "test".into(),
+                home_dir: "/home/test".into(),
+                shell: "/bin/bash".into(),
+            })
         }
-        async fn enumerate_users(&self, _ctx: &CapabilityContext) -> Result<Vec<UserInfo>, UserError> {
+        async fn enumerate_users(
+            &self,
+            _ctx: &CapabilityContext,
+        ) -> Result<Vec<UserInfo>, UserError> {
             Ok(vec![])
         }
-        async fn enumerate_groups(&self, _ctx: &CapabilityContext) -> Result<Vec<GroupInfo>, UserError> {
+        async fn enumerate_groups(
+            &self,
+            _ctx: &CapabilityContext,
+        ) -> Result<Vec<GroupInfo>, UserError> {
             Ok(vec![])
         }
-        async fn switch_user(&self, _ctx: &CapabilityContext, user_id: &UserId) -> Result<(), UserError> {
+        async fn switch_user(
+            &self,
+            _ctx: &CapabilityContext,
+            user_id: &UserId,
+        ) -> Result<(), UserError> {
             if user_id.0.is_empty() {
                 Err(UserError::NotFound("empty user".to_string()))
             } else {
                 Ok(())
             }
         }
-        async fn get_user_by_uid(&self, _ctx: &CapabilityContext, _uid: Uid) -> Result<UserInfo, UserError> {
-            Ok(UserInfo { uid: Uid(1000), gid: Gid(1000), username: "test".into(), home_dir: "/home/test".into(), shell: "/bin/bash".into() })
+        async fn get_user_by_uid(
+            &self,
+            _ctx: &CapabilityContext,
+            _uid: Uid,
+        ) -> Result<UserInfo, UserError> {
+            Ok(UserInfo {
+                uid: Uid(1000),
+                gid: Gid(1000),
+                username: "test".into(),
+                home_dir: "/home/test".into(),
+                shell: "/bin/bash".into(),
+            })
         }
         fn events(&self) -> Receiver<OsalEvent> {
             closed_rx()
@@ -599,7 +822,9 @@ pub mod mock {
 
     pub struct MockPlatformInfo;
     impl MockPlatformInfo {
-        pub fn new() -> Self { Self }
+        pub fn new() -> Self {
+            Self
+        }
     }
     impl std::fmt::Debug for MockPlatformInfo {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -607,13 +832,27 @@ pub mod mock {
         }
     }
     impl PlatformInfo for MockPlatformInfo {
-        fn os_name(&self) -> &str { "MockOS" }
-        fn os_version(&self) -> &str { "0.1.0" }
-        fn hostname(&self) -> String { "mockhost".into() }
-        fn num_cpus(&self) -> usize { 4 }
-        fn total_memory(&self) -> u64 { 8_000_000_000 }
-        fn uptime(&self) -> Duration { Duration::from_secs(3600) }
-        fn kernel_version(&self) -> &str { "mock-kernel-1.0" }
+        fn os_name(&self) -> &str {
+            "MockOS"
+        }
+        fn os_version(&self) -> &str {
+            "0.1.0"
+        }
+        fn hostname(&self) -> String {
+            "mockhost".into()
+        }
+        fn num_cpus(&self) -> usize {
+            4
+        }
+        fn total_memory(&self) -> u64 {
+            8_000_000_000
+        }
+        fn uptime(&self) -> Duration {
+            Duration::from_secs(3600)
+        }
+        fn kernel_version(&self) -> &str {
+            "mock-kernel-1.0"
+        }
     }
 
     /// Build a fully-wired mock `KernelFacade` for testing.
@@ -681,7 +920,10 @@ pub mod mock {
             let ctx = dummy_ctx();
             let result = pm.spawn(&ctx, "", &[]).await;
             assert!(result.is_err());
-            assert!(matches!(result.unwrap_err(), ProcessError::ExecutionFailed(_)));
+            assert!(matches!(
+                result.unwrap_err(),
+                ProcessError::ExecutionFailed(_)
+            ));
         }
 
         #[tokio::test]
@@ -828,7 +1070,11 @@ pub mod mock {
             let meta = k.filesystem.metadata(&ctx, "/etc/hostname").await.unwrap();
             assert_eq!(meta.path, "/etc/hostname");
 
-            let handle = k.process.spawn(&ctx, "cat", &["/etc/hostname"]).await.unwrap();
+            let handle = k
+                .process
+                .spawn(&ctx, "cat", &["/etc/hostname"])
+                .await
+                .unwrap();
             assert!(handle.pid.0 > 0);
 
             let wait = k.process.wait(&ctx, handle.pid).await.unwrap();

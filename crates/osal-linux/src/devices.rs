@@ -1,11 +1,9 @@
+use async_trait::async_trait;
+use osal_capabilities::CapabilityContext;
+use osal_core::{DeviceError, DeviceHandle, DeviceInfo, DeviceManager, OsalEvent};
 use std::fmt;
 use std::os::unix::io::IntoRawFd;
-use async_trait::async_trait;
 use tokio::sync::mpsc::{self, Receiver};
-use osal_capabilities::CapabilityContext;
-use osal_core::{
-    DeviceManager, DeviceInfo, DeviceHandle, DeviceError, OsalEvent,
-};
 
 pub struct LinuxDeviceManager;
 
@@ -93,7 +91,11 @@ impl DeviceManager for LinuxDeviceManager {
         Ok(enumerate_class_devices())
     }
 
-    async fn access(&self, _ctx: &CapabilityContext, path: &str) -> Result<DeviceHandle, DeviceError> {
+    async fn access(
+        &self,
+        _ctx: &CapabilityContext,
+        path: &str,
+    ) -> Result<DeviceHandle, DeviceError> {
         let file = tokio::fs::File::open(path)
             .await
             .map_err(|e| DeviceError::Io(e.to_string()))?;

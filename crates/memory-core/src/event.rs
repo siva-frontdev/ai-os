@@ -11,7 +11,6 @@ use std::collections::HashMap;
 #[serde(tag = "event_type", content = "payload")]
 pub enum MemoryEvent {
     // -- Object lifecycle events --
-
     /// A memory object was stored.
     #[serde(rename = "memory.object.stored")]
     ObjectStored {
@@ -63,7 +62,6 @@ pub enum MemoryEvent {
     },
 
     // -- Consolidation events --
-
     /// A memory object was consolidated to a higher tier.
     #[serde(rename = "memory.consolidated")]
     Consolidated {
@@ -89,7 +87,6 @@ pub enum MemoryEvent {
     },
 
     // -- Pruning events --
-
     /// A pruning cycle completed.
     #[serde(rename = "memory.pruned")]
     Pruned {
@@ -104,7 +101,6 @@ pub enum MemoryEvent {
     },
 
     // -- Context events --
-
     /// A new memory context was created.
     #[serde(rename = "memory.context.created")]
     ContextCreated {
@@ -124,7 +120,6 @@ pub enum MemoryEvent {
     },
 
     // -- Snapshot events --
-
     /// A memory snapshot was created.
     #[serde(rename = "memory.snapshot.created")]
     SnapshotCreated {
@@ -146,7 +141,6 @@ pub enum MemoryEvent {
     },
 
     // -- Pattern discovery events --
-
     /// A new memory pattern was discovered.
     #[serde(rename = "memory.pattern.discovered")]
     PatternDiscovered {
@@ -161,7 +155,6 @@ pub enum MemoryEvent {
     },
 
     // -- Capacity events --
-
     /// A memory tier is approaching capacity.
     #[serde(rename = "memory.tier.capacity_warning")]
     TierCapacityWarning {
@@ -176,7 +169,6 @@ pub enum MemoryEvent {
     },
 
     // -- Index events --
-
     /// The search index was rebuilt.
     #[serde(rename = "memory.index.rebuilt")]
     IndexRebuilt {
@@ -189,7 +181,6 @@ pub enum MemoryEvent {
     },
 
     // -- Cache events --
-
     /// A cache entry was evicted.
     #[serde(rename = "memory.cache.eviction")]
     CacheEviction {
@@ -227,16 +218,22 @@ impl MemoryEvent {
         let mut m = HashMap::new();
         m.insert("event_type".into(), self.event_type().into());
         match self {
-            Self::ObjectStored { id, .. } => { m.insert("id".into(), id.to_string()); }
+            Self::ObjectStored { id, .. } => {
+                m.insert("id".into(), id.to_string());
+            }
             Self::ObjectRecalled { id, latency_us, .. } => {
                 m.insert("id".into(), id.to_string());
                 m.insert("latency_us".into(), latency_us.to_string());
             }
-            Self::ObjectUpdated { id, new_version, .. } => {
+            Self::ObjectUpdated {
+                id, new_version, ..
+            } => {
                 m.insert("id".into(), id.to_string());
                 m.insert("new_version".into(), new_version.to_string());
             }
-            Self::ObjectDeleted { id, .. } => { m.insert("id".into(), id.to_string()); }
+            Self::ObjectDeleted { id, .. } => {
+                m.insert("id".into(), id.to_string());
+            }
             Self::Consolidated { id, new_id, .. } => {
                 m.insert("id".into(), id.to_string());
                 m.insert("new_id".into(), new_id.to_string());
@@ -263,11 +260,15 @@ impl MemoryEvent {
             Self::PatternDiscovered { pattern_id, .. } => {
                 m.insert("pattern_id".into(), pattern_id.to_string());
             }
-            Self::TierCapacityWarning { tier, usage_pct, .. } => {
+            Self::TierCapacityWarning {
+                tier, usage_pct, ..
+            } => {
                 m.insert("tier".into(), format!("{:?}", tier));
                 m.insert("usage_pct".into(), usage_pct.to_string());
             }
-            Self::IndexRebuilt { entries_indexed, .. } => {
+            Self::IndexRebuilt {
+                entries_indexed, ..
+            } => {
                 m.insert("entries_indexed".into(), entries_indexed.to_string());
             }
             Self::CacheEviction { key, .. } => {
@@ -288,21 +289,84 @@ mod tests {
         let ts = Timestamp::now();
 
         let events: Vec<MemoryEvent> = vec![
-            MemoryEvent::ObjectStored { id, memory_type: MemoryType::Working, tier: MemoryTier::Working, timestamp: ts },
-            MemoryEvent::ObjectRecalled { id, memory_type: MemoryType::Working, tier: MemoryTier::Working, latency_us: 5, cache_hit: true },
-            MemoryEvent::ObjectUpdated { id, new_version: 2, timestamp: ts },
-            MemoryEvent::ObjectDeleted { id, memory_type: MemoryType::Working, tier: MemoryTier::Working },
-            MemoryEvent::Consolidated { id, from_tier: MemoryTier::Working, to_tier: MemoryTier::Episodic, new_id: MemoryId::new() },
-            MemoryEvent::ConsolidationFailed { id, from_tier: MemoryTier::Working, reason: "timeout".into() },
-            MemoryEvent::Pruned { ids_removed: vec![id], bytes_freed: 1024, tier: MemoryTier::Working, policy: "ttl".into() },
-            MemoryEvent::ContextCreated { context_id: uuid::Uuid::new_v4(), parent_id: None, session_id: "sess".into() },
-            MemoryEvent::ContextDestroyed { context_id: uuid::Uuid::new_v4() },
-            MemoryEvent::SnapshotCreated { snapshot_id: uuid::Uuid::new_v4(), size_bytes: 4096, scope: "full".into() },
-            MemoryEvent::SnapshotRestored { snapshot_id: uuid::Uuid::new_v4(), timestamp: ts },
-            MemoryEvent::PatternDiscovered { pattern_id: uuid::Uuid::new_v4(), pattern_type: "temporal".into(), confidence: 0.85, support: 42 },
-            MemoryEvent::TierCapacityWarning { tier: MemoryTier::Working, usage_pct: 95, current_bytes: 95000, max_bytes: 100000 },
-            MemoryEvent::IndexRebuilt { entries_indexed: 1000, elapsed_ms: 250, dimension: 384 },
-            MemoryEvent::CacheEviction { key: "mem:123".into(), reason: "ttl_expired".into() },
+            MemoryEvent::ObjectStored {
+                id,
+                memory_type: MemoryType::Working,
+                tier: MemoryTier::Working,
+                timestamp: ts,
+            },
+            MemoryEvent::ObjectRecalled {
+                id,
+                memory_type: MemoryType::Working,
+                tier: MemoryTier::Working,
+                latency_us: 5,
+                cache_hit: true,
+            },
+            MemoryEvent::ObjectUpdated {
+                id,
+                new_version: 2,
+                timestamp: ts,
+            },
+            MemoryEvent::ObjectDeleted {
+                id,
+                memory_type: MemoryType::Working,
+                tier: MemoryTier::Working,
+            },
+            MemoryEvent::Consolidated {
+                id,
+                from_tier: MemoryTier::Working,
+                to_tier: MemoryTier::Episodic,
+                new_id: MemoryId::new(),
+            },
+            MemoryEvent::ConsolidationFailed {
+                id,
+                from_tier: MemoryTier::Working,
+                reason: "timeout".into(),
+            },
+            MemoryEvent::Pruned {
+                ids_removed: vec![id],
+                bytes_freed: 1024,
+                tier: MemoryTier::Working,
+                policy: "ttl".into(),
+            },
+            MemoryEvent::ContextCreated {
+                context_id: uuid::Uuid::new_v4(),
+                parent_id: None,
+                session_id: "sess".into(),
+            },
+            MemoryEvent::ContextDestroyed {
+                context_id: uuid::Uuid::new_v4(),
+            },
+            MemoryEvent::SnapshotCreated {
+                snapshot_id: uuid::Uuid::new_v4(),
+                size_bytes: 4096,
+                scope: "full".into(),
+            },
+            MemoryEvent::SnapshotRestored {
+                snapshot_id: uuid::Uuid::new_v4(),
+                timestamp: ts,
+            },
+            MemoryEvent::PatternDiscovered {
+                pattern_id: uuid::Uuid::new_v4(),
+                pattern_type: "temporal".into(),
+                confidence: 0.85,
+                support: 42,
+            },
+            MemoryEvent::TierCapacityWarning {
+                tier: MemoryTier::Working,
+                usage_pct: 95,
+                current_bytes: 95000,
+                max_bytes: 100000,
+            },
+            MemoryEvent::IndexRebuilt {
+                entries_indexed: 1000,
+                elapsed_ms: 250,
+                dimension: 384,
+            },
+            MemoryEvent::CacheEviction {
+                key: "mem:123".into(),
+                reason: "ttl_expired".into(),
+            },
         ];
 
         let expected_types = [
@@ -324,7 +388,12 @@ mod tests {
         ];
 
         for (event, expected) in events.iter().zip(expected_types.iter()) {
-            assert_eq!(event.event_type(), *expected, "event type mismatch for {:?}", event);
+            assert_eq!(
+                event.event_type(),
+                *expected,
+                "event type mismatch for {:?}",
+                event
+            );
         }
     }
 
@@ -347,25 +416,92 @@ mod tests {
         let id = MemoryId::new();
         let ts = Timestamp::now();
         let events: Vec<MemoryEvent> = vec![
-            MemoryEvent::ObjectStored { id, memory_type: MemoryType::Working, tier: MemoryTier::Working, timestamp: ts },
-            MemoryEvent::ObjectRecalled { id, memory_type: MemoryType::Working, tier: MemoryTier::Working, latency_us: 0, cache_hit: false },
-            MemoryEvent::ObjectUpdated { id, new_version: 1, timestamp: ts },
-            MemoryEvent::ObjectDeleted { id, memory_type: MemoryType::Working, tier: MemoryTier::Working },
-            MemoryEvent::Consolidated { id, from_tier: MemoryTier::Working, to_tier: MemoryTier::Episodic, new_id: MemoryId::new() },
-            MemoryEvent::ConsolidationFailed { id, from_tier: MemoryTier::Working, reason: "".into() },
-            MemoryEvent::Pruned { ids_removed: vec![], bytes_freed: 0, tier: MemoryTier::Working, policy: "".into() },
-            MemoryEvent::ContextCreated { context_id: uuid::Uuid::new_v4(), parent_id: None, session_id: "".into() },
-            MemoryEvent::ContextDestroyed { context_id: uuid::Uuid::new_v4() },
-            MemoryEvent::SnapshotCreated { snapshot_id: uuid::Uuid::new_v4(), size_bytes: 0, scope: "".into() },
-            MemoryEvent::SnapshotRestored { snapshot_id: uuid::Uuid::new_v4(), timestamp: ts },
-            MemoryEvent::PatternDiscovered { pattern_id: uuid::Uuid::new_v4(), pattern_type: "".into(), confidence: 0.0, support: 0 },
-            MemoryEvent::TierCapacityWarning { tier: MemoryTier::Working, usage_pct: 0, current_bytes: 0, max_bytes: 0 },
-            MemoryEvent::IndexRebuilt { entries_indexed: 0, elapsed_ms: 0, dimension: 0 },
-            MemoryEvent::CacheEviction { key: "".into(), reason: "".into() },
+            MemoryEvent::ObjectStored {
+                id,
+                memory_type: MemoryType::Working,
+                tier: MemoryTier::Working,
+                timestamp: ts,
+            },
+            MemoryEvent::ObjectRecalled {
+                id,
+                memory_type: MemoryType::Working,
+                tier: MemoryTier::Working,
+                latency_us: 0,
+                cache_hit: false,
+            },
+            MemoryEvent::ObjectUpdated {
+                id,
+                new_version: 1,
+                timestamp: ts,
+            },
+            MemoryEvent::ObjectDeleted {
+                id,
+                memory_type: MemoryType::Working,
+                tier: MemoryTier::Working,
+            },
+            MemoryEvent::Consolidated {
+                id,
+                from_tier: MemoryTier::Working,
+                to_tier: MemoryTier::Episodic,
+                new_id: MemoryId::new(),
+            },
+            MemoryEvent::ConsolidationFailed {
+                id,
+                from_tier: MemoryTier::Working,
+                reason: "".into(),
+            },
+            MemoryEvent::Pruned {
+                ids_removed: vec![],
+                bytes_freed: 0,
+                tier: MemoryTier::Working,
+                policy: "".into(),
+            },
+            MemoryEvent::ContextCreated {
+                context_id: uuid::Uuid::new_v4(),
+                parent_id: None,
+                session_id: "".into(),
+            },
+            MemoryEvent::ContextDestroyed {
+                context_id: uuid::Uuid::new_v4(),
+            },
+            MemoryEvent::SnapshotCreated {
+                snapshot_id: uuid::Uuid::new_v4(),
+                size_bytes: 0,
+                scope: "".into(),
+            },
+            MemoryEvent::SnapshotRestored {
+                snapshot_id: uuid::Uuid::new_v4(),
+                timestamp: ts,
+            },
+            MemoryEvent::PatternDiscovered {
+                pattern_id: uuid::Uuid::new_v4(),
+                pattern_type: "".into(),
+                confidence: 0.0,
+                support: 0,
+            },
+            MemoryEvent::TierCapacityWarning {
+                tier: MemoryTier::Working,
+                usage_pct: 0,
+                current_bytes: 0,
+                max_bytes: 0,
+            },
+            MemoryEvent::IndexRebuilt {
+                entries_indexed: 0,
+                elapsed_ms: 0,
+                dimension: 0,
+            },
+            MemoryEvent::CacheEviction {
+                key: "".into(),
+                reason: "".into(),
+            },
         ];
         for event in &events {
             let meta = event.metadata();
-            assert!(meta.contains_key("event_type"), "missing event_type for {:?}", event);
+            assert!(
+                meta.contains_key("event_type"),
+                "missing event_type for {:?}",
+                event
+            );
         }
     }
 }

@@ -32,9 +32,7 @@ use tokio::sync::mpsc::{self, Receiver};
 /// OSAL-specific user types not present in `osal_core`.
 pub mod types;
 
-pub use osal_core::{
-    Gid, GroupInfo, OsalEvent, Uid, UserError, UserId, UserInfo, UserManager,
-};
+pub use osal_core::{Gid, GroupInfo, OsalEvent, Uid, UserError, UserId, UserInfo, UserManager};
 pub use types::{Credential, UserSession};
 
 /// No-op implementation of [`UserManager`].
@@ -59,22 +57,31 @@ impl Default for DefaultUserManager {
 
 #[async_trait]
 impl UserManager for DefaultUserManager {
-    async fn current_user(&self, _ctx: &osal_capabilities::CapabilityContext) -> Result<UserInfo, UserError> {
-        Err(UserError::Other("DefaultUserManager: not implemented".into()))
+    async fn current_user(
+        &self,
+        _ctx: &osal_capabilities::CapabilityContext,
+    ) -> Result<UserInfo, UserError> {
+        Err(UserError::Other(
+            "DefaultUserManager: not implemented".into(),
+        ))
     }
 
     async fn enumerate_users(
         &self,
         _ctx: &osal_capabilities::CapabilityContext,
     ) -> Result<Vec<UserInfo>, UserError> {
-        Err(UserError::Other("DefaultUserManager: not implemented".into()))
+        Err(UserError::Other(
+            "DefaultUserManager: not implemented".into(),
+        ))
     }
 
     async fn enumerate_groups(
         &self,
         _ctx: &osal_capabilities::CapabilityContext,
     ) -> Result<Vec<GroupInfo>, UserError> {
-        Err(UserError::Other("DefaultUserManager: not implemented".into()))
+        Err(UserError::Other(
+            "DefaultUserManager: not implemented".into(),
+        ))
     }
 
     async fn switch_user(
@@ -82,7 +89,9 @@ impl UserManager for DefaultUserManager {
         _ctx: &osal_capabilities::CapabilityContext,
         _user_id: &UserId,
     ) -> Result<(), UserError> {
-        Err(UserError::Other("DefaultUserManager: not implemented".into()))
+        Err(UserError::Other(
+            "DefaultUserManager: not implemented".into(),
+        ))
     }
 
     async fn get_user_by_uid(
@@ -90,7 +99,9 @@ impl UserManager for DefaultUserManager {
         _ctx: &osal_capabilities::CapabilityContext,
         _uid: Uid,
     ) -> Result<UserInfo, UserError> {
-        Err(UserError::Other("DefaultUserManager: not implemented".into()))
+        Err(UserError::Other(
+            "DefaultUserManager: not implemented".into(),
+        ))
     }
 
     fn events(&self) -> Receiver<OsalEvent> {
@@ -161,9 +172,15 @@ mod tests {
 
     #[test]
     fn test_credential_variants() {
-        let pw = Credential::Password { hash: "abc123".into() };
-        let key = Credential::Key { public_key: "ssh-rsa ...".into() };
-        let token = Credential::Token { token: "tok_xxx".into() };
+        let pw = Credential::Password {
+            hash: "abc123".into(),
+        };
+        let key = Credential::Key {
+            public_key: "ssh-rsa ...".into(),
+        };
+        let token = Credential::Token {
+            token: "tok_xxx".into(),
+        };
         let none = Credential::None;
         assert!(matches!(pw, Credential::Password { .. }));
         assert!(matches!(key, Credential::Key { .. }));
@@ -176,7 +193,10 @@ mod tests {
         let cred = Credential::Password { hash: "abc".into() };
         let json = serde_json::to_string(&cred).unwrap();
         let deserialized: Credential = serde_json::from_str(&json).unwrap();
-        assert_eq!(serde_json::to_string(&cred).unwrap(), serde_json::to_string(&deserialized).unwrap());
+        assert_eq!(
+            serde_json::to_string(&cred).unwrap(),
+            serde_json::to_string(&deserialized).unwrap()
+        );
     }
 
     #[test]

@@ -21,7 +21,6 @@ pub enum Capability {
     // -----------------------------------------------------------------------
     // Filesystem
     // -----------------------------------------------------------------------
-
     /// Read a file at the given path (`"*"` = any path).
     FileRead(String),
     /// Write to a file at the given path (`"*"` = any path).
@@ -38,7 +37,6 @@ pub enum Capability {
     // -----------------------------------------------------------------------
     // Process
     // -----------------------------------------------------------------------
-
     /// Spawn new processes.
     ProcessSpawn,
     /// Kill (send a signal to) a specific process.
@@ -53,7 +51,6 @@ pub enum Capability {
     // -----------------------------------------------------------------------
     // Terminal
     // -----------------------------------------------------------------------
-
     /// Execute commands in a terminal.
     TerminalExecute,
     /// Allocate and use a pseudo-terminal.
@@ -64,7 +61,6 @@ pub enum Capability {
     // -----------------------------------------------------------------------
     // Network
     // -----------------------------------------------------------------------
-
     /// Configure network interfaces.
     NetworkConfigure,
     /// Open network sockets.
@@ -77,7 +73,6 @@ pub enum Capability {
     // -----------------------------------------------------------------------
     // Monitoring
     // -----------------------------------------------------------------------
-
     /// Read CPU usage statistics.
     MonitorCpu,
     /// Read memory usage statistics.
@@ -94,7 +89,6 @@ pub enum Capability {
     // -----------------------------------------------------------------------
     // Devices
     // -----------------------------------------------------------------------
-
     /// Enumerate available hardware devices.
     DeviceEnumerate,
     /// Access a hardware device at the given path (`"*"` = any device).
@@ -103,7 +97,6 @@ pub enum Capability {
     // -----------------------------------------------------------------------
     // Clipboard
     // -----------------------------------------------------------------------
-
     /// Read from the system clipboard.
     ClipboardRead,
     /// Write to the system clipboard.
@@ -112,7 +105,6 @@ pub enum Capability {
     // -----------------------------------------------------------------------
     // Display / Window
     // -----------------------------------------------------------------------
-
     /// List open windows.
     WindowList,
     /// Focus or manage window focus.
@@ -123,7 +115,6 @@ pub enum Capability {
     // -----------------------------------------------------------------------
     // Users
     // -----------------------------------------------------------------------
-
     /// Enumerate system users.
     UserEnumerate,
     /// Switch the current user context.
@@ -134,7 +125,6 @@ pub enum Capability {
     // -----------------------------------------------------------------------
     // System
     // -----------------------------------------------------------------------
-
     /// Shut down the system.
     SystemShutdown,
     /// Reboot the system.
@@ -147,7 +137,6 @@ pub enum Capability {
     // -----------------------------------------------------------------------
     // Admin — universal grant
     // -----------------------------------------------------------------------
-
     /// Grants every capability. Bypasses all individual checks.
     Admin,
 }

@@ -6,7 +6,9 @@ use osal_capabilities::CapabilityContext;
 use tokio::fs;
 use tokio::sync::mpsc::{self, Receiver};
 
-use osal_core::{DirEntry, FileKind, FileMetadata, FileSystem, FilesystemError, OsalEvent, Gid, Permissions, Uid};
+use osal_core::{
+    DirEntry, FileKind, FileMetadata, FileSystem, FilesystemError, Gid, OsalEvent, Permissions, Uid,
+};
 
 pub struct LinuxFileSystem;
 
@@ -59,38 +61,61 @@ fn system_time_to_utc(t: std::time::SystemTime) -> DateTime<Utc> {
 impl FileSystem for LinuxFileSystem {
     #[allow(unused_variables)]
     async fn read(&self, ctx: &CapabilityContext, path: &str) -> Result<Vec<u8>, FilesystemError> {
-        fs::read(path).await.map_err(|e| io_error_to_filesystem(e, path))
+        fs::read(path)
+            .await
+            .map_err(|e| io_error_to_filesystem(e, path))
     }
 
     #[allow(unused_variables)]
-    async fn write(&self, ctx: &CapabilityContext, path: &str, data: &[u8]) -> Result<(), FilesystemError> {
-        fs::write(path, data).await.map_err(|e| io_error_to_filesystem(e, path))
+    async fn write(
+        &self,
+        ctx: &CapabilityContext,
+        path: &str,
+        data: &[u8],
+    ) -> Result<(), FilesystemError> {
+        fs::write(path, data)
+            .await
+            .map_err(|e| io_error_to_filesystem(e, path))
     }
 
     #[allow(unused_variables)]
     async fn delete(&self, ctx: &CapabilityContext, path: &str) -> Result<(), FilesystemError> {
         match fs::remove_file(path).await {
             Ok(()) => Ok(()),
-            Err(e) if e.kind() == std::io::ErrorKind::IsADirectory => {
-                fs::remove_dir(path).await.map_err(|e| io_error_to_filesystem(e, path))
-            }
+            Err(e) if e.kind() == std::io::ErrorKind::IsADirectory => fs::remove_dir(path)
+                .await
+                .map_err(|e| io_error_to_filesystem(e, path)),
             Err(e) => Err(io_error_to_filesystem(e, path)),
         }
     }
 
     #[allow(unused_variables)]
     async fn create_dir(&self, ctx: &CapabilityContext, path: &str) -> Result<(), FilesystemError> {
-        fs::create_dir_all(path).await.map_err(|e| io_error_to_filesystem(e, path))
+        fs::create_dir_all(path)
+            .await
+            .map_err(|e| io_error_to_filesystem(e, path))
     }
 
     #[allow(unused_variables)]
-    async fn metadata(&self, ctx: &CapabilityContext, path: &str) -> Result<FileMetadata, FilesystemError> {
-        let meta = fs::metadata(path).await.map_err(|e| io_error_to_filesystem(e, path))?;
+    async fn metadata(
+        &self,
+        ctx: &CapabilityContext,
+        path: &str,
+    ) -> Result<FileMetadata, FilesystemError> {
+        let meta = fs::metadata(path)
+            .await
+            .map_err(|e| io_error_to_filesystem(e, path))?;
 
         let kind = file_kind_from_ft(meta.file_type());
         let mode = meta.permissions().mode();
-        let modified = meta.modified().map(system_time_to_utc).unwrap_or_else(|_| Utc::now());
-        let created = meta.created().map(system_time_to_utc).unwrap_or_else(|_| Utc::now());
+        let modified = meta
+            .modified()
+            .map(system_time_to_utc)
+            .unwrap_or_else(|_| Utc::now());
+        let created = meta
+            .created()
+            .map(system_time_to_utc)
+            .unwrap_or_else(|_| Utc::now());
 
         Ok(FileMetadata {
             path: path.to_string(),
@@ -105,12 +130,25 @@ impl FileSystem for LinuxFileSystem {
     }
 
     #[allow(unused_variables)]
-    async fn list(&self, ctx: &CapabilityContext, path: &str) -> Result<Vec<DirEntry>, FilesystemError> {
-        let mut rd = fs::read_dir(path).await.map_err(|e| io_error_to_filesystem(e, path))?;
+    async fn list(
+        &self,
+        ctx: &CapabilityContext,
+        path: &str,
+    ) -> Result<Vec<DirEntry>, FilesystemError> {
+        let mut rd = fs::read_dir(path)
+            .await
+            .map_err(|e| io_error_to_filesystem(e, path))?;
         let mut entries = Vec::new();
 
-        while let Some(entry) = rd.next_entry().await.map_err(|e| io_error_to_filesystem(e, path))? {
-            let file_type = entry.file_type().await.map_err(|e| io_error_to_filesystem(e, path))?;
+        while let Some(entry) = rd
+            .next_entry()
+            .await
+            .map_err(|e| io_error_to_filesystem(e, path))?
+        {
+            let file_type = entry
+                .file_type()
+                .await
+                .map_err(|e| io_error_to_filesystem(e, path))?;
             let kind = file_kind_from_ft(file_type);
             let name = entry.file_name().to_string_lossy().to_string();
             let entry_path = entry.path().to_string_lossy().to_string();
@@ -126,7 +164,11 @@ impl FileSystem for LinuxFileSystem {
     }
 
     #[allow(unused_variables)]
-    async fn watch(&self, ctx: &CapabilityContext, path: &str) -> Result<Receiver<OsalEvent>, FilesystemError> {
+    async fn watch(
+        &self,
+        ctx: &CapabilityContext,
+        path: &str,
+    ) -> Result<Receiver<OsalEvent>, FilesystemError> {
         use inotify::{EventMask, Inotify, WatchMask};
 
         let (tx, rx) = mpsc::channel(256);

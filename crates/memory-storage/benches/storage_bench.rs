@@ -1,8 +1,6 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
 
-use memory_core::{
-    MemoryObject, MemoryPriority, MemoryTier, MemoryType, QueryFilter, Timestamp,
-};
+use memory_core::{MemoryObject, MemoryPriority, MemoryTier, MemoryType, QueryFilter, Timestamp};
 use memory_storage::{InMemoryStore, MemoryStore};
 
 fn create_test_object(size: usize, tier: MemoryTier, memory_type: MemoryType) -> MemoryObject {
@@ -67,7 +65,11 @@ fn bench_in_memory_query(c: &mut Criterion) {
         let obj = MemoryObject::builder()
             .content_type("text")
             .content(vec![i as u8])
-            .tier(if i % 2 == 0 { MemoryTier::Working } else { MemoryTier::Episodic })
+            .tier(if i % 2 == 0 {
+                MemoryTier::Working
+            } else {
+                MemoryTier::Episodic
+            })
             .build();
         rt.block_on(async { store.insert(obj).await.unwrap() });
     }

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use memory_core::{Timestamp, MemoryId};
+use memory_core::{MemoryId, Timestamp};
 
 /// The type of change applied to a context.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -51,7 +51,12 @@ impl ContextEvent {
         let mut m = HashMap::new();
         m.insert("event_type".into(), self.event_type().into());
         match self {
-            Self::ContextChanged { context_id, change_type, key, .. } => {
+            Self::ContextChanged {
+                context_id,
+                change_type,
+                key,
+                ..
+            } => {
                 m.insert("context_id".into(), context_id.to_string());
                 m.insert("change_type".into(), format!("{:?}", change_type));
                 if let Some(k) = key {

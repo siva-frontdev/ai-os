@@ -659,12 +659,65 @@ dependencies = [
 ]
 
 [[package]]
+name = "memory-episodic"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "criterion",
+ "memory-core",
+ "memory-storage",
+ "proptest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "tokio-test",
+ "uuid",
+]
+
+[[package]]
 name = "memory-index"
 version = "0.1.0"
 dependencies = [
  "async-trait",
  "criterion",
  "memory-core",
+ "tokio",
+ "tokio-test",
+ "uuid",
+]
+
+[[package]]
+name = "memory-knowledge"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "criterion",
+ "memory-core",
+ "memory-episodic",
+ "memory-semantic",
+ "memory-storage",
+ "proptest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "tokio-test",
+ "uuid",
+]
+
+[[package]]
+name = "memory-semantic"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "criterion",
+ "memory-core",
+ "memory-storage",
+ "proptest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
  "tokio",
  "tokio-test",
  "uuid",

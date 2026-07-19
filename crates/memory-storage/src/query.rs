@@ -23,10 +23,14 @@ pub struct DefaultQuery;
 #[async_trait]
 impl Query for DefaultQuery {
     async fn query(&self, _filter: &QueryFilter) -> MemoryResult<Vec<MemoryObject>> {
-        Err(memory_core::MemoryError::StorageBackendError("DefaultQuery: not configured".into()))
+        Err(memory_core::MemoryError::StorageBackendError(
+            "DefaultQuery: not configured".into(),
+        ))
     }
 
     async fn count(&self, _filter: &QueryFilter) -> MemoryResult<u64> {
-        Err(memory_core::MemoryError::StorageBackendError("DefaultQuery: not configured".into()))
+        Err(memory_core::MemoryError::StorageBackendError(
+            "DefaultQuery: not configured".into(),
+        ))
     }
 }

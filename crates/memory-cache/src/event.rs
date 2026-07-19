@@ -1,7 +1,7 @@
 //! Event types emitted by the cache during its lifecycle.
 
-use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Emitted when a cache lookup results in a hit.
 #[derive(Debug, Clone, Serialize, Deserialize)]

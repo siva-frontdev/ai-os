@@ -1,7 +1,7 @@
+use crate::types::{Pid, Signal};
+use osal_capabilities::Capability;
 use std::time::Duration;
 use thiserror::Error;
-use osal_capabilities::Capability;
-use crate::types::{Pid, Signal};
 
 #[derive(Debug, Error)]
 #[non_exhaustive]
@@ -149,10 +149,7 @@ pub enum OsalError {
         duration: Duration,
     },
     #[error("operation interrupted: {operation} by signal {signal:?}")]
-    Interrupted {
-        operation: String,
-        signal: Signal,
-    },
+    Interrupted { operation: String, signal: Signal },
     #[error("resource exhausted: {resource} (limit {limit}, requested {requested})")]
     ResourceExhausted {
         resource: String,
@@ -160,14 +157,9 @@ pub enum OsalError {
         requested: u64,
     },
     #[error("not supported: {operation} on {platform}")]
-    NotSupported {
-        operation: String,
-        platform: String,
-    },
+    NotSupported { operation: String, platform: String },
     #[error("permission denied: {context}")]
-    PermissionDenied {
-        context: String,
-    },
+    PermissionDenied { context: String },
     #[error("I/O error: {0}")]
     IoError(String),
 }

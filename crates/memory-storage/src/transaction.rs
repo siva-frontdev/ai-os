@@ -47,26 +47,38 @@ pub struct DefaultTransaction;
 #[async_trait]
 impl Transaction for DefaultTransaction {
     async fn begin(&self) -> MemoryResult<uuid::Uuid> {
-        Err(MemoryError::TransactionError("DefaultTransaction: not configured".into()))
+        Err(MemoryError::TransactionError(
+            "DefaultTransaction: not configured".into(),
+        ))
     }
 
     async fn commit(&self, _tx_id: &uuid::Uuid) -> MemoryResult<()> {
-        Err(MemoryError::TransactionError("DefaultTransaction: not configured".into()))
+        Err(MemoryError::TransactionError(
+            "DefaultTransaction: not configured".into(),
+        ))
     }
 
     async fn rollback(&self, _tx_id: &uuid::Uuid) -> MemoryResult<()> {
-        Err(MemoryError::TransactionError("DefaultTransaction: not configured".into()))
+        Err(MemoryError::TransactionError(
+            "DefaultTransaction: not configured".into(),
+        ))
     }
 
     async fn insert(&self, _tx_id: &uuid::Uuid, _object: MemoryObject) -> MemoryResult<()> {
-        Err(MemoryError::TransactionError("DefaultTransaction: not configured".into()))
+        Err(MemoryError::TransactionError(
+            "DefaultTransaction: not configured".into(),
+        ))
     }
 
     async fn delete(&self, _tx_id: &uuid::Uuid, _id: &memory_core::MemoryId) -> MemoryResult<()> {
-        Err(MemoryError::TransactionError("DefaultTransaction: not configured".into()))
+        Err(MemoryError::TransactionError(
+            "DefaultTransaction: not configured".into(),
+        ))
     }
 
     async fn update(&self, _tx_id: &uuid::Uuid, _object: MemoryObject) -> MemoryResult<()> {
-        Err(MemoryError::TransactionError("DefaultTransaction: not configured".into()))
+        Err(MemoryError::TransactionError(
+            "DefaultTransaction: not configured".into(),
+        ))
     }
 }

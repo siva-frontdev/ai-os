@@ -102,9 +102,10 @@ impl Default for PriorityScheduler {
 
 impl Scheduler for PriorityScheduler {
     fn enqueue(&self, handle: TaskHandle) -> Result<(), RuntimeError> {
-        let mut guard = self.queue.write().map_err(|_| {
-            RuntimeError::Scheduler("lock poisoned".into())
-        })?;
+        let mut guard = self
+            .queue
+            .write()
+            .map_err(|_| RuntimeError::Scheduler("lock poisoned".into()))?;
         guard.push(ScheduledTask { handle });
         self.enqueued.fetch_add(1, AtomicOrdering::Relaxed);
         Ok(())
@@ -123,9 +124,10 @@ impl Scheduler for PriorityScheduler {
     }
 
     fn remove(&self, task_id: &TaskId) -> Result<(), RuntimeError> {
-        let mut guard = self.queue.write().map_err(|_| {
-            RuntimeError::Scheduler("lock poisoned".into())
-        })?;
+        let mut guard = self
+            .queue
+            .write()
+            .map_err(|_| RuntimeError::Scheduler("lock poisoned".into()))?;
         let before = guard.len();
         guard.retain(|t| t.handle.task_id != *task_id);
         if guard.len() == before {

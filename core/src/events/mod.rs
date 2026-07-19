@@ -52,9 +52,7 @@ struct HandlerAdapter<E: Event, H: EventHandler<E>> {
 }
 
 #[async_trait]
-impl<E: Event + 'static, H: EventHandler<E> + 'static> ErasedEventHandler
-    for HandlerAdapter<E, H>
-{
+impl<E: Event + 'static, H: EventHandler<E> + 'static> ErasedEventHandler for HandlerAdapter<E, H> {
     async fn handle(&self, event: &dyn Event) -> Result<(), CoreError> {
         let downcasted = event.downcast_ref::<E>().ok_or_else(|| {
             CoreError::General(format!(
@@ -104,10 +102,7 @@ pub trait EventBus: Debug + Send + Sync {
 }
 
 /// Type-safe publish helper.
-pub async fn typed_publish<E: Event>(
-    bus: &dyn EventBus,
-    event: &E,
-) -> Result<(), CoreError> {
+pub async fn typed_publish<E: Event>(bus: &dyn EventBus, event: &E) -> Result<(), CoreError> {
     bus.publish_event(event).await
 }
 
@@ -155,7 +150,10 @@ impl EventBus for InMemoryEventBus {
     async fn publish_event(&self, event: &dyn Event) -> Result<(), CoreError> {
         let type_id = (event as &dyn Any).type_id();
         let handlers: Vec<Arc<dyn ErasedEventHandler>> = {
-            let guard = self.subscribers.read().map_err(|_| CoreError::LockPoisoned)?;
+            let guard = self
+                .subscribers
+                .read()
+                .map_err(|_| CoreError::LockPoisoned)?;
             match guard.get(&type_id) {
                 None => return Ok(()),
                 Some(entries) => entries.iter().map(|e| e.handler.clone()).collect(),
@@ -163,12 +161,13 @@ impl EventBus for InMemoryEventBus {
         };
 
         for handler in &handlers {
-            handler.handle(event).await.map_err(|e| {
-                CoreError::HandlerFailed {
+            handler
+                .handle(event)
+                .await
+                .map_err(|e| CoreError::HandlerFailed {
                     event_type: event.event_type(),
                     detail: e.to_string(),
-                }
-            })?;
+                })?;
         }
         Ok(())
     }
@@ -183,13 +182,19 @@ impl EventBus for InMemoryEventBus {
             sub: sub.clone(),
             handler,
         };
-        let mut guard = self.subscribers.write().map_err(|_| CoreError::LockPoisoned)?;
+        let mut guard = self
+            .subscribers
+            .write()
+            .map_err(|_| CoreError::LockPoisoned)?;
         guard.entry(type_id).or_default().push(entry);
         Ok(sub)
     }
 
     fn unsubscribe(&self, sub: &Subscription) -> Result<(), CoreError> {
-        let mut guard = self.subscribers.write().map_err(|_| CoreError::LockPoisoned)?;
+        let mut guard = self
+            .subscribers
+            .write()
+            .map_err(|_| CoreError::LockPoisoned)?;
         for entries in guard.values_mut() {
             entries.retain(|e| &e.sub != sub);
         }

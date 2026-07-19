@@ -32,24 +32,23 @@
 //! - Content type must not be empty
 //! - Timestamp must not be unreasonably far in the future
 
-mod types;
 mod error;
 mod event;
+mod types;
 
-/// Validation and serialization traits for memory objects.
-pub mod traits;
-/// Typed, weighted relationships between memory objects.
-pub mod relationship;
 /// The universal memory record with builder pattern.
 pub mod memory_object;
 /// Query filters, sorting, pagination, and storage statistics.
 pub mod query;
+/// Typed, weighted relationships between memory objects.
+pub mod relationship;
+/// Validation and serialization traits for memory objects.
+pub mod traits;
 
 // Re-export all public types
 pub use types::{
-    MemoryId, Timestamp, MemorySource, MemoryTier, MemoryType,
-    RelationType, MemoryPriority, MemoryImportance, Version,
-    Checksum, Metadata,
+    Checksum, MemoryId, MemoryImportance, MemoryPriority, MemorySource, MemoryTier, MemoryType,
+    Metadata, RelationType, Timestamp, Version,
 };
 
 // Re-export error types
@@ -59,11 +58,11 @@ pub use error::{MemoryError, MemoryResult};
 pub use event::MemoryEvent;
 
 // Re-export query types
-pub use query::{QueryFilter, SortField, SortOrder, StorageStats, CapacityInfo};
+pub use query::{CapacityInfo, QueryFilter, SortField, SortOrder, StorageStats};
 
 // Re-export record types
 pub use memory_object::{MemoryObject, MemoryObjectBuilder};
 pub use relationship::Relationship;
 
 // Re-export traits
-pub use traits::{Validate, Checksumable, ToJsonBytes};
+pub use traits::{Checksumable, ToJsonBytes, Validate};

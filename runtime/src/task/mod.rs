@@ -64,7 +64,10 @@ pub enum TaskState {
 
 impl TaskState {
     pub fn is_terminal(&self) -> bool {
-        matches!(self, TaskState::Completed | TaskState::Failed | TaskState::Cancelled)
+        matches!(
+            self,
+            TaskState::Completed | TaskState::Failed | TaskState::Cancelled
+        )
     }
 }
 
@@ -186,12 +189,13 @@ impl TaskManager for DefaultTaskManager {
     }
 
     fn update_state(&self, id: &TaskId, state: TaskState) -> Result<(), RuntimeError> {
-        let mut guard = self.tasks.write().map_err(|_| {
-            RuntimeError::Task("lock poisoned".into())
-        })?;
-        let task = guard.get_mut(id).ok_or_else(|| {
-            RuntimeError::Task(format!("task {} not found", id))
-        })?;
+        let mut guard = self
+            .tasks
+            .write()
+            .map_err(|_| RuntimeError::Task("lock poisoned".into()))?;
+        let task = guard
+            .get_mut(id)
+            .ok_or_else(|| RuntimeError::Task(format!("task {} not found", id)))?;
 
         let now = Utc::now();
         task.state = state;

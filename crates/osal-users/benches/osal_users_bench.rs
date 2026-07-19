@@ -1,28 +1,22 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use osal_users::{Credential, DefaultUserManager, UserManager, UserSession, Uid};
+use osal_users::{Credential, DefaultUserManager, Uid, UserManager, UserSession};
 
 fn bench_credential_creation(c: &mut Criterion) {
     c.bench_function("credential_creation_password", |b| {
-        b.iter(|| {
-            Credential::Password {
-                hash: black_box("$argon2id$v=19$m=65536,t=3,p=4$...".into()),
-            }
+        b.iter(|| Credential::Password {
+            hash: black_box("$argon2id$v=19$m=65536,t=3,p=4$...".into()),
         })
     });
 
     c.bench_function("credential_creation_key", |b| {
-        b.iter(|| {
-            Credential::Key {
-                public_key: black_box("ssh-ed25519 AAAAC3...".into()),
-            }
+        b.iter(|| Credential::Key {
+            public_key: black_box("ssh-ed25519 AAAAC3...".into()),
         })
     });
 
     c.bench_function("credential_creation_token", |b| {
-        b.iter(|| {
-            Credential::Token {
-                token: black_box("tok_abcdef123456".into()),
-            }
+        b.iter(|| Credential::Token {
+            token: black_box("tok_abcdef123456".into()),
         })
     });
 
@@ -31,13 +25,11 @@ fn bench_credential_creation(c: &mut Criterion) {
 
 fn bench_user_session_creation(c: &mut Criterion) {
     c.bench_function("user_session_creation", |b| {
-        b.iter(|| {
-            UserSession {
-                uid: black_box(Uid(1000)),
-                username: black_box("bench-user".into()),
-                started_at: black_box(chrono::Utc::now()),
-                access_token: black_box("tok_bench_session".into()),
-            }
+        b.iter(|| UserSession {
+            uid: black_box(Uid(1000)),
+            username: black_box("bench-user".into()),
+            started_at: black_box(chrono::Utc::now()),
+            access_token: black_box("tok_bench_session".into()),
         })
     });
 }
@@ -67,8 +59,7 @@ fn bench_default_user_manager_methods(c: &mut Criterion) {
     let ctx = osal_capabilities::CapabilityContext::new("bench");
 
     c.bench_function("default_user_manager_current_user", |b| {
-        b.to_async(&rt)
-            .iter(|| mgr.current_user(black_box(&ctx)))
+        b.to_async(&rt).iter(|| mgr.current_user(black_box(&ctx)))
     });
 
     c.bench_function("default_user_manager_enumerate_users", |b| {

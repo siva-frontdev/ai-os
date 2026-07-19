@@ -22,22 +22,22 @@
 //! | [`InMemoryStore`] | Thread-safe in-memory store backed by `RwLock<HashMap>` |
 //! | [`MockStore`] | Configurable mock for testing with call tracking and error injection |
 
+mod backend;
 mod store;
 mod transaction;
-mod backend;
 
-/// Filtered query execution trait and default implementation.
-pub mod query;
 /// Batch operation trait and default implementation.
 pub mod batch;
+/// Filtered query execution trait and default implementation.
+pub mod query;
 
 mod in_memory;
 mod mock;
 
-pub use store::{MemoryStore, DefaultMemoryStore};
-pub use transaction::{Transaction, DefaultTransaction};
-pub use backend::{StorageBackend, DefaultStorageBackend};
-pub use query::{Query, DefaultQuery};
+pub use backend::{DefaultStorageBackend, StorageBackend};
 pub use batch::{BatchOperation, DefaultBatchOperation};
 pub use in_memory::InMemoryStore;
 pub use mock::MockStore;
+pub use query::{DefaultQuery, Query};
+pub use store::{DefaultMemoryStore, MemoryStore};
+pub use transaction::{DefaultTransaction, Transaction};

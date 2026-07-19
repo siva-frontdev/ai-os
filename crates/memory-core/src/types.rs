@@ -1,6 +1,6 @@
+use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
-use serde::{Deserialize, Serialize};
 
 /// A unique identifier for a memory object.
 ///
@@ -133,7 +133,13 @@ pub enum MemorySource {
 
 impl MemorySource {
     /// All variants of MemorySource.
-    pub const ALL: &'static [Self] = &[Self::User, Self::System, Self::Agent, Self::Derived, Self::External];
+    pub const ALL: &'static [Self] = &[
+        Self::User,
+        Self::System,
+        Self::Agent,
+        Self::Derived,
+        Self::External,
+    ];
 }
 
 /// The physical storage tier of a memory object.
@@ -162,7 +168,8 @@ impl fmt::Display for MemoryTier {
 
 impl MemoryTier {
     /// All variants of MemoryTier.
-    pub const ALL: &'static [Self] = &[Self::Working, Self::Episodic, Self::Semantic, Self::Archive];
+    pub const ALL: &'static [Self] =
+        &[Self::Working, Self::Episodic, Self::Semantic, Self::Archive];
 }
 
 /// The cognitive type classification of a memory object.
@@ -180,7 +187,12 @@ pub enum MemoryType {
 
 impl MemoryType {
     /// All variants of MemoryType.
-    pub const ALL: &'static [Self] = &[Self::Working, Self::Episodic, Self::Semantic, Self::Knowledge];
+    pub const ALL: &'static [Self] = &[
+        Self::Working,
+        Self::Episodic,
+        Self::Semantic,
+        Self::Knowledge,
+    ];
 }
 
 /// The type of relationship between two memory objects.
@@ -416,7 +428,11 @@ impl Default for Metadata {
 
 impl<K: Into<String>, V: Into<String>> FromIterator<(K, V)> for Metadata {
     fn from_iter<I: IntoIterator<Item = (K, V)>>(iter: I) -> Self {
-        Self(iter.into_iter().map(|(k, v)| (k.into(), v.into())).collect())
+        Self(
+            iter.into_iter()
+                .map(|(k, v)| (k.into(), v.into()))
+                .collect(),
+        )
     }
 }
 

@@ -37,5 +37,10 @@ fn bench_default_events(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, bench_default_enumerate, bench_default_access, bench_default_events);
+criterion_group!(
+    benches,
+    bench_default_enumerate,
+    bench_default_access,
+    bench_default_events
+);
 criterion_main!(benches);

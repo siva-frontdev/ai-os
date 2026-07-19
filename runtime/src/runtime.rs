@@ -48,10 +48,7 @@ pub struct Runtime {
 }
 
 impl Runtime {
-    pub fn new(
-        event_bus: Arc<dyn EventBus>,
-        logger: Arc<dyn Logger>,
-    ) -> Self {
+    pub fn new(event_bus: Arc<dyn EventBus>, logger: Arc<dyn Logger>) -> Self {
         Self {
             scheduler: Arc::new(crate::scheduler::PriorityScheduler::new()),
             supervisor: Arc::new(crate::supervisor::DefaultSupervisor::new()),
@@ -145,10 +142,7 @@ mod tests {
             .await
             .unwrap();
 
-        let rt = Runtime::new(
-            app.event_bus().clone(),
-            app.logger().clone(),
-        );
+        let rt = Runtime::new(app.event_bus().clone(), app.logger().clone());
 
         assert_eq!(rt.state.phase(), crate::state::RuntimePhase::Created);
 
@@ -167,16 +161,10 @@ mod tests {
             .await
             .unwrap();
 
-        let rt = Runtime::new(
-            app.event_bus().clone(),
-            app.logger().clone(),
-        );
+        let rt = Runtime::new(app.event_bus().clone(), app.logger().clone());
 
         // Register runtime as a core lifecycle service
-        app.lifecycle()
-            .register(Arc::new(rt))
-            .await
-            .unwrap();
+        app.lifecycle().register(Arc::new(rt)).await.unwrap();
 
         app.run().await.unwrap();
         app.shutdown().await.unwrap();
@@ -192,10 +180,7 @@ mod tests {
                 .unwrap()
         });
 
-        let rt = Runtime::new(
-            app.event_bus().clone(),
-            app.logger().clone(),
-        );
+        let rt = Runtime::new(app.event_bus().clone(), app.logger().clone());
 
         assert!(rt.scheduler.queue_depth() == 0);
         assert!(rt.session_manager.session_count() == 0);

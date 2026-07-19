@@ -2,10 +2,10 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Duration;
 
+use osal_capabilities::CapabilitySet;
+use osal_core::{ExitStatus, Gid, Pid, Uid};
 use serde::{Deserialize, Serialize};
 use tokio::process::{ChildStderr, ChildStdin, ChildStdout};
-use osal_core::{Pid, Uid, Gid, ExitStatus};
-use osal_capabilities::CapabilitySet;
 
 /// Full configuration for spawning a child process.
 ///

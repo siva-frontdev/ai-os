@@ -29,20 +29,9 @@
 /// Extended process types unique to this crate.
 pub mod types;
 
-pub use osal_core::{
-    ChildHandle,
-    OsalEvent,
-    ProcessError,
-    ProcessInfo,
-    ProcessManager,
-};
+pub use osal_core::{ChildHandle, OsalEvent, ProcessError, ProcessInfo, ProcessManager};
 
-pub use types::{
-    ProcessConfig,
-    ProcessHandle,
-    ProcessState,
-    ProcessStatus,
-};
+pub use types::{ProcessConfig, ProcessHandle, ProcessState, ProcessStatus};
 
 use std::fmt::Debug;
 
@@ -86,40 +75,25 @@ impl ProcessManager for DefaultProcessManager {
         ))
     }
 
-    async fn suspend(
-        &self,
-        _ctx: &CapabilityContext,
-        _pid: Pid,
-    ) -> Result<(), ProcessError> {
+    async fn suspend(&self, _ctx: &CapabilityContext, _pid: Pid) -> Result<(), ProcessError> {
         Err(ProcessError::NotAllowed(
             "DefaultProcessManager: suspend not available".into(),
         ))
     }
 
-    async fn resume(
-        &self,
-        _ctx: &CapabilityContext,
-        _pid: Pid,
-    ) -> Result<(), ProcessError> {
+    async fn resume(&self, _ctx: &CapabilityContext, _pid: Pid) -> Result<(), ProcessError> {
         Err(ProcessError::NotAllowed(
             "DefaultProcessManager: resume not available".into(),
         ))
     }
 
-    async fn list(
-        &self,
-        _ctx: &CapabilityContext,
-    ) -> Result<Vec<ProcessInfo>, ProcessError> {
+    async fn list(&self, _ctx: &CapabilityContext) -> Result<Vec<ProcessInfo>, ProcessError> {
         Err(ProcessError::NotAllowed(
             "DefaultProcessManager: list not available".into(),
         ))
     }
 
-    async fn wait(
-        &self,
-        _ctx: &CapabilityContext,
-        _pid: Pid,
-    ) -> Result<ExitStatus, ProcessError> {
+    async fn wait(&self, _ctx: &CapabilityContext, _pid: Pid) -> Result<ExitStatus, ProcessError> {
         Err(ProcessError::NotAllowed(
             "DefaultProcessManager: wait not available".into(),
         ))

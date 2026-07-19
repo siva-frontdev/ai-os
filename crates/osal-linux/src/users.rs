@@ -1,11 +1,9 @@
-use std::fmt;
 use async_trait::async_trait;
-use tokio::sync::mpsc::{Receiver};
-use tokio::task::spawn_blocking;
 use osal_capabilities::CapabilityContext;
-use osal_core::{
-    UserManager, UserInfo, GroupInfo, UserError, UserId, Uid, Gid, OsalEvent,
-};
+use osal_core::{Gid, GroupInfo, OsalEvent, Uid, UserError, UserId, UserInfo, UserManager};
+use std::fmt;
+use tokio::sync::mpsc::Receiver;
+use tokio::task::spawn_blocking;
 
 pub struct LinuxUserManager;
 
@@ -106,12 +104,9 @@ fn get_user_by_uid_sync(uid: u32) -> Result<UserInfo, UserError> {
 }
 
 fn enumerate_users_sync() -> Result<Vec<UserInfo>, UserError> {
-    let content = std::fs::read_to_string("/etc/passwd")
-        .map_err(|e| UserError::Io(e.to_string()))?;
-    let users: Vec<UserInfo> = content
-        .lines()
-        .filter_map(parse_passwd_line)
-        .collect();
+    let content =
+        std::fs::read_to_string("/etc/passwd").map_err(|e| UserError::Io(e.to_string()))?;
+    let users: Vec<UserInfo> = content.lines().filter_map(parse_passwd_line).collect();
     Ok(users)
 }
 
@@ -135,12 +130,9 @@ fn parse_passwd_line(line: &str) -> Option<UserInfo> {
 }
 
 fn enumerate_groups_sync() -> Result<Vec<GroupInfo>, UserError> {
-    let content = std::fs::read_to_string("/etc/group")
-        .map_err(|e| UserError::Io(e.to_string()))?;
-    let groups: Vec<GroupInfo> = content
-        .lines()
-        .filter_map(parse_group_line)
-        .collect();
+    let content =
+        std::fs::read_to_string("/etc/group").map_err(|e| UserError::Io(e.to_string()))?;
+    let groups: Vec<GroupInfo> = content.lines().filter_map(parse_group_line).collect();
     Ok(groups)
 }
 
@@ -177,17 +169,28 @@ impl UserManager for LinuxUserManager {
             .map_err(|e| UserError::Io(e.to_string()))?
     }
 
-    async fn enumerate_groups(&self, _ctx: &CapabilityContext) -> Result<Vec<GroupInfo>, UserError> {
+    async fn enumerate_groups(
+        &self,
+        _ctx: &CapabilityContext,
+    ) -> Result<Vec<GroupInfo>, UserError> {
         spawn_blocking(enumerate_groups_sync)
             .await
             .map_err(|e| UserError::Io(e.to_string()))?
     }
 
-    async fn switch_user(&self, _ctx: &CapabilityContext, _user_id: &UserId) -> Result<(), UserError> {
+    async fn switch_user(
+        &self,
+        _ctx: &CapabilityContext,
+        _user_id: &UserId,
+    ) -> Result<(), UserError> {
         Err(UserError::SwitchFailed("not supported".to_string()))
     }
 
-    async fn get_user_by_uid(&self, _ctx: &CapabilityContext, uid: Uid) -> Result<UserInfo, UserError> {
+    async fn get_user_by_uid(
+        &self,
+        _ctx: &CapabilityContext,
+        uid: Uid,
+    ) -> Result<UserInfo, UserError> {
         spawn_blocking(move || get_user_by_uid_sync(uid.0))
             .await
             .map_err(|e| UserError::Io(e.to_string()))?

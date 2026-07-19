@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use memory_context::{ContextManager, TreeContextManager};
 
 fn bench_create_context(c: &mut Criterion) {
@@ -39,5 +39,10 @@ fn bench_snapshot(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, bench_create_context, bench_value_set, bench_snapshot);
+criterion_group!(
+    benches,
+    bench_create_context,
+    bench_value_set,
+    bench_snapshot
+);
 criterion_main!(benches);

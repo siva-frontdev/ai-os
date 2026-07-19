@@ -79,7 +79,11 @@ fn bench_default_manager_spawn(c: &mut Criterion) {
 
     c.bench_function("default_manager_spawn", |b| {
         b.to_async(&rt).iter(|| {
-            pm.spawn(black_box(&ctx), black_box("ls"), black_box(&["-la"] as &[&str]))
+            pm.spawn(
+                black_box(&ctx),
+                black_box("ls"),
+                black_box(&["-la"] as &[&str]),
+            )
         })
     });
 }

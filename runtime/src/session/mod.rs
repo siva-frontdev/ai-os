@@ -122,14 +122,12 @@ impl SessionManager for DefaultSessionManager {
     }
 
     fn destroy_session(&self, id: &SessionId) -> Result<(), RuntimeError> {
-        let mut guard = self.sessions.write().map_err(|_| {
-            RuntimeError::Session("lock poisoned".into())
-        })?;
+        let mut guard = self
+            .sessions
+            .write()
+            .map_err(|_| RuntimeError::Session("lock poisoned".into()))?;
         if guard.remove(id).is_none() {
-            return Err(RuntimeError::Session(format!(
-                "session {} not found",
-                id
-            )));
+            return Err(RuntimeError::Session(format!("session {} not found", id)));
         }
         Ok(())
     }
@@ -214,7 +212,9 @@ mod tests {
     fn session_has_permissions() {
         let mgr = DefaultSessionManager::new();
         let session = mgr.create_session(HashMap::new());
-        assert!(session.permission_ctx.has_permission(&crate::permission::Permission::Read));
+        assert!(session
+            .permission_ctx
+            .has_permission(&crate::permission::Permission::Read));
         assert!(session.permission_ctx.has_role("user"));
     }
 }

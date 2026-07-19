@@ -1,8 +1,8 @@
 //! OSAL-specific user types not present in `osal_core`.
 
 use chrono::{DateTime, Utc};
-use serde::{Serialize, Deserialize};
 use osal_core::Uid;
+use serde::{Deserialize, Serialize};
 
 /// Authentication credential.
 ///

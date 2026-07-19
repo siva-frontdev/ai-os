@@ -28,7 +28,10 @@ pub enum CoreError {
     NoHandler { event_type: &'static str },
 
     #[error("event handler for `{event_type}` failed: {detail}")]
-    HandlerFailed { event_type: &'static str, detail: String },
+    HandlerFailed {
+        event_type: &'static str,
+        detail: String,
+    },
 
     // ── Lifecycle ─────────────────────────────────────────
     #[error("service `{name}` failed to start: {detail}")]

@@ -94,9 +94,10 @@ impl Default for DefaultSupervisor {
 
 impl Supervisor for DefaultSupervisor {
     fn supervise(&self, task_id: TaskId, policy: RestartPolicy) -> Result<(), RuntimeError> {
-        let mut guard = self.supervised.write().map_err(|_| {
-            RuntimeError::Supervisor("lock poisoned".into())
-        })?;
+        let mut guard = self
+            .supervised
+            .write()
+            .map_err(|_| RuntimeError::Supervisor("lock poisoned".into()))?;
         let status = SupervisionStatus {
             task_id: task_id.clone(),
             policy,
@@ -110,12 +111,13 @@ impl Supervisor for DefaultSupervisor {
     }
 
     fn cancel_supervision(&self, task_id: &TaskId) -> Result<(), RuntimeError> {
-        let mut guard = self.supervised.write().map_err(|_| {
-            RuntimeError::Supervisor("lock poisoned".into())
-        })?;
-        guard.remove(task_id).ok_or_else(|| {
-            RuntimeError::Supervisor(format!("task {} not supervised", task_id))
-        })?;
+        let mut guard = self
+            .supervised
+            .write()
+            .map_err(|_| RuntimeError::Supervisor("lock poisoned".into()))?;
+        guard
+            .remove(task_id)
+            .ok_or_else(|| RuntimeError::Supervisor(format!("task {} not supervised", task_id)))?;
         Ok(())
     }
 
@@ -131,12 +133,13 @@ impl Supervisor for DefaultSupervisor {
     }
 
     fn record_failure(&self, task_id: &TaskId, reason: &str) -> Result<bool, RuntimeError> {
-        let mut guard = self.supervised.write().map_err(|_| {
-            RuntimeError::Supervisor("lock poisoned".into())
-        })?;
-        let status = guard.get_mut(task_id).ok_or_else(|| {
-            RuntimeError::Supervisor(format!("task {} not supervised", task_id))
-        })?;
+        let mut guard = self
+            .supervised
+            .write()
+            .map_err(|_| RuntimeError::Supervisor("lock poisoned".into()))?;
+        let status = guard
+            .get_mut(task_id)
+            .ok_or_else(|| RuntimeError::Supervisor(format!("task {} not supervised", task_id)))?;
 
         status.retries += 1;
         status.last_failure = Some(Utc::now());
@@ -189,11 +192,8 @@ mod tests {
     fn on_failure_restarts_up_to_max() {
         let sup = DefaultSupervisor::new();
         let id = TaskId::new();
-        sup.supervise(
-            id.clone(),
-            RestartPolicy::OnFailure { max_retries: 3 },
-        )
-        .unwrap();
+        sup.supervise(id.clone(), RestartPolicy::OnFailure { max_retries: 3 })
+            .unwrap();
 
         // Three retries allowed
         assert!(sup.record_failure(&id, "err1").unwrap());

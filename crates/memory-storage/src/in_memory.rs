@@ -3,8 +3,8 @@ use std::sync::RwLock;
 
 use async_trait::async_trait;
 use memory_core::{
-    MemoryError, MemoryId, MemoryObject, MemoryResult,
-    QueryFilter, SortField, SortOrder, StorageStats,
+    MemoryError, MemoryId, MemoryObject, MemoryResult, QueryFilter, SortField, SortOrder,
+    StorageStats,
 };
 
 use crate::store::MemoryStore;
@@ -28,7 +28,9 @@ pub struct InMemoryStore {
 impl InMemoryStore {
     /// Create a new empty `InMemoryStore`.
     pub fn new() -> Self {
-        Self { data: RwLock::new(HashMap::new()) }
+        Self {
+            data: RwLock::new(HashMap::new()),
+        }
     }
 
     /// Create a new `InMemoryStore` pre-populated with objects.
@@ -37,12 +39,17 @@ impl InMemoryStore {
         for obj in objects {
             map.insert(obj.id, obj);
         }
-        Self { data: RwLock::new(map) }
+        Self {
+            data: RwLock::new(map),
+        }
     }
 
     /// Return the number of stored objects.
     pub fn len(&self) -> MemoryResult<usize> {
-        let map = self.data.read().map_err(|e| MemoryError::Internal(e.to_string()))?;
+        let map = self
+            .data
+            .read()
+            .map_err(|e| MemoryError::Internal(e.to_string()))?;
         Ok(map.len())
     }
 
@@ -53,23 +60,38 @@ impl InMemoryStore {
 
     /// Remove all objects from the store.
     pub fn clear(&self) -> MemoryResult<()> {
-        let mut map = self.data.write().map_err(|e| MemoryError::Internal(e.to_string()))?;
+        let mut map = self
+            .data
+            .write()
+            .map_err(|e| MemoryError::Internal(e.to_string()))?;
         map.clear();
         Ok(())
     }
 
-    fn apply_filter(map: &HashMap<MemoryId, MemoryObject>, filter: &QueryFilter) -> Vec<MemoryObject> {
-        let mut results: Vec<&MemoryObject> = map.values().filter(|obj| filter.matches(obj)).collect();
+    fn apply_filter(
+        map: &HashMap<MemoryId, MemoryObject>,
+        filter: &QueryFilter,
+    ) -> Vec<MemoryObject> {
+        let mut results: Vec<&MemoryObject> =
+            map.values().filter(|obj| filter.matches(obj)).collect();
 
         // Sort
         match filter.sort_by {
             SortField::Timestamp => results.sort_by_key(|obj| obj.timestamp),
             SortField::Priority => results.sort_by_key(|obj| obj.priority),
             SortField::Importance => {
-                results.sort_by(|a, b| a.importance.partial_cmp(&b.importance).unwrap_or(std::cmp::Ordering::Equal));
+                results.sort_by(|a, b| {
+                    a.importance
+                        .partial_cmp(&b.importance)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                });
             }
             SortField::Confidence => {
-                results.sort_by(|a, b| a.confidence.partial_cmp(&b.confidence).unwrap_or(std::cmp::Ordering::Equal));
+                results.sort_by(|a, b| {
+                    a.confidence
+                        .partial_cmp(&b.confidence)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                });
             }
             SortField::Version => results.sort_by_key(|obj| obj.version),
             SortField::AccessCount => {
@@ -102,7 +124,10 @@ impl Default for InMemoryStore {
 #[async_trait]
 impl MemoryStore for InMemoryStore {
     async fn insert(&self, object: MemoryObject) -> MemoryResult<()> {
-        let mut map = self.data.write().map_err(|e| MemoryError::Internal(e.to_string()))?;
+        let mut map = self
+            .data
+            .write()
+            .map_err(|e| MemoryError::Internal(e.to_string()))?;
         if map.contains_key(&object.id) {
             return Err(MemoryError::ObjectNotFound(object.id));
         }
@@ -111,12 +136,18 @@ impl MemoryStore for InMemoryStore {
     }
 
     async fn get(&self, id: &MemoryId) -> MemoryResult<Option<MemoryObject>> {
-        let map = self.data.read().map_err(|e| MemoryError::Internal(e.to_string()))?;
+        let map = self
+            .data
+            .read()
+            .map_err(|e| MemoryError::Internal(e.to_string()))?;
         Ok(map.get(id).cloned())
     }
 
     async fn update(&self, object: MemoryObject) -> MemoryResult<()> {
-        let mut map = self.data.write().map_err(|e| MemoryError::Internal(e.to_string()))?;
+        let mut map = self
+            .data
+            .write()
+            .map_err(|e| MemoryError::Internal(e.to_string()))?;
         if !map.contains_key(&object.id) {
             return Err(MemoryError::ObjectNotFound(object.id));
         }
@@ -125,18 +156,27 @@ impl MemoryStore for InMemoryStore {
     }
 
     async fn delete(&self, id: &MemoryId) -> MemoryResult<()> {
-        let mut map = self.data.write().map_err(|e| MemoryError::Internal(e.to_string()))?;
+        let mut map = self
+            .data
+            .write()
+            .map_err(|e| MemoryError::Internal(e.to_string()))?;
         map.remove(id).ok_or(MemoryError::ObjectNotFound(*id))?;
         Ok(())
     }
 
     async fn exists(&self, id: &MemoryId) -> MemoryResult<bool> {
-        let map = self.data.read().map_err(|e| MemoryError::Internal(e.to_string()))?;
+        let map = self
+            .data
+            .read()
+            .map_err(|e| MemoryError::Internal(e.to_string()))?;
         Ok(map.contains_key(id))
     }
 
     async fn insert_batch(&self, objects: &[MemoryObject]) -> MemoryResult<()> {
-        let mut map = self.data.write().map_err(|e| MemoryError::Internal(e.to_string()))?;
+        let mut map = self
+            .data
+            .write()
+            .map_err(|e| MemoryError::Internal(e.to_string()))?;
         for obj in objects {
             if map.contains_key(&obj.id) {
                 return Err(MemoryError::ObjectNotFound(obj.id));
@@ -149,12 +189,18 @@ impl MemoryStore for InMemoryStore {
     }
 
     async fn get_batch(&self, ids: &[MemoryId]) -> MemoryResult<Vec<Option<MemoryObject>>> {
-        let map = self.data.read().map_err(|e| MemoryError::Internal(e.to_string()))?;
+        let map = self
+            .data
+            .read()
+            .map_err(|e| MemoryError::Internal(e.to_string()))?;
         Ok(ids.iter().map(|id| map.get(id).cloned()).collect())
     }
 
     async fn delete_batch(&self, ids: &[MemoryId]) -> MemoryResult<()> {
-        let mut map = self.data.write().map_err(|e| MemoryError::Internal(e.to_string()))?;
+        let mut map = self
+            .data
+            .write()
+            .map_err(|e| MemoryError::Internal(e.to_string()))?;
         for id in ids {
             map.remove(id);
         }
@@ -162,12 +208,18 @@ impl MemoryStore for InMemoryStore {
     }
 
     async fn query(&self, filter: &QueryFilter) -> MemoryResult<Vec<MemoryObject>> {
-        let map = self.data.read().map_err(|e| MemoryError::Internal(e.to_string()))?;
+        let map = self
+            .data
+            .read()
+            .map_err(|e| MemoryError::Internal(e.to_string()))?;
         Ok(Self::apply_filter(&map, filter))
     }
 
     async fn count(&self, filter: &QueryFilter) -> MemoryResult<u64> {
-        let map = self.data.read().map_err(|e| MemoryError::Internal(e.to_string()))?;
+        let map = self
+            .data
+            .read()
+            .map_err(|e| MemoryError::Internal(e.to_string()))?;
         let count = map.values().filter(|obj| filter.matches(obj)).count();
         Ok(count as u64)
     }
@@ -183,7 +235,10 @@ impl MemoryStore for InMemoryStore {
     }
 
     async fn stats(&self) -> MemoryResult<StorageStats> {
-        let map = self.data.read().map_err(|e| MemoryError::Internal(e.to_string()))?;
+        let map = self
+            .data
+            .read()
+            .map_err(|e| MemoryError::Internal(e.to_string()))?;
         let total_objects = map.len() as u64;
         let total_bytes: u64 = map.values().map(|obj| obj.content.len() as u64).sum();
 
@@ -410,7 +465,11 @@ mod tests {
             let obj = MemoryObject::builder()
                 .content_type("text")
                 .content(vec![i])
-                .tier(if i < 5 { MemoryTier::Working } else { MemoryTier::Episodic })
+                .tier(if i < 5 {
+                    MemoryTier::Working
+                } else {
+                    MemoryTier::Episodic
+                })
                 .build();
             store.insert(obj).await.unwrap();
         }

@@ -7,7 +7,6 @@ use crate::types::{MemoryId, MemoryTier};
 #[derive(Debug, thiserror::Error)]
 pub enum MemoryError {
     // -- Lookup errors --
-
     /// The requested memory object was not found.
     #[error("object not found: {0}")]
     ObjectNotFound(MemoryId),
@@ -17,7 +16,6 @@ pub enum MemoryError {
     ContextNotFound(uuid::Uuid),
 
     // -- Capacity errors --
-
     /// A memory tier has reached its capacity limit.
     #[error("tier {0} is full: {1} bytes used of {2}")]
     TierFull(MemoryTier, u64, u64),
@@ -27,13 +25,11 @@ pub enum MemoryError {
     CapacityExceeded(String, u64, u64),
 
     // -- Query errors --
-
     /// The query specification was invalid.
     #[error("invalid query: {0}")]
     InvalidQuery(String),
 
     // -- Index errors --
-
     /// Index build or rebuild failed.
     #[error("index build failed: {0}")]
     IndexBuildFailed(String),
@@ -43,7 +39,6 @@ pub enum MemoryError {
     SearchFailed(String),
 
     // -- Learning errors --
-
     /// Consolidation operation failed for a specific object.
     #[error("consolidation failed for {0}: {1}")]
     ConsolidationFailed(MemoryId, String),
@@ -57,13 +52,11 @@ pub enum MemoryError {
     PatternDiscoveryFailed(String),
 
     // -- Snapshot errors --
-
     /// Snapshot operation failed.
     #[error("snapshot failed: {0}")]
     SnapshotFailed(String),
 
     // -- Storage errors --
-
     /// Serialization or deserialization error.
     #[error("serialization error: {0}")]
     SerializationError(String),
@@ -73,7 +66,6 @@ pub enum MemoryError {
     StorageBackendError(String),
 
     // -- Security errors --
-
     /// The operation was denied due to insufficient permissions.
     #[error("permission denied: {session} cannot access {resource}")]
     PermissionDenied {
@@ -84,25 +76,21 @@ pub enum MemoryError {
     },
 
     // -- Transaction errors --
-
     /// Transaction operation failed.
     #[error("transaction failed: {0}")]
     TransactionError(String),
 
     // -- Timeout errors --
-
     /// The operation exceeded its time bound.
     #[error("operation timed out after {0}ms")]
     Timeout(u64),
 
     // -- Validation errors --
-
     /// Input validation failed.
     #[error("validation error: {0}")]
     ValidationError(String),
 
     // -- Internal errors --
-
     /// An internal invariant was violated.
     #[error("internal error: {0}")]
     Internal(String),
@@ -172,7 +160,10 @@ mod tests {
             MemoryError::SnapshotFailed("permission denied".into()),
             MemoryError::SerializationError("invalid utf-8".into()),
             MemoryError::StorageBackendError("connection lost".into()),
-            MemoryError::PermissionDenied { session: "s".into(), resource: "r".into() },
+            MemoryError::PermissionDenied {
+                session: "s".into(),
+                resource: "r".into(),
+            },
             MemoryError::TransactionError("rollback failed".into()),
             MemoryError::Timeout(100),
             MemoryError::ValidationError("bad value".into()),

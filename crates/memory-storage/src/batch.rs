@@ -33,14 +33,20 @@ pub struct DefaultBatchOperation;
 #[async_trait]
 impl BatchOperation for DefaultBatchOperation {
     async fn insert_batch(&self, _objects: &[MemoryObject]) -> MemoryResult<()> {
-        Err(memory_core::MemoryError::StorageBackendError("DefaultBatchOperation: not configured".into()))
+        Err(memory_core::MemoryError::StorageBackendError(
+            "DefaultBatchOperation: not configured".into(),
+        ))
     }
 
     async fn get_batch(&self, _ids: &[MemoryId]) -> MemoryResult<Vec<Option<MemoryObject>>> {
-        Err(memory_core::MemoryError::StorageBackendError("DefaultBatchOperation: not configured".into()))
+        Err(memory_core::MemoryError::StorageBackendError(
+            "DefaultBatchOperation: not configured".into(),
+        ))
     }
 
     async fn delete_batch(&self, _ids: &[MemoryId]) -> MemoryResult<()> {
-        Err(memory_core::MemoryError::StorageBackendError("DefaultBatchOperation: not configured".into()))
+        Err(memory_core::MemoryError::StorageBackendError(
+            "DefaultBatchOperation: not configured".into(),
+        ))
     }
 }

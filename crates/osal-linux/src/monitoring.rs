@@ -1,15 +1,14 @@
 use std::ffi::CString;
 use std::fmt;
-use std::path::Path;
 use std::fs;
+use std::path::Path;
 
 use async_trait::async_trait;
-use tokio::sync::mpsc::Receiver;
 use osal_capabilities::CapabilityContext;
 use osal_core::{
-    SystemMonitor, MemoryInfo, DiskInfo, NetworkIO, ProcessInfo,
-    MonitorError, OsalEvent, Pid, Uid,
+    DiskInfo, MemoryInfo, MonitorError, NetworkIO, OsalEvent, Pid, ProcessInfo, SystemMonitor, Uid,
 };
+use tokio::sync::mpsc::Receiver;
 
 pub struct LinuxSystemMonitor;
 
@@ -47,12 +46,9 @@ impl SystemMonitor for LinuxSystemMonitor {
         }
 
         let parse = |i: usize| -> Result<u64, MonitorError> {
-            parts
-                .get(i)
-                .and_then(|s| s.parse().ok())
-                .ok_or_else(|| {
-                    MonitorError::Io(format!("failed to parse field {} of /proc/stat", i))
-                })
+            parts.get(i).and_then(|s| s.parse().ok()).ok_or_else(|| {
+                MonitorError::Io(format!("failed to parse field {} of /proc/stat", i))
+            })
         };
 
         let user = parse(1)?;
@@ -84,9 +80,7 @@ impl SystemMonitor for LinuxSystemMonitor {
                     let val: u64 = line
                         .split_whitespace()
                         .nth(1)
-                        .ok_or_else(|| {
-                            MonitorError::Io(format!("missing value for {}", prefix))
-                        })?
+                        .ok_or_else(|| MonitorError::Io(format!("missing value for {}", prefix)))?
                         .parse()
                         .map_err(|e| {
                             MonitorError::Io(format!("failed to parse {}: {}", prefix, e))
@@ -219,9 +213,7 @@ impl SystemMonitor for LinuxSystemMonitor {
                     }
                 }
             }
-            Err(MonitorError::NotAvailable(
-                "no thermal zone found".into(),
-            ))
+            Err(MonitorError::NotAvailable("no thermal zone found".into()))
         })
         .await
         .map_err(|e| MonitorError::Io(e.to_string()))??;
@@ -298,11 +290,7 @@ fn read_process_list() -> Result<Vec<ProcessInfo>, MonitorError> {
             Err(_) => String::new(),
         };
 
-        let command = if cmdline.is_empty() {
-            comm
-        } else {
-            cmdline
-        };
+        let command = if cmdline.is_empty() { comm } else { cmdline };
 
         processes.push(ProcessInfo {
             pid: Pid(pid),

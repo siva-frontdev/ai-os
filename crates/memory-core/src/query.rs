@@ -1,6 +1,6 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::ops::Range;
-use serde::{Deserialize, Serialize};
 
 use crate::types::{MemorySource, MemoryTier, MemoryType, Timestamp};
 
@@ -146,8 +146,18 @@ pub struct CapacityInfo {
 
 impl CapacityInfo {
     /// Create new CapacityInfo.
-    pub fn new(max_entries: usize, current_entries: usize, max_bytes: u64, current_bytes: u64) -> Self {
-        Self { max_entries, current_entries, max_bytes, current_bytes }
+    pub fn new(
+        max_entries: usize,
+        current_entries: usize,
+        max_bytes: u64,
+        current_bytes: u64,
+    ) -> Self {
+        Self {
+            max_entries,
+            current_entries,
+            max_bytes,
+            current_bytes,
+        }
     }
 
     /// Return the usage percentage by entry count (0.0 - 100.0).

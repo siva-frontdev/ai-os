@@ -25,8 +25,7 @@ pub mod types;
 
 pub use osal_core::{PtyHandle, Terminal, TerminalError};
 pub use types::{
-    CommandConfig, CommandOutput, PtyConfig, PtySession, TerminalOutput,
-    TerminalOutputEventType,
+    CommandConfig, CommandOutput, PtyConfig, PtySession, TerminalOutput, TerminalOutputEventType,
 };
 
 use async_trait::async_trait;
@@ -44,10 +43,7 @@ pub struct DefaultTerminal;
 
 #[async_trait]
 impl Terminal for DefaultTerminal {
-    async fn open_pty(
-        &self,
-        _ctx: &CapabilityContext,
-    ) -> Result<PtyHandle, TerminalError> {
+    async fn open_pty(&self, _ctx: &CapabilityContext) -> Result<PtyHandle, TerminalError> {
         Err(TerminalError::NotAvailable("open_pty".into()))
     }
 
@@ -121,7 +117,10 @@ mod tests {
         let t = DefaultTerminal;
         let result = t.write_pty(&ctx(), "pty-1", b"data").await;
         assert!(result.is_err());
-        assert!(is_not_available(result.err().as_ref().unwrap(), "write_pty"));
+        assert!(is_not_available(
+            result.err().as_ref().unwrap(),
+            "write_pty"
+        ));
     }
 
     #[tokio::test]
@@ -137,7 +136,10 @@ mod tests {
         let t = DefaultTerminal;
         let result = t.resize_pty(&ctx(), "pty-1", 24, 80).await;
         assert!(result.is_err());
-        assert!(is_not_available(result.err().as_ref().unwrap(), "resize_pty"));
+        assert!(is_not_available(
+            result.err().as_ref().unwrap(),
+            "resize_pty"
+        ));
     }
 
     #[tokio::test]
@@ -145,7 +147,10 @@ mod tests {
         let t = DefaultTerminal;
         let result = t.signal_pty(&ctx(), "pty-1", Signal(9)).await;
         assert!(result.is_err());
-        assert!(is_not_available(result.err().as_ref().unwrap(), "signal_pty"));
+        assert!(is_not_available(
+            result.err().as_ref().unwrap(),
+            "signal_pty"
+        ));
     }
 
     #[tokio::test]

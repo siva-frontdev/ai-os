@@ -97,7 +97,12 @@ mod tests {
         let id = MemoryId::new();
 
         assert!(idx.index_time(&id, Timestamp::now()).await.is_ok());
-        assert!(idx.search_by_time_range(&(Timestamp::MIN..Timestamp::MAX)).await.unwrap().is_empty());
+        assert!(
+            idx.search_by_time_range(&(Timestamp::MIN..Timestamp::MAX))
+                .await
+                .unwrap()
+                .is_empty()
+        );
         assert!(idx.search_oldest(10).await.unwrap().is_empty());
         assert!(idx.search_newest(10).await.unwrap().is_empty());
         assert!(idx.remove_object(&id).await.is_ok());

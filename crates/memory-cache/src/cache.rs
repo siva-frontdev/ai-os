@@ -176,7 +176,8 @@ impl Default for LruMemoryCache {
 fn lock_inner(
     lock: &RwLock<LruInner>,
 ) -> MemoryCacheResult<std::sync::RwLockWriteGuard<'_, LruInner>> {
-    lock.write().map_err(|e| MemoryCacheError::Internal(format!("lock poisoned: {e}")))
+    lock.write()
+        .map_err(|e| MemoryCacheError::Internal(format!("lock poisoned: {e}")))
 }
 
 /// Remove the entry with the lowest priority (oldest among equal-priority ties).
@@ -510,16 +511,28 @@ mod tests {
         let cache = LruMemoryCache::new(3, 10_000);
 
         let o0 = make_obj(vec![0; 10]);
-        cache.set_with_priority("key0".into(), o0, None, 100).await.unwrap();
+        cache
+            .set_with_priority("key0".into(), o0, None, 100)
+            .await
+            .unwrap();
 
         let o1 = make_obj(vec![0; 10]);
-        cache.set_with_priority("key1".into(), o1, None, 50).await.unwrap();
+        cache
+            .set_with_priority("key1".into(), o1, None, 50)
+            .await
+            .unwrap();
 
         let o2 = make_obj(vec![0; 10]);
-        cache.set_with_priority("key2".into(), o2, None, 200).await.unwrap();
+        cache
+            .set_with_priority("key2".into(), o2, None, 200)
+            .await
+            .unwrap();
 
         let o3 = make_obj(vec![0; 10]);
-        cache.set_with_priority("key3".into(), o3, None, 150).await.unwrap();
+        cache
+            .set_with_priority("key3".into(), o3, None, 150)
+            .await
+            .unwrap();
 
         // key1 (priority 50) should be evicted as the lowest
         assert!(
@@ -564,7 +577,10 @@ mod tests {
         let cache = LruMemoryCache::new(100, 10_000);
         for i in 0..5 {
             let obj = make_obj(vec![0; 10]);
-            cache.set(format!("user:{i}:profile"), obj, None).await.unwrap();
+            cache
+                .set(format!("user:{i}:profile"), obj, None)
+                .await
+                .unwrap();
         }
         let obj = make_obj(vec![0; 10]);
         cache.set("admin:config".into(), obj, None).await.unwrap();

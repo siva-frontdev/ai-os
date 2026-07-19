@@ -9,9 +9,9 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use chrono::{DateTime, Utc};
+use osal_core::{Pid, SessionId};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc::{Receiver, Sender};
-use osal_core::{Pid, SessionId};
 
 /// Configuration for a batch command execution.
 #[derive(Debug, Clone, Serialize, Deserialize)]

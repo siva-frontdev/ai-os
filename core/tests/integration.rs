@@ -22,11 +22,17 @@ impl Service for HistoryService {
         &self.name
     }
     async fn start(&self) -> Result<(), CoreError> {
-        self.history.lock().await.push(format!("{}:start", self.name));
+        self.history
+            .lock()
+            .await
+            .push(format!("{}:start", self.name));
         Ok(())
     }
     async fn stop(&self) -> Result<(), CoreError> {
-        self.history.lock().await.push(format!("{}:stop", self.name));
+        self.history
+            .lock()
+            .await
+            .push(format!("{}:stop", self.name));
         Ok(())
     }
 }
@@ -63,15 +69,24 @@ async fn service_start_stop_via_application() {
         .unwrap();
 
     app.lifecycle().register(svc).await.unwrap();
-    assert_eq!(app.lifecycle().state("test-svc"), Some(ServiceState::Created));
+    assert_eq!(
+        app.lifecycle().state("test-svc"),
+        Some(ServiceState::Created)
+    );
 
     app.run().await.unwrap();
     assert!(app.is_running());
-    assert_eq!(app.lifecycle().state("test-svc"), Some(ServiceState::Running));
+    assert_eq!(
+        app.lifecycle().state("test-svc"),
+        Some(ServiceState::Running)
+    );
 
     app.shutdown().await.unwrap();
     assert!(!app.is_running());
-    assert_eq!(app.lifecycle().state("test-svc"), Some(ServiceState::Stopped));
+    assert_eq!(
+        app.lifecycle().state("test-svc"),
+        Some(ServiceState::Stopped)
+    );
 
     let hist = history.lock().await;
     assert_eq!(hist.len(), 2);
@@ -104,7 +119,9 @@ async fn event_bus_fires_started_event() {
 
     typed_subscribe::<StartedEvent, TestHandler>(
         app.event_bus().as_ref(),
-        Arc::new(TestHandler { flag: fired.clone() }),
+        Arc::new(TestHandler {
+            flag: fired.clone(),
+        }),
     )
     .unwrap();
 

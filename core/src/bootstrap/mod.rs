@@ -10,9 +10,7 @@ use crate::error::CoreError;
 use crate::events::{EventBus, InMemoryEventBus};
 use crate::health::{DefaultHealthMonitor, HealthMonitor};
 use crate::lifecycle::{DefaultLifecycleManager, LifecycleManager};
-use crate::logging::{
-    ConsoleSink, DefaultLogger, LogSink, Logger, NullLogger, TracingBridge,
-};
+use crate::logging::{ConsoleSink, DefaultLogger, LogSink, Logger, NullLogger, TracingBridge};
 use crate::registry::{DefaultServiceRegistry, ServiceRegistry};
 
 #[derive(Debug)]

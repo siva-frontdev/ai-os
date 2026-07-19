@@ -39,14 +39,12 @@
 mod types;
 
 pub use types::{
-    CpuCore, CpuSnapshot, MemorySnapshot, DiskSnapshot, NetworkIoSnapshot,
-    TemperatureSnapshot, SystemLoad, OsInfo, ResourceType, ThresholdOperator,
-    ResourceThreshold,
+    CpuCore, CpuSnapshot, DiskSnapshot, MemorySnapshot, NetworkIoSnapshot, OsInfo,
+    ResourceThreshold, ResourceType, SystemLoad, TemperatureSnapshot, ThresholdOperator,
 };
 
 pub use osal_core::{
-    SystemMonitor, MonitorError, MemoryInfo, DiskInfo, NetworkIO, ProcessInfo,
-    OsalEvent,
+    DiskInfo, MemoryInfo, MonitorError, NetworkIO, OsalEvent, ProcessInfo, SystemMonitor,
 };
 
 use async_trait::async_trait;
@@ -348,7 +346,10 @@ mod tests {
 
     #[test]
     fn test_threshold_operator_debug_and_eq() {
-        assert_eq!(ThresholdOperator::GreaterThan, ThresholdOperator::GreaterThan);
+        assert_eq!(
+            ThresholdOperator::GreaterThan,
+            ThresholdOperator::GreaterThan
+        );
         assert_ne!(ThresholdOperator::GreaterThan, ThresholdOperator::LessThan);
     }
 

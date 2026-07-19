@@ -3,22 +3,21 @@
 
 mod error;
 pub mod events;
-mod types;
 mod facade;
+mod types;
 
 pub use error::{
-    FilesystemError, ProcessError, TerminalError, NetworkError,
-    MonitorError, DeviceError, UserError, OsalError, OsalResult,
+    DeviceError, FilesystemError, MonitorError, NetworkError, OsalError, OsalResult, ProcessError,
+    TerminalError, UserError,
 };
 pub use events::OsalEvent;
-pub use types::*;
 pub use facade::{
-    KernelFacade, FileSystem, ProcessManager, Terminal, NetworkManager,
-    SystemMonitor, DeviceManager, UserManager, PlatformInfo,
-    FileMetadata, FileKind, DirEntry, ChildHandle, ProcessInfo,
-    PtyHandle, InterfaceInfo, NetworkConfig, MemoryInfo, DiskInfo,
-    NetworkIO, DeviceInfo, DeviceHandle, UserInfo, GroupInfo,
+    ChildHandle, DeviceHandle, DeviceInfo, DeviceManager, DirEntry, DiskInfo, FileKind,
+    FileMetadata, FileSystem, GroupInfo, InterfaceInfo, KernelFacade, MemoryInfo, NetworkConfig,
+    NetworkIO, NetworkManager, PlatformInfo, ProcessInfo, ProcessManager, PtyHandle, SystemMonitor,
+    Terminal, UserInfo, UserManager,
 };
+pub use types::*;
 
 #[cfg(test)]
 pub use facade::mock;

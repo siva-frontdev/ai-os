@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 use crate::relationship::Relationship;
 use crate::types::*;
@@ -337,14 +337,23 @@ mod tests {
 
     #[test]
     fn test_auto_id_generation() {
-        let a = MemoryObject::builder().content_type("text").content(vec![1]).build();
-        let b = MemoryObject::builder().content_type("text").content(vec![2]).build();
+        let a = MemoryObject::builder()
+            .content_type("text")
+            .content(vec![1])
+            .build();
+        let b = MemoryObject::builder()
+            .content_type("text")
+            .content(vec![2])
+            .build();
         assert_ne!(a.id, b.id);
     }
 
     #[test]
     fn test_auto_timestamp() {
-        let obj = MemoryObject::builder().content_type("text").content(vec![]).build();
+        let obj = MemoryObject::builder()
+            .content_type("text")
+            .content(vec![])
+            .build();
         let now = Timestamp::now();
         let diff = now.as_nanos() - obj.timestamp.as_nanos();
         assert!(diff.abs() < 1_000_000_000); // within 1 second

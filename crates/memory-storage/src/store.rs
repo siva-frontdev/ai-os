@@ -1,7 +1,5 @@
 use async_trait::async_trait;
-use memory_core::{
-    MemoryError, MemoryId, MemoryObject, MemoryResult, QueryFilter, StorageStats,
-};
+use memory_core::{MemoryError, MemoryId, MemoryObject, MemoryResult, QueryFilter, StorageStats};
 
 /// High-level storage abstraction for memory objects.
 ///
@@ -94,55 +92,81 @@ pub struct DefaultMemoryStore;
 #[async_trait]
 impl MemoryStore for DefaultMemoryStore {
     async fn insert(&self, _object: MemoryObject) -> MemoryResult<()> {
-        Err(MemoryError::StorageBackendError("DefaultMemoryStore: not configured".into()))
+        Err(MemoryError::StorageBackendError(
+            "DefaultMemoryStore: not configured".into(),
+        ))
     }
 
     async fn get(&self, _id: &MemoryId) -> MemoryResult<Option<MemoryObject>> {
-        Err(MemoryError::StorageBackendError("DefaultMemoryStore: not configured".into()))
+        Err(MemoryError::StorageBackendError(
+            "DefaultMemoryStore: not configured".into(),
+        ))
     }
 
     async fn update(&self, _object: MemoryObject) -> MemoryResult<()> {
-        Err(MemoryError::StorageBackendError("DefaultMemoryStore: not configured".into()))
+        Err(MemoryError::StorageBackendError(
+            "DefaultMemoryStore: not configured".into(),
+        ))
     }
 
     async fn delete(&self, _id: &MemoryId) -> MemoryResult<()> {
-        Err(MemoryError::StorageBackendError("DefaultMemoryStore: not configured".into()))
+        Err(MemoryError::StorageBackendError(
+            "DefaultMemoryStore: not configured".into(),
+        ))
     }
 
     async fn exists(&self, _id: &MemoryId) -> MemoryResult<bool> {
-        Err(MemoryError::StorageBackendError("DefaultMemoryStore: not configured".into()))
+        Err(MemoryError::StorageBackendError(
+            "DefaultMemoryStore: not configured".into(),
+        ))
     }
 
     async fn insert_batch(&self, _objects: &[MemoryObject]) -> MemoryResult<()> {
-        Err(MemoryError::StorageBackendError("DefaultMemoryStore: not configured".into()))
+        Err(MemoryError::StorageBackendError(
+            "DefaultMemoryStore: not configured".into(),
+        ))
     }
 
     async fn get_batch(&self, _ids: &[MemoryId]) -> MemoryResult<Vec<Option<MemoryObject>>> {
-        Err(MemoryError::StorageBackendError("DefaultMemoryStore: not configured".into()))
+        Err(MemoryError::StorageBackendError(
+            "DefaultMemoryStore: not configured".into(),
+        ))
     }
 
     async fn delete_batch(&self, _ids: &[MemoryId]) -> MemoryResult<()> {
-        Err(MemoryError::StorageBackendError("DefaultMemoryStore: not configured".into()))
+        Err(MemoryError::StorageBackendError(
+            "DefaultMemoryStore: not configured".into(),
+        ))
     }
 
     async fn query(&self, _filter: &QueryFilter) -> MemoryResult<Vec<MemoryObject>> {
-        Err(MemoryError::StorageBackendError("DefaultMemoryStore: not configured".into()))
+        Err(MemoryError::StorageBackendError(
+            "DefaultMemoryStore: not configured".into(),
+        ))
     }
 
     async fn count(&self, _filter: &QueryFilter) -> MemoryResult<u64> {
-        Err(MemoryError::StorageBackendError("DefaultMemoryStore: not configured".into()))
+        Err(MemoryError::StorageBackendError(
+            "DefaultMemoryStore: not configured".into(),
+        ))
     }
 
     async fn flush(&self) -> MemoryResult<()> {
-        Err(MemoryError::StorageBackendError("DefaultMemoryStore: not configured".into()))
+        Err(MemoryError::StorageBackendError(
+            "DefaultMemoryStore: not configured".into(),
+        ))
     }
 
     async fn compact(&self) -> MemoryResult<()> {
-        Err(MemoryError::StorageBackendError("DefaultMemoryStore: not configured".into()))
+        Err(MemoryError::StorageBackendError(
+            "DefaultMemoryStore: not configured".into(),
+        ))
     }
 
     async fn stats(&self) -> MemoryResult<StorageStats> {
-        Err(MemoryError::StorageBackendError("DefaultMemoryStore: not configured".into()))
+        Err(MemoryError::StorageBackendError(
+            "DefaultMemoryStore: not configured".into(),
+        ))
     }
 }
 

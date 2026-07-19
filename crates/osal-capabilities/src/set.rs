@@ -1,7 +1,7 @@
 //! `CapabilitySet` — a hash-set wrapper with utility methods.
-use std::collections::HashSet;
-use serde::{Deserialize, Serialize};
 use crate::Capability;
+use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 
 /// A set of capabilities that defines what a subject is allowed to do.
 ///
@@ -48,11 +48,7 @@ impl CapabilitySet {
     /// set.grant(Capability::FileRead("*".into()));
     /// assert!(set.check_path(Capability::FileRead, "/etc/passwd"));
     /// ```
-    pub fn check_path(
-        &self,
-        capability_fn: impl Fn(String) -> Capability,
-        path: &str,
-    ) -> bool {
+    pub fn check_path(&self, capability_fn: impl Fn(String) -> Capability, path: &str) -> bool {
         self.0.contains(&Capability::Admin)
             || self.0.contains(&capability_fn("*".to_string()))
             || self.0.contains(&capability_fn(path.to_string()))

@@ -9,17 +9,30 @@ use memory_core::{MemoryId, MemoryResult, RelationType};
 #[async_trait]
 pub trait RelationshipIndex: Send + Sync + std::fmt::Debug {
     /// Index a relationship from a source object to a target object.
-    async fn index_relationship(&self, source: &MemoryId, target: &MemoryId, relation_type: &RelationType) -> MemoryResult<()>;
+    async fn index_relationship(
+        &self,
+        source: &MemoryId,
+        target: &MemoryId,
+        relation_type: &RelationType,
+    ) -> MemoryResult<()>;
 
     /// Find all objects related to the given object, optionally filtered by relation type.
     ///
     /// Returns IDs of objects reachable via outgoing relationships from the source.
-    async fn find_related(&self, id: &MemoryId, relation_type: Option<&RelationType>) -> MemoryResult<Vec<MemoryId>>;
+    async fn find_related(
+        &self,
+        id: &MemoryId,
+        relation_type: Option<&RelationType>,
+    ) -> MemoryResult<Vec<MemoryId>>;
 
     /// Find all objects that reference the given object, optionally filtered by relation type.
     ///
     /// Returns IDs of objects that have incoming relationships to the target.
-    async fn find_incoming(&self, id: &MemoryId, relation_type: Option<&RelationType>) -> MemoryResult<Vec<MemoryId>>;
+    async fn find_incoming(
+        &self,
+        id: &MemoryId,
+        relation_type: Option<&RelationType>,
+    ) -> MemoryResult<Vec<MemoryId>>;
 
     /// Remove all relationships involving this object (both incoming and outgoing).
     async fn remove_object(&self, id: &MemoryId) -> MemoryResult<()>;
@@ -44,15 +57,28 @@ pub struct DefaultRelationshipIndex;
 
 #[async_trait]
 impl RelationshipIndex for DefaultRelationshipIndex {
-    async fn index_relationship(&self, _source: &MemoryId, _target: &MemoryId, _relation_type: &RelationType) -> MemoryResult<()> {
+    async fn index_relationship(
+        &self,
+        _source: &MemoryId,
+        _target: &MemoryId,
+        _relation_type: &RelationType,
+    ) -> MemoryResult<()> {
         Ok(())
     }
 
-    async fn find_related(&self, _id: &MemoryId, _relation_type: Option<&RelationType>) -> MemoryResult<Vec<MemoryId>> {
+    async fn find_related(
+        &self,
+        _id: &MemoryId,
+        _relation_type: Option<&RelationType>,
+    ) -> MemoryResult<Vec<MemoryId>> {
         Ok(Vec::new())
     }
 
-    async fn find_incoming(&self, _id: &MemoryId, _relation_type: Option<&RelationType>) -> MemoryResult<Vec<MemoryId>> {
+    async fn find_incoming(
+        &self,
+        _id: &MemoryId,
+        _relation_type: Option<&RelationType>,
+    ) -> MemoryResult<Vec<MemoryId>> {
         Ok(Vec::new())
     }
 
@@ -79,9 +105,18 @@ mod tests {
         let a = MemoryId::new();
         let b = MemoryId::new();
 
-        assert!(idx.index_relationship(&a, &b, &RelationType::References).await.is_ok());
+        assert!(
+            idx.index_relationship(&a, &b, &RelationType::References)
+                .await
+                .is_ok()
+        );
         assert!(idx.find_related(&a, None).await.unwrap().is_empty());
-        assert!(idx.find_incoming(&b, Some(&RelationType::References)).await.unwrap().is_empty());
+        assert!(
+            idx.find_incoming(&b, Some(&RelationType::References))
+                .await
+                .unwrap()
+                .is_empty()
+        );
         assert!(idx.remove_object(&a).await.is_ok());
         assert!(idx.rebuild().await.is_ok());
         assert_eq!(idx.len().await.unwrap(), 0);

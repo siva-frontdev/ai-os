@@ -19,27 +19,47 @@ pub struct Relationship {
 impl Relationship {
     /// Create a new relationship.
     pub fn new(target_id: MemoryId, relation_type: RelationType, weight: f32) -> Self {
-        Self { target_id, relation_type, weight }
+        Self {
+            target_id,
+            relation_type,
+            weight,
+        }
     }
 
     /// Create a "References" relationship with weight 1.0.
     pub fn reference(target_id: MemoryId) -> Self {
-        Self { target_id, relation_type: RelationType::References, weight: 1.0 }
+        Self {
+            target_id,
+            relation_type: RelationType::References,
+            weight: 1.0,
+        }
     }
 
     /// Create a "PartOf" relationship with weight 1.0.
     pub fn part_of(target_id: MemoryId) -> Self {
-        Self { target_id, relation_type: RelationType::PartOf, weight: 1.0 }
+        Self {
+            target_id,
+            relation_type: RelationType::PartOf,
+            weight: 1.0,
+        }
     }
 
     /// Create a "Sequence" relationship with weight 1.0.
     pub fn sequence(target_id: MemoryId) -> Self {
-        Self { target_id, relation_type: RelationType::Sequence, weight: 1.0 }
+        Self {
+            target_id,
+            relation_type: RelationType::Sequence,
+            weight: 1.0,
+        }
     }
 
     /// Create a "Supports" relationship with weight 1.0.
     pub fn supports(target_id: MemoryId) -> Self {
-        Self { target_id, relation_type: RelationType::Supports, weight: 1.0 }
+        Self {
+            target_id,
+            relation_type: RelationType::Supports,
+            weight: 1.0,
+        }
     }
 }
 
@@ -59,10 +79,22 @@ mod tests {
     #[test]
     fn test_convenience_constructors() {
         let id = MemoryId::new();
-        assert_eq!(Relationship::reference(id.clone()).relation_type, RelationType::References);
-        assert_eq!(Relationship::part_of(id.clone()).relation_type, RelationType::PartOf);
-        assert_eq!(Relationship::sequence(id.clone()).relation_type, RelationType::Sequence);
-        assert_eq!(Relationship::supports(id).relation_type, RelationType::Supports);
+        assert_eq!(
+            Relationship::reference(id.clone()).relation_type,
+            RelationType::References
+        );
+        assert_eq!(
+            Relationship::part_of(id.clone()).relation_type,
+            RelationType::PartOf
+        );
+        assert_eq!(
+            Relationship::sequence(id.clone()).relation_type,
+            RelationType::Sequence
+        );
+        assert_eq!(
+            Relationship::supports(id).relation_type,
+            RelationType::Supports
+        );
     }
 
     #[test]

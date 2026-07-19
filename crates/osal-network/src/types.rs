@@ -61,8 +61,6 @@ pub struct TcpConnection {
     pub peer_addr: SocketAddr,
 }
 
-
-
 /// The system's DNS configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DnsConfig {

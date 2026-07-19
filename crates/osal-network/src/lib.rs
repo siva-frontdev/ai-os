@@ -30,15 +30,12 @@
 mod types;
 
 pub use types::{
-    ConnectivityStatus, DnsConfig, InterfaceFlags, NetworkInterface,
-    PingResult, TcpConnection,
+    ConnectivityStatus, DnsConfig, InterfaceFlags, NetworkInterface, PingResult, TcpConnection,
 };
 
 pub use tokio::net::{TcpListener, UdpSocket};
 
-pub use osal_core::{
-    InterfaceInfo, NetworkConfig, NetworkError, NetworkIO, NetworkManager,
-};
+pub use osal_core::{InterfaceInfo, NetworkConfig, NetworkError, NetworkIO, NetworkManager};
 
 use std::net::IpAddr;
 
@@ -132,10 +129,7 @@ mod tests {
     async fn default_dns_lookup_returns_error() {
         let mgr = DefaultNetworkManager;
         let ctx = test_context();
-        let err = mgr
-            .dns_lookup(&ctx, "example.com")
-            .await
-            .unwrap_err();
+        let err = mgr.dns_lookup(&ctx, "example.com").await.unwrap_err();
         assert!(matches!(err, NetworkError::DnsFailed(_)));
     }
 
@@ -143,10 +137,7 @@ mod tests {
     async fn default_set_hostname_returns_error() {
         let mgr = DefaultNetworkManager;
         let ctx = test_context();
-        let err = mgr
-            .set_hostname(&ctx, "myhost")
-            .await
-            .unwrap_err();
+        let err = mgr.set_hostname(&ctx, "myhost").await.unwrap_err();
         assert!(matches!(err, NetworkError::ConfigurationFailed(_)));
     }
 

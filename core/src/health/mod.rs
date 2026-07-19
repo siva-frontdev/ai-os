@@ -118,11 +118,8 @@ impl HealthMonitor for DefaultHealthMonitor {
     }
 
     async fn run_checks(&self) -> Vec<HealthReport> {
-        let checks: Vec<Arc<dyn HealthCheck>> = self
-            .checks
-            .read()
-            .map(|g| g.clone())
-            .unwrap_or_default();
+        let checks: Vec<Arc<dyn HealthCheck>> =
+            self.checks.read().map(|g| g.clone()).unwrap_or_default();
 
         let mut reports = Vec::with_capacity(checks.len());
         for check in &checks {
@@ -264,8 +261,20 @@ mod tests {
     #[test]
     fn health_status_methods() {
         assert!(HealthStatus::Healthy.is_healthy());
-        assert!(HealthStatus::Degraded { message: "x".into() }.is_degraded());
-        assert!(HealthStatus::Unhealthy { message: "x".into() }.is_unhealthy());
-        assert_eq!(HealthStatus::Unhealthy { message: "x".into() }.summary(), "unhealthy");
+        assert!(HealthStatus::Degraded {
+            message: "x".into()
+        }
+        .is_degraded());
+        assert!(HealthStatus::Unhealthy {
+            message: "x".into()
+        }
+        .is_unhealthy());
+        assert_eq!(
+            HealthStatus::Unhealthy {
+                message: "x".into()
+            }
+            .summary(),
+            "unhealthy"
+        );
     }
 }

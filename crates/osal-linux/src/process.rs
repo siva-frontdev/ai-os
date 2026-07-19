@@ -55,9 +55,9 @@ impl ProcessManager for LinuxProcessManager {
             });
         }
 
-        let child = cmd
-            .spawn()
-            .map_err(|e| ProcessError::ExecutionFailed(format!("failed to spawn {}: {}", command, e)))?;
+        let child = cmd.spawn().map_err(|e| {
+            ProcessError::ExecutionFailed(format!("failed to spawn {}: {}", command, e))
+        })?;
 
         let pid = child.id().ok_or_else(|| {
             ProcessError::ExecutionFailed("child process id not available".to_string())
@@ -66,9 +66,7 @@ impl ProcessManager for LinuxProcessManager {
         let mut map = self.children.lock().await;
         map.insert(pid, child);
 
-        Ok(ChildHandle {
-            pid: Pid(pid),
-        })
+        Ok(ChildHandle { pid: Pid(pid) })
     }
 
     async fn kill(
@@ -91,12 +89,9 @@ impl ProcessManager for LinuxProcessManager {
                 let err = io::Error::last_os_error();
                 match err.raw_os_error() {
                     Some(libc::ESRCH) => Err(ProcessError::NotFound(pid)),
-                    Some(libc::EPERM) | Some(libc::EACCES) => {
-                        Err(ProcessError::NotAllowed(format!(
-                            "permission denied to signal pid {}: {}",
-                            pid_i32, err
-                        )))
-                    }
+                    Some(libc::EPERM) | Some(libc::EACCES) => Err(ProcessError::NotAllowed(
+                        format!("permission denied to signal pid {}: {}", pid_i32, err),
+                    )),
                     Some(libc::EINVAL) => Err(ProcessError::InvalidSignal(signal)),
                     _ => Err(ProcessError::Io(format!(
                         "kill({}, {}): {}",
@@ -111,11 +106,7 @@ impl ProcessManager for LinuxProcessManager {
         .map_err(|e| ProcessError::Io(format!("spawn_blocking join: {}", e)))?
     }
 
-    async fn suspend(
-        &self,
-        _ctx: &CapabilityContext,
-        pid: Pid,
-    ) -> Result<(), ProcessError> {
+    async fn suspend(&self, _ctx: &CapabilityContext, pid: Pid) -> Result<(), ProcessError> {
         let pid_i32 = pid.0 as i32;
         tokio::task::spawn_blocking(move || {
             // SAFETY: libc::kill with SIGSTOP is safe per POSIX semantics.
@@ -126,12 +117,9 @@ impl ProcessManager for LinuxProcessManager {
                 let err = io::Error::last_os_error();
                 match err.raw_os_error() {
                     Some(libc::ESRCH) => Err(ProcessError::NotFound(pid)),
-                    Some(libc::EPERM) | Some(libc::EACCES) => {
-                        Err(ProcessError::NotAllowed(format!(
-                            "permission denied to suspend pid {}: {}",
-                            pid_i32, err
-                        )))
-                    }
+                    Some(libc::EPERM) | Some(libc::EACCES) => Err(ProcessError::NotAllowed(
+                        format!("permission denied to suspend pid {}: {}", pid_i32, err),
+                    )),
                     _ => Err(ProcessError::Io(format!("suspend({}): {}", pid_i32, err))),
                 }
             } else {
@@ -142,11 +130,7 @@ impl ProcessManager for LinuxProcessManager {
         .map_err(|e| ProcessError::Io(format!("spawn_blocking join: {}", e)))?
     }
 
-    async fn resume(
-        &self,
-        _ctx: &CapabilityContext,
-        pid: Pid,
-    ) -> Result<(), ProcessError> {
+    async fn resume(&self, _ctx: &CapabilityContext, pid: Pid) -> Result<(), ProcessError> {
         let pid_i32 = pid.0 as i32;
         tokio::task::spawn_blocking(move || {
             // SAFETY: libc::kill with SIGCONT is safe per POSIX semantics.
@@ -156,12 +140,9 @@ impl ProcessManager for LinuxProcessManager {
                 let err = io::Error::last_os_error();
                 match err.raw_os_error() {
                     Some(libc::ESRCH) => Err(ProcessError::NotFound(pid)),
-                    Some(libc::EPERM) | Some(libc::EACCES) => {
-                        Err(ProcessError::NotAllowed(format!(
-                            "permission denied to resume pid {}: {}",
-                            pid_i32, err
-                        )))
-                    }
+                    Some(libc::EPERM) | Some(libc::EACCES) => Err(ProcessError::NotAllowed(
+                        format!("permission denied to resume pid {}: {}", pid_i32, err),
+                    )),
                     _ => Err(ProcessError::Io(format!("resume({}): {}", pid_i32, err))),
                 }
             } else {
@@ -172,12 +153,9 @@ impl ProcessManager for LinuxProcessManager {
         .map_err(|e| ProcessError::Io(format!("spawn_blocking join: {}", e)))?
     }
 
-    async fn list(
-        &self,
-        _ctx: &CapabilityContext,
-    ) -> Result<Vec<ProcessInfo>, ProcessError> {
-        let entries = fs::read_dir("/proc")
-            .map_err(|e| ProcessError::Io(format!("read /proc: {}", e)))?;
+    async fn list(&self, _ctx: &CapabilityContext) -> Result<Vec<ProcessInfo>, ProcessError> {
+        let entries =
+            fs::read_dir("/proc").map_err(|e| ProcessError::Io(format!("read /proc: {}", e)))?;
 
         let mut processes = Vec::new();
         for entry in entries {
@@ -201,11 +179,7 @@ impl ProcessManager for LinuxProcessManager {
         Ok(processes)
     }
 
-    async fn wait(
-        &self,
-        _ctx: &CapabilityContext,
-        pid: Pid,
-    ) -> Result<ExitStatus, ProcessError> {
+    async fn wait(&self, _ctx: &CapabilityContext, pid: Pid) -> Result<ExitStatus, ProcessError> {
         let mut map = self.children.lock().await;
         let child = map.remove(&pid.0);
         drop(map);
@@ -229,17 +203,12 @@ impl ProcessManager for LinuxProcessManager {
             if ret == -1 {
                 let err = io::Error::last_os_error();
                 match err.raw_os_error() {
-                    Some(libc::ESRCH) | Some(libc::ECHILD) => {
-                        Err(ProcessError::NotFound(pid))
-                    }
+                    Some(libc::ESRCH) | Some(libc::ECHILD) => Err(ProcessError::NotFound(pid)),
                     Some(libc::EINTR) => Err(ProcessError::Io(format!(
                         "waitpid({}) interrupted by signal",
                         pid_i32
                     ))),
-                    _ => Err(ProcessError::Io(format!(
-                        "waitpid({}): {}",
-                        pid_i32, err
-                    ))),
+                    _ => Err(ProcessError::Io(format!("waitpid({}): {}", pid_i32, err))),
                 }
             } else {
                 Ok(convert_wstatus(wstatus))
@@ -313,14 +282,12 @@ fn parse_stat(pid: u64) -> Result<(String, u64, u64, u64), io::Error> {
 
     // The comm field (field 2) is enclosed in parentheses and may contain
     // parentheses itself. Find the last ") " to correctly delimit it.
-    let paren_end = content
-        .rfind(") ")
-        .ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::InvalidData,
-                format!("malformed /proc/{}/stat: no closing paren", pid),
-            )
-        })?;
+    let paren_end = content.rfind(") ").ok_or_else(|| {
+        io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("malformed /proc/{}/stat: no closing paren", pid),
+        )
+    })?;
 
     let rest = &content[paren_end + 2..];
     let fields: Vec<&str> = rest.split_whitespace().collect();
@@ -361,8 +328,8 @@ fn parse_status(pid: u64) -> Result<(Uid, u64), io::Error> {
 /// Read all available `/proc` information for a given PID.
 fn read_process_info(pid: u64) -> Result<ProcessInfo, ProcessError> {
     let cmdline = read_cmdline(pid).unwrap_or_default();
-    let (state, ppid, _utime, _stime) = parse_stat(pid)
-        .map_err(|e| ProcessError::Io(format!("read /proc/{}/stat: {}", pid, e)))?;
+    let (state, ppid, _utime, _stime) =
+        parse_stat(pid).map_err(|e| ProcessError::Io(format!("read /proc/{}/stat: {}", pid, e)))?;
     let (user, memory) = parse_status(pid)
         .map_err(|e| ProcessError::Io(format!("read /proc/{}/status: {}", pid, e)))?;
 
@@ -394,7 +361,11 @@ mod tests {
         assert!(status.success());
     }
 
-    async fn spawn_kill_cleanup(pm: &LinuxProcessManager, ctx: &CapabilityContext, sleep_secs: &str) {
+    async fn spawn_kill_cleanup(
+        pm: &LinuxProcessManager,
+        ctx: &CapabilityContext,
+        sleep_secs: &str,
+    ) {
         let handle = pm.spawn(ctx, "sleep", &[sleep_secs]).await.unwrap();
         pm.kill(ctx, handle.pid, Signal(9)).await.unwrap();
         let status = pm.wait(ctx, handle.pid).await.unwrap();
@@ -427,7 +398,10 @@ mod tests {
         let pm = LinuxProcessManager::new();
         let ctx = dummy_ctx();
         let result = pm.kill(&ctx, Pid(1), Signal(0)).await;
-        assert!(matches!(result.unwrap_err(), ProcessError::InvalidSignal(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            ProcessError::InvalidSignal(_)
+        ));
     }
 
     #[tokio::test]

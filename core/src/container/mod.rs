@@ -70,7 +70,10 @@ impl Container for InMemoryContainer {
     }
 
     fn contains(&self, key: &str) -> bool {
-        self.services.read().map(|g| g.contains_key(key)).unwrap_or(false)
+        self.services
+            .read()
+            .map(|g| g.contains_key(key))
+            .unwrap_or(false)
     }
 }
 

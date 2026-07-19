@@ -273,9 +273,7 @@ mod tests {
     async fn start_stop_cycle() {
         let manager = DefaultLifecycleManager::new();
         manager
-            .register(Arc::new(NoopService {
-                name: "svc".into(),
-            }))
+            .register(Arc::new(NoopService { name: "svc".into() }))
             .await
             .unwrap();
         manager.start_all().await.unwrap();
@@ -313,15 +311,11 @@ mod tests {
     async fn duplicate_registration_rejected() {
         let manager = DefaultLifecycleManager::new();
         manager
-            .register(Arc::new(NoopService {
-                name: "dup".into(),
-            }))
+            .register(Arc::new(NoopService { name: "dup".into() }))
             .await
             .unwrap();
         let result = manager
-            .register(Arc::new(NoopService {
-                name: "dup".into(),
-            }))
+            .register(Arc::new(NoopService { name: "dup".into() }))
             .await;
         assert!(result.is_err());
     }
@@ -332,9 +326,7 @@ mod tests {
         rt.block_on(async {
             let manager = DefaultLifecycleManager::new();
             manager
-                .register(Arc::new(NoopService {
-                    name: "svc".into(),
-                }))
+                .register(Arc::new(NoopService { name: "svc".into() }))
                 .await
                 .unwrap();
             manager.start_all().await.unwrap();

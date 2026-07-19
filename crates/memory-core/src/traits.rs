@@ -1,7 +1,7 @@
+use crate::MemoryError;
 use crate::memory_object::MemoryObject;
 use crate::relationship::Relationship;
 use crate::types::{Checksum, MemoryImportance, MemoryPriority};
-use crate::MemoryError;
 
 /// Validation trait for types that can be validated.
 ///
@@ -27,7 +27,9 @@ impl Validate for MemoryObject {
 
         // Validate that timestamp is not in the far future (optional sanity check)
         let now = crate::types::Timestamp::now();
-        if self.timestamp > now && self.timestamp.as_nanos() - now.as_nanos() > 3_600_000_000_000_000_000 {
+        if self.timestamp > now
+            && self.timestamp.as_nanos() - now.as_nanos() > 3_600_000_000_000_000_000
+        {
             // 1 hour in the future as nanoseconds, allow some clock skew
             return Err(MemoryError::ValidationError(
                 "timestamp is unreasonably far in the future".into(),
@@ -115,17 +117,13 @@ mod tests {
 
     #[test]
     fn test_validate_valid_memory_object() {
-        let obj = MemoryObject::builder()
-            .content_type("text/plain")
-            .build();
+        let obj = MemoryObject::builder().content_type("text/plain").build();
         assert!(obj.validate().is_ok());
     }
 
     #[test]
     fn test_validate_empty_content_type() {
-        let obj = MemoryObject::builder()
-            .content_type("")
-            .build();
+        let obj = MemoryObject::builder().content_type("").build();
         assert!(obj.validate().is_err());
     }
 

@@ -19,7 +19,8 @@ pub trait TagIndex: Send + Sync + std::fmt::Debug {
     /// If `match_all` is `true`, results include only objects that have all
     /// specified tags (AND semantics). If `false`, results include objects
     /// that have any of the specified tags (OR semantics).
-    async fn search_by_tags(&self, tags: &[String], match_all: bool) -> MemoryResult<Vec<MemoryId>>;
+    async fn search_by_tags(&self, tags: &[String], match_all: bool)
+    -> MemoryResult<Vec<MemoryId>>;
 
     /// Remove a memory object from the tag index.
     async fn remove_object(&self, id: &MemoryId) -> MemoryResult<()>;
@@ -55,7 +56,11 @@ impl TagIndex for DefaultTagIndex {
         Ok(Vec::new())
     }
 
-    async fn search_by_tags(&self, _tags: &[String], _match_all: bool) -> MemoryResult<Vec<MemoryId>> {
+    async fn search_by_tags(
+        &self,
+        _tags: &[String],
+        _match_all: bool,
+    ) -> MemoryResult<Vec<MemoryId>> {
         Ok(Vec::new())
     }
 

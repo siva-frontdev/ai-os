@@ -1,9 +1,7 @@
 use std::sync::RwLock;
 
 use async_trait::async_trait;
-use memory_core::{
-    MemoryError, MemoryId, MemoryObject, MemoryResult, QueryFilter, StorageStats,
-};
+use memory_core::{MemoryError, MemoryId, MemoryObject, MemoryResult, QueryFilter, StorageStats};
 
 use crate::store::MemoryStore;
 
@@ -111,7 +109,9 @@ impl MemoryStore for MockStore {
     async fn insert(&self, object: MemoryObject) -> MemoryResult<()> {
         *self.insert_calls.write().expect("lock") += 1;
         if *self.fail_on_insert.read().expect("lock") {
-            return Err(MemoryError::StorageBackendError("MockStore: insert forced failure".into()));
+            return Err(MemoryError::StorageBackendError(
+                "MockStore: insert forced failure".into(),
+            ));
         }
         let mut map = self.objects.write().expect("lock");
         map.insert(object.id, object);
@@ -121,7 +121,9 @@ impl MemoryStore for MockStore {
     async fn get(&self, id: &MemoryId) -> MemoryResult<Option<MemoryObject>> {
         *self.get_calls.write().expect("lock") += 1;
         if *self.fail_on_get.read().expect("lock") {
-            return Err(MemoryError::StorageBackendError("MockStore: get forced failure".into()));
+            return Err(MemoryError::StorageBackendError(
+                "MockStore: get forced failure".into(),
+            ));
         }
         let map = self.objects.read().expect("lock");
         Ok(map.get(id).cloned())
@@ -130,7 +132,9 @@ impl MemoryStore for MockStore {
     async fn update(&self, object: MemoryObject) -> MemoryResult<()> {
         *self.update_calls.write().expect("lock") += 1;
         if *self.fail_on_update.read().expect("lock") {
-            return Err(MemoryError::StorageBackendError("MockStore: update forced failure".into()));
+            return Err(MemoryError::StorageBackendError(
+                "MockStore: update forced failure".into(),
+            ));
         }
         let mut map = self.objects.write().expect("lock");
         if !map.contains_key(&object.id) {
@@ -143,7 +147,9 @@ impl MemoryStore for MockStore {
     async fn delete(&self, id: &MemoryId) -> MemoryResult<()> {
         *self.delete_calls.write().expect("lock") += 1;
         if *self.fail_on_delete.read().expect("lock") {
-            return Err(MemoryError::StorageBackendError("MockStore: delete forced failure".into()));
+            return Err(MemoryError::StorageBackendError(
+                "MockStore: delete forced failure".into(),
+            ));
         }
         let mut map = self.objects.write().expect("lock");
         map.remove(id);

@@ -20,6 +20,9 @@ members = [
   "crates/memory-working",
   "crates/memory-context",
   "crates/memory-cache",
+  "crates/memory-episodic",
+  "crates/memory-semantic",
+  "crates/memory-knowledge",
 ]
 
 [workspace.package]

@@ -1,8 +1,8 @@
 //! Cache statistics tracking — hit/miss/eviction counters and hit-rate computation.
 
-use std::sync::atomic::{AtomicU64, Ordering};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::error::MemoryCacheResult;
 
