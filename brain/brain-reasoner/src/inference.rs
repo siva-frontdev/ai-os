@@ -7,7 +7,9 @@ use brain_core::types::Confidence;
 pub struct InferenceEngine;
 
 impl InferenceEngine {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 
     pub fn infer(
         &self,
@@ -36,5 +38,7 @@ impl InferenceEngine {
 }
 
 impl Default for InferenceEngine {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }

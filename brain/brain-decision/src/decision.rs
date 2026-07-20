@@ -1,7 +1,5 @@
 use crate::errors::{DecisionError, DecisionResult};
-use crate::types::{
-    ConfidenceScore, ConflictDescription, Decision, Explanation,
-};
+use crate::types::{ConfidenceScore, ConflictDescription, Decision, Explanation};
 use brain_core::budget::CognitiveBudget;
 use brain_core::context::{DecisionContext, OptionRef};
 use brain_core::types::Confidence;
@@ -13,7 +11,9 @@ pub struct DecisionMaker {
 
 impl DecisionMaker {
     pub fn new(confidence_threshold: f64) -> Self {
-        Self { confidence_threshold }
+        Self {
+            confidence_threshold,
+        }
     }
 
     pub fn make_decision(
@@ -57,9 +57,16 @@ impl DecisionMaker {
             };
         }
 
-        let avg_conf: f64 = ctx.options.iter().map(|o| o.confidence.raw() as f64).sum::<f64>() / ctx.options.len() as f64;
-        let avg_benefit: f64 = ctx.options.iter().map(|o| o.estimated_benefit).sum::<f64>() / ctx.options.len() as f64;
-        let avg_risk: f64 = ctx.options.iter().map(|o| o.estimated_risk).sum::<f64>() / ctx.options.len() as f64;
+        let avg_conf: f64 = ctx
+            .options
+            .iter()
+            .map(|o| o.confidence.raw() as f64)
+            .sum::<f64>()
+            / ctx.options.len() as f64;
+        let avg_benefit: f64 =
+            ctx.options.iter().map(|o| o.estimated_benefit).sum::<f64>() / ctx.options.len() as f64;
+        let avg_risk: f64 =
+            ctx.options.iter().map(|o| o.estimated_risk).sum::<f64>() / ctx.options.len() as f64;
 
         let evidence_strength = avg_conf;
         let model_confidence = avg_conf;
@@ -68,22 +75,37 @@ impl DecisionMaker {
 
         let overall = avg_conf * 0.4 + consistency_score * 0.3 + (1.0 - uncertainty) * 0.3;
 
-        ConfidenceScore { overall, evidence_strength, model_confidence, consistency_score, uncertainty }
+        ConfidenceScore {
+            overall,
+            evidence_strength,
+            model_confidence,
+            consistency_score,
+            uncertainty,
+        }
     }
 
-    fn select_option<'a>(&self, ctx: &'a DecisionContext, _score: &ConfidenceScore) -> DecisionResult<&'a OptionRef> {
-        ctx.options.iter()
+    fn select_option<'a>(
+        &self,
+        ctx: &'a DecisionContext,
+        _score: &ConfidenceScore,
+    ) -> DecisionResult<&'a OptionRef> {
+        ctx.options
+            .iter()
             .max_by(|a, b| {
                 let a_val = a.estimated_benefit - a.estimated_cost - a.estimated_risk;
                 let b_val = b.estimated_benefit - b.estimated_cost - b.estimated_risk;
-                a_val.partial_cmp(&b_val).unwrap_or(std::cmp::Ordering::Equal)
+                a_val
+                    .partial_cmp(&b_val)
+                    .unwrap_or(std::cmp::Ordering::Equal)
             })
             .ok_or_else(|| DecisionError::NoDecision("no options available".into()))
     }
 
     #[allow(dead_code)]
     fn resolve_conflict(&self, _ctx: &DecisionContext) -> DecisionResult<ConflictDescription> {
-        Err(DecisionError::UnresolvableConflict("no conflict resolution strategy defined".into()))
+        Err(DecisionError::UnresolvableConflict(
+            "no conflict resolution strategy defined".into(),
+        ))
     }
 
     pub fn generate_explanation(
@@ -98,14 +120,23 @@ impl DecisionMaker {
             format!("evidence strength: {:.2}", score.evidence_strength),
             format!("consistency score: {:.2}", score.consistency_score),
         ];
-        factors.push(format!("selected option: {} with expected benefit {:.2}", chosen.option_id, chosen.estimated_benefit));
+        factors.push(format!(
+            "selected option: {} with expected benefit {:.2}",
+            chosen.option_id, chosen.estimated_benefit
+        ));
 
         Explanation {
             decision_id: ctx.decision_id,
-            summary: format!("decision based on multi-factor analysis, confidence {:.2}", score.overall),
+            summary: format!(
+                "decision based on multi-factor analysis, confidence {:.2}",
+                score.overall
+            ),
             key_factors: factors,
             alternatives_considered: ctx.options.iter().map(|o| o.option_id.clone()).collect(),
-            confidence_rationale: format!("aggregated confidence from {} options", ctx.options.len()),
+            confidence_rationale: format!(
+                "aggregated confidence from {} options",
+                ctx.options.len()
+            ),
             policy_compliance: "policy evaluation passed".into(),
         }
     }

@@ -1,7 +1,7 @@
 //! Planning events.
 use crate::ids::{GoalId, PlanId};
-use memory_core::Timestamp;
 use ai_os_core::events::Event;
+use memory_core::Timestamp;
 use serde::{Deserialize, Serialize};
 
 /// Published when a new plan is generated.

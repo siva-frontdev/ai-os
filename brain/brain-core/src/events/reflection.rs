@@ -1,7 +1,7 @@
 //! Reflection events.
-use crate::ids::{DecisionId, ReflectionId, LessonId};
-use memory_core::Timestamp;
+use crate::ids::{DecisionId, LessonId, ReflectionId};
 use ai_os_core::events::Event;
+use memory_core::Timestamp;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -16,7 +16,9 @@ pub struct ReflectionCompleted {
 }
 
 impl Event for ReflectionCompleted {
-    fn event_type(&self) -> &'static str { "brain.reflection.completed" }
+    fn event_type(&self) -> &'static str {
+        "brain.reflection.completed"
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -29,5 +31,7 @@ pub struct OutcomeObserved {
 }
 
 impl Event for OutcomeObserved {
-    fn event_type(&self) -> &'static str { "brain.reflection.outcome.observed" }
+    fn event_type(&self) -> &'static str {
+        "brain.reflection.outcome.observed"
+    }
 }

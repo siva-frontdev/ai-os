@@ -1,14 +1,17 @@
 #[cfg(test)]
 mod tests {
-    use brain_core::ids::GoalId;
-    use uuid::Uuid;
     use crate::lesson_store::LessonStore;
     use crate::reflector::Reflector;
     use crate::types::{Lesson, MistakeCategory};
+    use brain_core::ids::GoalId;
+    use uuid::Uuid;
 
     fn make_goal_id(n: u8) -> GoalId {
         GoalId::from(Uuid::from_bytes({
-            let mut buf = [0u8; 16]; buf[0] = n; buf[15] = n; buf
+            let mut buf = [0u8; 16];
+            buf[0] = n;
+            buf[15] = n;
+            buf
         }))
     }
 
@@ -31,7 +34,9 @@ mod tests {
     fn test_reflector_detects_mistakes() {
         let r = Reflector::new();
         let goal = make_goal_id(1);
-        let reflection = r.reflect(goal, "expected great outcome", "poor outcome").unwrap();
+        let reflection = r
+            .reflect(goal, "expected great outcome", "poor outcome")
+            .unwrap();
         assert!(!reflection.mistakes.is_empty());
         assert!(!reflection.improvements.is_empty());
     }

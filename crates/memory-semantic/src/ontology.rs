@@ -1,9 +1,9 @@
+use crate::error::{SemanticError, SemanticResult};
+use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::RwLock;
 use uuid::Uuid;
-use serde::{Serialize, Deserialize};
-use async_trait::async_trait;
-use crate::error::{SemanticError, SemanticResult};
 
 /// Descriptor for an ontology category.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -15,7 +15,11 @@ pub struct CategoryDescriptor {
 
 impl CategoryDescriptor {
     pub fn new(name: impl Into<String>, description: impl Into<String>) -> Self {
-        Self { name: name.into(), description: description.into(), min_confidence: 0.0 }
+        Self {
+            name: name.into(),
+            description: description.into(),
+            min_confidence: 0.0,
+        }
     }
 }
 
@@ -31,7 +35,12 @@ pub struct OntologyNode {
 #[async_trait]
 pub trait OntologyProvider: Send + Sync + std::fmt::Debug {
     async fn register_category(&self, descriptor: CategoryDescriptor) -> SemanticResult<()>;
-    async fn assign_category(&self, concept_id: Uuid, category: String, confidence: f32) -> SemanticResult<()>;
+    async fn assign_category(
+        &self,
+        concept_id: Uuid,
+        category: String,
+        confidence: f32,
+    ) -> SemanticResult<()>;
     async fn resolve(&self, concept_id: &Uuid) -> SemanticResult<Option<OntologyNode>>;
     async fn list_categories(&self) -> SemanticResult<Vec<CategoryDescriptor>>;
 }
@@ -57,22 +66,36 @@ impl OntologyProvider for DefaultOntologyProvider {
             .insert(descriptor.name.clone(), descriptor);
         Ok(())
     }
-    async fn assign_category(&self, concept_id: Uuid, category: String, confidence: f32) -> SemanticResult<()> {
+    async fn assign_category(
+        &self,
+        concept_id: Uuid,
+        category: String,
+        confidence: f32,
+    ) -> SemanticResult<()> {
         self.assignments
             .write()
             .map_err(|e| SemanticError::Internal(e.to_string()))?
-            .insert(concept_id, OntologyNode { concept_id, category, confidence });
+            .insert(
+                concept_id,
+                OntologyNode {
+                    concept_id,
+                    category,
+                    confidence,
+                },
+            );
         Ok(())
     }
     async fn resolve(&self, concept_id: &Uuid) -> SemanticResult<Option<OntologyNode>> {
-        Ok(self.assignments
+        Ok(self
+            .assignments
             .read()
             .map_err(|e| SemanticError::Internal(e.to_string()))?
             .get(concept_id)
             .cloned())
     }
     async fn list_categories(&self) -> SemanticResult<Vec<CategoryDescriptor>> {
-        Ok(self.categories
+        Ok(self
+            .categories
             .read()
             .map_err(|e| SemanticError::Internal(e.to_string()))?
             .values()

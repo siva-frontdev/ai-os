@@ -1,6 +1,6 @@
 //! `ReasoningContext` — context passed to the Reasoner.
-use crate::ids::{GoalId, ThoughtId};
 use crate::budget::CognitiveBudget;
+use crate::ids::{GoalId, ThoughtId};
 use memory_core::Timestamp;
 use serde::{Deserialize, Serialize};
 

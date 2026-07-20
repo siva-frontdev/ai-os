@@ -1,6 +1,6 @@
+use async_trait::async_trait;
 use std::collections::{BTreeMap, HashMap};
 use std::sync::RwLock;
-use async_trait::async_trait;
 use uuid::Uuid;
 
 use crate::error::{EpisodicError, EpisodicResult};
@@ -50,10 +50,12 @@ impl Timeline for InMemoryTimeline {
         Ok(())
     }
     async fn range(&self, start_ns: i64, end_ns: i64) -> EpisodicResult<Vec<EpisodicEvent>> {
-        let ts_map = self.by_timestamp
+        let ts_map = self
+            .by_timestamp
             .read()
             .map_err(|e| EpisodicError::Internal(e.to_string()))?;
-        let id_map = self.by_id
+        let id_map = self
+            .by_id
             .read()
             .map_err(|e| EpisodicError::Internal(e.to_string()))?;
         let mut results = Vec::new();
@@ -67,10 +69,12 @@ impl Timeline for InMemoryTimeline {
         Ok(results)
     }
     async fn recent(&self, n: usize) -> EpisodicResult<Vec<EpisodicEvent>> {
-        let ts_map = self.by_timestamp
+        let ts_map = self
+            .by_timestamp
             .read()
             .map_err(|e| EpisodicError::Internal(e.to_string()))?;
-        let id_map = self.by_id
+        let id_map = self
+            .by_id
             .read()
             .map_err(|e| EpisodicError::Internal(e.to_string()))?;
         let mut results = Vec::new();
@@ -86,10 +90,12 @@ impl Timeline for InMemoryTimeline {
         Ok(results)
     }
     async fn oldest(&self, n: usize) -> EpisodicResult<Vec<EpisodicEvent>> {
-        let ts_map = self.by_timestamp
+        let ts_map = self
+            .by_timestamp
             .read()
             .map_err(|e| EpisodicError::Internal(e.to_string()))?;
-        let id_map = self.by_id
+        let id_map = self
+            .by_id
             .read()
             .map_err(|e| EpisodicError::Internal(e.to_string()))?;
         let mut results = Vec::new();
@@ -103,7 +109,8 @@ impl Timeline for InMemoryTimeline {
         Ok(results)
     }
     async fn remove(&self, id: &Uuid) -> EpisodicResult<()> {
-        let mut ts_map = self.by_timestamp
+        let mut ts_map = self
+            .by_timestamp
             .write()
             .map_err(|e| EpisodicError::Internal(e.to_string()))?;
         for (_ts, ids) in ts_map.iter_mut() {
@@ -116,14 +123,17 @@ impl Timeline for InMemoryTimeline {
         Ok(())
     }
     async fn rebuild(&self) -> EpisodicResult<()> {
-        let id_map = self.by_id
+        let id_map = self
+            .by_id
             .read()
             .map_err(|e| EpisodicError::Internal(e.to_string()))?;
         drop(id_map); // release read lock
-        let mut ts_map = self.by_timestamp
+        let mut ts_map = self
+            .by_timestamp
             .write()
             .map_err(|e| EpisodicError::Internal(e.to_string()))?;
-        let id_map = self.by_id
+        let id_map = self
+            .by_id
             .read()
             .map_err(|e| EpisodicError::Internal(e.to_string()))?;
         ts_map.clear();
@@ -133,7 +143,8 @@ impl Timeline for InMemoryTimeline {
         Ok(())
     }
     async fn len(&self) -> EpisodicResult<usize> {
-        Ok(self.by_id
+        Ok(self
+            .by_id
             .read()
             .map_err(|e| EpisodicError::Internal(e.to_string()))?
             .len())
@@ -146,11 +157,25 @@ pub struct DefaultTimeline;
 
 #[async_trait]
 impl Timeline for DefaultTimeline {
-    async fn index(&self, _: &EpisodicEvent) -> EpisodicResult<()> { Ok(()) }
-    async fn range(&self, _: i64, _: i64) -> EpisodicResult<Vec<EpisodicEvent>> { Ok(Vec::new()) }
-    async fn recent(&self, _: usize) -> EpisodicResult<Vec<EpisodicEvent>> { Ok(Vec::new()) }
-    async fn oldest(&self, _: usize) -> EpisodicResult<Vec<EpisodicEvent>> { Ok(Vec::new()) }
-    async fn remove(&self, _: &Uuid) -> EpisodicResult<()> { Ok(()) }
-    async fn rebuild(&self) -> EpisodicResult<()> { Ok(()) }
-    async fn len(&self) -> EpisodicResult<usize> { Ok(0) }
+    async fn index(&self, _: &EpisodicEvent) -> EpisodicResult<()> {
+        Ok(())
+    }
+    async fn range(&self, _: i64, _: i64) -> EpisodicResult<Vec<EpisodicEvent>> {
+        Ok(Vec::new())
+    }
+    async fn recent(&self, _: usize) -> EpisodicResult<Vec<EpisodicEvent>> {
+        Ok(Vec::new())
+    }
+    async fn oldest(&self, _: usize) -> EpisodicResult<Vec<EpisodicEvent>> {
+        Ok(Vec::new())
+    }
+    async fn remove(&self, _: &Uuid) -> EpisodicResult<()> {
+        Ok(())
+    }
+    async fn rebuild(&self) -> EpisodicResult<()> {
+        Ok(())
+    }
+    async fn len(&self) -> EpisodicResult<usize> {
+        Ok(0)
+    }
 }

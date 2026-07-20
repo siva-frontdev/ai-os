@@ -1,7 +1,7 @@
 //! Coordinator / lifecycle events.
 use crate::types::BrainState;
-use memory_core::Timestamp;
 use ai_os_core::events::Event;
+use memory_core::Timestamp;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -13,7 +13,9 @@ pub struct BrainStarted {
 }
 
 impl Event for BrainStarted {
-    fn event_type(&self) -> &'static str { "brain.started" }
+    fn event_type(&self) -> &'static str {
+        "brain.started"
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -24,7 +26,9 @@ pub struct BrainPaused {
 }
 
 impl Event for BrainPaused {
-    fn event_type(&self) -> &'static str { "brain.paused" }
+    fn event_type(&self) -> &'static str {
+        "brain.paused"
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -34,7 +38,9 @@ pub struct BrainResumed {
 }
 
 impl Event for BrainResumed {
-    fn event_type(&self) -> &'static str { "brain.resumed" }
+    fn event_type(&self) -> &'static str {
+        "brain.resumed"
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -44,7 +50,9 @@ pub struct BrainStopping {
 }
 
 impl Event for BrainStopping {
-    fn event_type(&self) -> &'static str { "brain.stopping" }
+    fn event_type(&self) -> &'static str {
+        "brain.stopping"
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -56,7 +64,9 @@ pub struct BrainStopped {
 }
 
 impl Event for BrainStopped {
-    fn event_type(&self) -> &'static str { "brain.stopped" }
+    fn event_type(&self) -> &'static str {
+        "brain.stopped"
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -68,5 +78,7 @@ pub struct BrainFailed {
 }
 
 impl Event for BrainFailed {
-    fn event_type(&self) -> &'static str { "brain.failed" }
+    fn event_type(&self) -> &'static str {
+        "brain.failed"
+    }
 }

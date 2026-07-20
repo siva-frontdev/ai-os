@@ -1,10 +1,10 @@
-use brain_core::context::DecisionContext;
-use brain_core::tool::ExecutablePlan;
-use brain_core::budget::CognitiveBudget;
-/// Policy engine traits.
-use async_trait::async_trait;
 use crate::errors::PolicyResult;
 use crate::types::*;
+/// Policy engine traits.
+use async_trait::async_trait;
+use brain_core::budget::CognitiveBudget;
+use brain_core::context::DecisionContext;
+use brain_core::tool::ExecutablePlan;
 
 // ── PolicyStore ───────────────────────────────────────────────
 
@@ -23,10 +23,23 @@ pub trait PolicyStore: Send + Sync {
 /// Evaluates a plan against policy rules.
 #[async_trait]
 pub trait PolicyEngine: Send + Sync {
-    async fn evaluate(&self, ctx: &DecisionContext, plan: &ExecutablePlan, budget: &CognitiveBudget) -> PolicyResult<PolicyEvaluation>;
+    async fn evaluate(
+        &self,
+        ctx: &DecisionContext,
+        plan: &ExecutablePlan,
+        budget: &CognitiveBudget,
+    ) -> PolicyResult<PolicyEvaluation>;
     async fn evaluate_rule(&self, rule: &PolicyRule, ctx: &DecisionContext) -> PolicyResult<bool>;
-    async fn check_guard_rails(&self, plan: &ExecutablePlan, budget: &CognitiveBudget) -> PolicyResult<Vec<ViolatedRule>>;
-    async fn enforce(&self, evaluation: &PolicyEvaluation, ctx: &mut DecisionContext) -> PolicyResult<()>;
+    async fn check_guard_rails(
+        &self,
+        plan: &ExecutablePlan,
+        budget: &CognitiveBudget,
+    ) -> PolicyResult<Vec<ViolatedRule>>;
+    async fn enforce(
+        &self,
+        evaluation: &PolicyEvaluation,
+        ctx: &mut DecisionContext,
+    ) -> PolicyResult<()>;
 }
 
 // ── PolicyEvaluator ───────────────────────────────────────────
@@ -34,8 +47,17 @@ pub trait PolicyEngine: Send + Sync {
 /// Selects applicable rules and evaluates them.
 #[async_trait]
 pub trait PolicyEvaluator: Send + Sync {
-    async fn applicable(&self, policies: &[RuleSet], ctx: &DecisionContext) -> PolicyResult<Vec<PolicyRule>>;
-    async fn evaluate_policy(&self, policy: &RuleSet, ctx: &DecisionContext, plan: &ExecutablePlan) -> PolicyResult<PolicyEvaluation>;
+    async fn applicable(
+        &self,
+        policies: &[RuleSet],
+        ctx: &DecisionContext,
+    ) -> PolicyResult<Vec<PolicyRule>>;
+    async fn evaluate_policy(
+        &self,
+        policy: &RuleSet,
+        ctx: &DecisionContext,
+        plan: &ExecutablePlan,
+    ) -> PolicyResult<PolicyEvaluation>;
     async fn aggregate(&self, evaluations: &[PolicyEvaluation]) -> PolicyResult<PolicyEvaluation>;
 }
 
@@ -62,7 +84,10 @@ pub struct CompilationValidation {
 pub trait PolicyLoader: Send + Sync {
     async fn load_from_config(&self, config: &PolicyConfig) -> PolicyResult<Vec<RuleSet>>;
     async fn load_from_file(&self, path: &str) -> PolicyResult<RuleSet>;
-    async fn watch_for_changes(&self, path: &str) -> PolicyResult<std::sync::mpsc::Receiver<PolicyChange>>;
+    async fn watch_for_changes(
+        &self,
+        path: &str,
+    ) -> PolicyResult<std::sync::mpsc::Receiver<PolicyChange>>;
 }
 
 // ── GuardRails ────────────────────────────────────────────────
@@ -71,6 +96,10 @@ pub trait PolicyLoader: Send + Sync {
 #[async_trait]
 pub trait GuardRails: Send + Sync {
     fn active_guard_rails(&self) -> &[GuardRail];
-    async fn check(&self, plan: &ExecutablePlan, budget: &CognitiveBudget) -> PolicyResult<Vec<ViolatedRule>>;
+    async fn check(
+        &self,
+        plan: &ExecutablePlan,
+        budget: &CognitiveBudget,
+    ) -> PolicyResult<Vec<ViolatedRule>>;
     fn reload(&mut self, guard_rails: Vec<GuardRail>);
 }

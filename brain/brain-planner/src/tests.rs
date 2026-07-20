@@ -1,30 +1,40 @@
 #[cfg(test)]
 mod tests {
-    use brain_core::ids::{GoalId, ToolCapabilityId};
-    use brain_core::tool::{ToolCandidate, ToolCapability, ToolRegistry, ToolRequirement};
-    use brain_core::types::Confidence;
-    use brain_core::BrainResult;
-    use std::collections::HashMap;
-    use std::sync::Arc;
-    use uuid::Uuid;
-        use crate::optimizer::PlanOptimizer;
+    use crate::optimizer::PlanOptimizer;
     use crate::planner::Planner;
     use crate::selector::ToolSelector;
     use crate::task_graph::TaskGraphBuilder;
     use crate::types::{TaskGraph, TaskNode};
+    use brain_core::BrainResult;
+    use brain_core::ids::{GoalId, ToolCapabilityId};
+    use brain_core::tool::{ToolCandidate, ToolCapability, ToolRegistry, ToolRequirement};
+    use brain_core::types::Confidence;
+    use std::collections::HashMap;
+    use std::sync::Arc;
+    use uuid::Uuid;
 
     struct MockToolRegistry {
         candidates: Vec<ToolCandidate>,
     }
 
     impl MockToolRegistry {
-        fn new() -> Self { Self { candidates: Vec::new() } }
-        fn with(mut self, c: ToolCandidate) -> Self { self.candidates.push(c); self }
+        fn new() -> Self {
+            Self {
+                candidates: Vec::new(),
+            }
+        }
+        fn with(mut self, c: ToolCandidate) -> Self {
+            self.candidates.push(c);
+            self
+        }
     }
 
     #[async_trait::async_trait]
     impl ToolRegistry for MockToolRegistry {
-        async fn find_candidates(&self, _capability: ToolCapabilityId) -> BrainResult<Vec<ToolCandidate>> {
+        async fn find_candidates(
+            &self,
+            _capability: ToolCapabilityId,
+        ) -> BrainResult<Vec<ToolCandidate>> {
             Ok(self.candidates.clone())
         }
         async fn register(&self, _candidate: ToolCandidate) -> BrainResult<()> {
@@ -54,10 +64,24 @@ mod tests {
     #[test]
     fn test_task_graph_new() {
         let nodes = vec![
-            TaskNode { id: "a".into(), description: "A".into(), tool_requirement: make_req("a", ToolCapabilityId::new()),
-                estimated_duration_ms: 100, estimated_cost: 1.0, dependencies: vec![], is_critical: true },
-            TaskNode { id: "b".into(), description: "B".into(), tool_requirement: make_req("b", ToolCapabilityId::new()),
-                estimated_duration_ms: 200, estimated_cost: 2.0, dependencies: vec!["a".into()], is_critical: true },
+            TaskNode {
+                id: "a".into(),
+                description: "A".into(),
+                tool_requirement: make_req("a", ToolCapabilityId::new()),
+                estimated_duration_ms: 100,
+                estimated_cost: 1.0,
+                dependencies: vec![],
+                is_critical: true,
+            },
+            TaskNode {
+                id: "b".into(),
+                description: "B".into(),
+                tool_requirement: make_req("b", ToolCapabilityId::new()),
+                estimated_duration_ms: 200,
+                estimated_cost: 2.0,
+                dependencies: vec!["a".into()],
+                is_critical: true,
+            },
         ];
         let graph = TaskGraph::new(nodes);
         assert_eq!(graph.entry_points, vec!["a"]);
@@ -67,12 +91,33 @@ mod tests {
     #[test]
     fn test_critical_path() {
         let nodes = vec![
-            TaskNode { id: "a".into(), description: "A".into(), tool_requirement: make_req("a", ToolCapabilityId::new()),
-                estimated_duration_ms: 100, estimated_cost: 1.0, dependencies: vec![], is_critical: true },
-            TaskNode { id: "b".into(), description: "B".into(), tool_requirement: make_req("b", ToolCapabilityId::new()),
-                estimated_duration_ms: 200, estimated_cost: 2.0, dependencies: vec!["a".into()], is_critical: true },
-            TaskNode { id: "c".into(), description: "C".into(), tool_requirement: make_req("c", ToolCapabilityId::new()),
-                estimated_duration_ms: 50, estimated_cost: 0.5, dependencies: vec!["a".into()], is_critical: false },
+            TaskNode {
+                id: "a".into(),
+                description: "A".into(),
+                tool_requirement: make_req("a", ToolCapabilityId::new()),
+                estimated_duration_ms: 100,
+                estimated_cost: 1.0,
+                dependencies: vec![],
+                is_critical: true,
+            },
+            TaskNode {
+                id: "b".into(),
+                description: "B".into(),
+                tool_requirement: make_req("b", ToolCapabilityId::new()),
+                estimated_duration_ms: 200,
+                estimated_cost: 2.0,
+                dependencies: vec!["a".into()],
+                is_critical: true,
+            },
+            TaskNode {
+                id: "c".into(),
+                description: "C".into(),
+                tool_requirement: make_req("c", ToolCapabilityId::new()),
+                estimated_duration_ms: 50,
+                estimated_cost: 0.5,
+                dependencies: vec!["a".into()],
+                is_critical: false,
+            },
         ];
         let graph = TaskGraph::new(nodes);
         assert_eq!(graph.critical_path_duration(), 300);
@@ -81,10 +126,24 @@ mod tests {
     #[test]
     fn test_topological_order() {
         let nodes = vec![
-            TaskNode { id: "a".into(), description: "A".into(), tool_requirement: make_req("a", ToolCapabilityId::new()),
-                estimated_duration_ms: 1, estimated_cost: 0.0, dependencies: vec![], is_critical: true },
-            TaskNode { id: "b".into(), description: "B".into(), tool_requirement: make_req("b", ToolCapabilityId::new()),
-                estimated_duration_ms: 1, estimated_cost: 0.0, dependencies: vec!["a".into()], is_critical: true },
+            TaskNode {
+                id: "a".into(),
+                description: "A".into(),
+                tool_requirement: make_req("a", ToolCapabilityId::new()),
+                estimated_duration_ms: 1,
+                estimated_cost: 0.0,
+                dependencies: vec![],
+                is_critical: true,
+            },
+            TaskNode {
+                id: "b".into(),
+                description: "B".into(),
+                tool_requirement: make_req("b", ToolCapabilityId::new()),
+                estimated_duration_ms: 1,
+                estimated_cost: 0.0,
+                dependencies: vec!["a".into()],
+                is_critical: true,
+            },
         ];
         let graph = TaskGraph::new(nodes);
         let order = graph.topological_order();
@@ -94,7 +153,10 @@ mod tests {
     #[test]
     fn test_task_graph_builder_linear() {
         let builder = TaskGraphBuilder::new();
-        let reqs = vec![make_req("r1", ToolCapabilityId::new()), make_req("r2", ToolCapabilityId::new())];
+        let reqs = vec![
+            make_req("r1", ToolCapabilityId::new()),
+            make_req("r2", ToolCapabilityId::new()),
+        ];
         let graph = builder.build_linear(make_goal_id(1), reqs);
         assert_eq!(graph.nodes.len(), 2);
         assert!(builder.validate(&graph).is_ok());
@@ -105,7 +167,10 @@ mod tests {
         let builder = TaskGraphBuilder::new();
         let reqs = vec![
             vec![make_req("r1", ToolCapabilityId::new())],
-            vec![make_req("r2", ToolCapabilityId::new()), make_req("r3", ToolCapabilityId::new())],
+            vec![
+                make_req("r2", ToolCapabilityId::new()),
+                make_req("r3", ToolCapabilityId::new()),
+            ],
         ];
         let graph = builder.build_parallel(make_goal_id(1), reqs);
         assert_eq!(graph.nodes.len(), 3);
@@ -116,10 +181,24 @@ mod tests {
     fn test_plan_optimizer() {
         let opt = PlanOptimizer::new();
         let nodes = vec![
-            TaskNode { id: "a".into(), description: "A".into(), tool_requirement: make_req("a", ToolCapabilityId::new()),
-                estimated_duration_ms: 1000, estimated_cost: 10.0, dependencies: vec![], is_critical: true },
-            TaskNode { id: "b".into(), description: "B".into(), tool_requirement: make_req("b", ToolCapabilityId::new()),
-                estimated_duration_ms: 500, estimated_cost: 5.0, dependencies: vec!["a".into()], is_critical: false },
+            TaskNode {
+                id: "a".into(),
+                description: "A".into(),
+                tool_requirement: make_req("a", ToolCapabilityId::new()),
+                estimated_duration_ms: 1000,
+                estimated_cost: 10.0,
+                dependencies: vec![],
+                is_critical: true,
+            },
+            TaskNode {
+                id: "b".into(),
+                description: "B".into(),
+                tool_requirement: make_req("b", ToolCapabilityId::new()),
+                estimated_duration_ms: 500,
+                estimated_cost: 5.0,
+                dependencies: vec!["a".into()],
+                is_critical: false,
+            },
         ];
         let graph = TaskGraph::new(nodes);
         let optimized = opt.optimize_duration(&graph);
@@ -130,10 +209,15 @@ mod tests {
     #[test]
     fn test_alternatives_generation() {
         let opt = PlanOptimizer::new();
-        let nodes = vec![
-            TaskNode { id: "a".into(), description: "A".into(), tool_requirement: make_req("a", ToolCapabilityId::new()),
-                estimated_duration_ms: 100, estimated_cost: 1.0, dependencies: vec![], is_critical: true },
-        ];
+        let nodes = vec![TaskNode {
+            id: "a".into(),
+            description: "A".into(),
+            tool_requirement: make_req("a", ToolCapabilityId::new()),
+            estimated_duration_ms: 100,
+            estimated_cost: 1.0,
+            dependencies: vec![],
+            is_critical: true,
+        }];
         let graph = TaskGraph::new(nodes);
         let alts = opt.generate_alternatives(&graph, 3);
         assert_eq!(alts.len(), 3);
@@ -144,8 +228,18 @@ mod tests {
         let sel = ToolSelector::new();
         use brain_core::ids::ToolId;
         let candidates = vec![
-            ToolCandidate::new(ToolId::new(), "provider_a", ToolCapabilityId::new(), Confidence::new(0.5)),
-            ToolCandidate::new(ToolId::new(), "provider_b", ToolCapabilityId::new(), Confidence::new(0.9)),
+            ToolCandidate::new(
+                ToolId::new(),
+                "provider_a",
+                ToolCapabilityId::new(),
+                Confidence::new(0.5),
+            ),
+            ToolCandidate::new(
+                ToolId::new(),
+                "provider_b",
+                ToolCapabilityId::new(),
+                Confidence::new(0.9),
+            ),
         ];
         let best = sel.best_match(&candidates);
         assert!(best.is_some());

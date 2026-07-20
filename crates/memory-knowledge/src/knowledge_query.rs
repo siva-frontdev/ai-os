@@ -103,10 +103,7 @@ impl KnowledgeQuery for DefaultKnowledgeQuery {
             });
         }
         matches.truncate(limit);
-        Ok(QueryResult {
-            matches,
-            examined,
-        })
+        Ok(QueryResult { matches, examined })
     }
     async fn search_by_predicate(&self, predicate: &str) -> KnowledgeResult<Vec<Fact>> {
         let all = self.base.list_entities().await?;

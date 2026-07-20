@@ -248,16 +248,11 @@ pub trait AnomalyDetector: Debug + Send + Sync {
         observation: &Observation,
     ) -> Result<AnomalyScore, perception_core::PerceptionError>;
 
-    async fn feed(
-        &self,
-        observation: &Observation,
-    ) -> Result<(), perception_core::PerceptionError>;
+    async fn feed(&self, observation: &Observation)
+        -> Result<(), perception_core::PerceptionError>;
 
-    fn register_model(
-        &self,
-        modality: Modality,
-        model: Arc<dyn AnomalyModel>,
-    ) -> AnomalyResult<()>;
+    fn register_model(&self, modality: Modality, model: Arc<dyn AnomalyModel>)
+        -> AnomalyResult<()>;
 
     fn stats(&self, modality: &Modality) -> AnomalyResult<Option<AnomalyStats>>;
 }
@@ -371,9 +366,10 @@ impl AnomalyDetector for DefaultAnomalyDetector {
     }
 
     fn stats(&self, modality: &Modality) -> AnomalyResult<Option<AnomalyStats>> {
-        let models = self.models.read().map_err(|_| {
-            AnomalyError::ModelNotFound(modality.clone())
-        })?;
+        let models = self
+            .models
+            .read()
+            .map_err(|_| AnomalyError::ModelNotFound(modality.clone()))?;
         let counts = self
             .anomaly_counts
             .read()
@@ -440,9 +436,7 @@ mod tests {
         let detector = DefaultAnomalyDetector::new(config);
 
         let model = Arc::new(ZScoreModel::new("terminal", 2.0));
-        detector
-            .register_model(Modality::Terminal, model)
-            .unwrap();
+        detector.register_model(Modality::Terminal, model).unwrap();
 
         let source = ObservationSource {
             observer_id: "test".into(),

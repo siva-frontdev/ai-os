@@ -1,8 +1,8 @@
 //! Decision events.
 use crate::ids::{DecisionId, PlanId};
 use crate::types::Confidence;
-use memory_core::Timestamp;
 use ai_os_core::events::Event;
+use memory_core::Timestamp;
 use serde::{Deserialize, Serialize};
 
 /// Published when a decision is made.

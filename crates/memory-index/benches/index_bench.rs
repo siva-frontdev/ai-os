@@ -36,7 +36,9 @@ fn bench_default_relationship_index(c: &mut Criterion) {
 
     c.bench_function("DefaultRelationshipIndex::index_relationship", |ben| {
         ben.to_async(&rt).iter(|| async {
-            let _ = idx.index_relationship(&id_a, &id_b, &RelationType::References).await;
+            let _ = idx
+                .index_relationship(&id_a, &id_b, &RelationType::References)
+                .await;
         });
     });
 }

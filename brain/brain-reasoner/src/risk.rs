@@ -5,9 +5,15 @@ use brain_core::context::ReasoningContext;
 pub struct RiskAnalyzer;
 
 impl RiskAnalyzer {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 
-    pub fn assess(&self, _ctx: &ReasoningContext, hypothesis: &Hypothesis) -> ReasonerResult<RiskAssessment> {
+    pub fn assess(
+        &self,
+        _ctx: &ReasoningContext,
+        hypothesis: &Hypothesis,
+    ) -> ReasonerResult<RiskAssessment> {
         let risk = 1.0 - hypothesis.confidence.raw() as f64;
         Ok(RiskAssessment {
             risk_id: format!("risk-{}", hypothesis.id),
@@ -21,5 +27,7 @@ impl RiskAnalyzer {
 }
 
 impl Default for RiskAnalyzer {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }

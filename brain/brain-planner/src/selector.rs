@@ -1,11 +1,13 @@
-use brain_core::tool::{ToolCandidate, ToolRegistry, ToolRequirement};
 use brain_core::BrainResult;
+use brain_core::tool::{ToolCandidate, ToolRegistry, ToolRequirement};
 
 #[derive(Debug)]
 pub struct ToolSelector;
 
 impl ToolSelector {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 
     pub async fn select_for_requirement(
         &self,
@@ -17,7 +19,10 @@ impl ToolSelector {
 
     pub fn best_match<'a>(&self, candidates: &'a [ToolCandidate]) -> Option<&'a ToolCandidate> {
         candidates.iter().min_by(|a, b| {
-            let cost_cmp = a.estimated_cost.partial_cmp(&b.estimated_cost).unwrap_or(std::cmp::Ordering::Equal);
+            let cost_cmp = a
+                .estimated_cost
+                .partial_cmp(&b.estimated_cost)
+                .unwrap_or(std::cmp::Ordering::Equal);
             if cost_cmp == std::cmp::Ordering::Equal {
                 a.estimated_duration_ms.cmp(&b.estimated_duration_ms)
             } else {
@@ -35,5 +40,7 @@ impl ToolSelector {
 }
 
 impl Default for ToolSelector {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }

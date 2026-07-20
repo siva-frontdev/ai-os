@@ -1,6 +1,6 @@
 use brain_core::ids::{GoalId, PlanId, WorkflowId};
-use brain_core::types::Confidence;
 use brain_core::tool::ExecutablePlan;
+use brain_core::types::Confidence;
 use brain_goals::types::GoalRecord;
 use brain_workflow::Workflow;
 use memory_core::Timestamp;

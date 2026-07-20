@@ -9,14 +9,18 @@ use crate::types::BrainState;
 pub struct BrainStateMachine;
 
 impl BrainStateMachine {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 
     /// Validate a planned state transition.
     ///
     /// Returns `Ok(())` if the transition is allowed, or an `Err(String)`
     /// describing the invalid transition.
     pub fn validate_transition(&self, from: BrainState, to: BrainState) -> Result<(), String> {
-        if from == to { return Ok(()); }
+        if from == to {
+            return Ok(());
+        }
         match (from, to) {
             (BrainState::Sleeping, BrainState::Idle) => Ok(()),
             (BrainState::Idle, BrainState::Planning) => Ok(()),
@@ -33,7 +37,10 @@ impl BrainStateMachine {
             (BrainState::Paused, BrainState::Idle) => Ok(()),
             (_, BrainState::Stopping) => Ok(()),
             (BrainState::Stopping, BrainState::Stopped) => Ok(()),
-            _ => Err(format!("invalid brain state transition: {:?} -> {:?}", from, to)),
+            _ => Err(format!(
+                "invalid brain state transition: {:?} -> {:?}",
+                from, to
+            )),
         }
     }
 }

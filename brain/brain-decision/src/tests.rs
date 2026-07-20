@@ -1,16 +1,16 @@
 #[cfg(test)]
 mod tests {
+    use crate::decision::DecisionMaker;
     use brain_core::budget::CognitiveBudget;
     use brain_core::context::{DecisionContext, OptionRef, PolicyRef};
     use brain_core::ids::DecisionId;
     use brain_core::tool::ExecutablePlan;
     use brain_core::types::Confidence;
-    use brain_policy::types::{PolicyEvaluation, PolicyRule, RuleSet, ViolatedRule};
     use brain_policy::PolicyEvaluator;
+    use brain_policy::types::{PolicyEvaluation, PolicyRule, RuleSet, ViolatedRule};
     use memory_core::Timestamp;
     use std::sync::Arc;
     use uuid::Uuid;
-    use crate::decision::DecisionMaker;
 
     fn make_decision_id(n: u8) -> DecisionId {
         let mut buf = [0u8; 16];
@@ -34,10 +34,19 @@ mod tests {
 
     #[async_trait::async_trait]
     impl PolicyEvaluator for MockPolicyEvaluator {
-        async fn applicable(&self, _policies: &[RuleSet], _ctx: &DecisionContext) -> brain_policy::PolicyResult<Vec<PolicyRule>> {
+        async fn applicable(
+            &self,
+            _policies: &[RuleSet],
+            _ctx: &DecisionContext,
+        ) -> brain_policy::PolicyResult<Vec<PolicyRule>> {
             Ok(Vec::new())
         }
-        async fn evaluate_policy(&self, _policy: &RuleSet, _ctx: &DecisionContext, _plan: &ExecutablePlan) -> brain_policy::PolicyResult<PolicyEvaluation> {
+        async fn evaluate_policy(
+            &self,
+            _policy: &RuleSet,
+            _ctx: &DecisionContext,
+            _plan: &ExecutablePlan,
+        ) -> brain_policy::PolicyResult<PolicyEvaluation> {
             Ok(PolicyEvaluation {
                 passed: true,
                 violated_rules: vec![],
@@ -45,7 +54,10 @@ mod tests {
                 allowance: 1.0,
             })
         }
-        async fn aggregate(&self, _evaluations: &[PolicyEvaluation]) -> brain_policy::PolicyResult<PolicyEvaluation> {
+        async fn aggregate(
+            &self,
+            _evaluations: &[PolicyEvaluation],
+        ) -> brain_policy::PolicyResult<PolicyEvaluation> {
             Ok(PolicyEvaluation {
                 passed: true,
                 violated_rules: vec![],
@@ -82,9 +94,7 @@ mod tests {
     #[test]
     fn test_decision_maker_low_confidence() {
         let maker = DecisionMaker::new(0.9);
-        let ctx = make_context(vec![
-            make_option("opt-a", 1.0, 0.5, 0.5, 0.3),
-        ]);
+        let ctx = make_context(vec![make_option("opt-a", 1.0, 0.5, 0.5, 0.3)]);
         let budget = CognitiveBudget::default();
         let policy = MockPolicyEvaluator;
         let result = maker.make_decision(&ctx, &budget, &policy);
@@ -116,9 +126,7 @@ mod tests {
     #[test]
     fn test_explanation_generation() {
         let maker = DecisionMaker::new(0.3);
-        let ctx = make_context(vec![
-            make_option("opt-a", 10.0, 2.0, 1.0, 0.9),
-        ]);
+        let ctx = make_context(vec![make_option("opt-a", 10.0, 2.0, 1.0, 0.9)]);
         let score = maker.compute_confidence(&ctx);
         let chosen = &ctx.options[0];
         let policy = MockPolicyEvaluator;

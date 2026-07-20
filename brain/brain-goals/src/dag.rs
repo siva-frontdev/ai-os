@@ -10,7 +10,10 @@ pub struct GoalDag {
 
 impl GoalDag {
     pub fn new() -> Self {
-        Self { edges: HashMap::new(), reverse: HashMap::new() }
+        Self {
+            edges: HashMap::new(),
+            reverse: HashMap::new(),
+        }
     }
 
     pub fn add_node(&mut self, id: GoalId) {
@@ -37,7 +40,9 @@ impl GoalDag {
 
     pub fn add_dependency(&mut self, from: GoalId, to: GoalId) -> GoalsResult<()> {
         if from == to {
-            return Err(GoalsError::ValidationError("goal cannot depend on itself".into()));
+            return Err(GoalsError::ValidationError(
+                "goal cannot depend on itself".into(),
+            ));
         }
         if self.would_create_cycle(from, to) {
             let cycle = self.detect_cycle_path(from, to);
@@ -58,11 +63,17 @@ impl GoalDag {
     }
 
     pub fn dependencies(&self, id: &GoalId) -> Vec<GoalId> {
-        self.edges.get(id).map(|s| s.iter().copied().collect()).unwrap_or_default()
+        self.edges
+            .get(id)
+            .map(|s| s.iter().copied().collect())
+            .unwrap_or_default()
     }
 
     pub fn dependents(&self, id: &GoalId) -> Vec<GoalId> {
-        self.reverse.get(id).map(|s| s.iter().copied().collect()).unwrap_or_default()
+        self.reverse
+            .get(id)
+            .map(|s| s.iter().copied().collect())
+            .unwrap_or_default()
     }
 
     pub fn has_node(&self, id: &GoalId) -> bool {
@@ -80,7 +91,8 @@ impl GoalDag {
             }
         }
 
-        let mut queue: VecDeque<GoalId> = in_degree.iter()
+        let mut queue: VecDeque<GoalId> = in_degree
+            .iter()
             .filter(|&(_, deg)| *deg == 0)
             .map(|(id, _)| *id)
             .collect();
@@ -101,7 +113,8 @@ impl GoalDag {
         }
 
         if sorted.len() != in_degree.len() {
-            let remaining: Vec<GoalId> = in_degree.iter()
+            let remaining: Vec<GoalId> = in_degree
+                .iter()
                 .filter(|&(_, deg)| *deg > 0)
                 .map(|(id, _)| *id)
                 .collect();
@@ -118,7 +131,9 @@ impl GoalDag {
             if current == from {
                 return true;
             }
-            if visited.insert(current) && let Some(deps) = self.edges.get(&current) {
+            if visited.insert(current)
+                && let Some(deps) = self.edges.get(&current)
+            {
                 stack.extend(deps.iter());
             }
         }
@@ -133,7 +148,9 @@ impl GoalDag {
             if current == from {
                 return current_path;
             }
-            if visited.insert(current) && let Some(deps) = self.edges.get(&current) {
+            if visited.insert(current)
+                && let Some(deps) = self.edges.get(&current)
+            {
                 for dep in deps {
                     let mut new_path = current_path.clone();
                     new_path.push(*dep);
@@ -151,7 +168,9 @@ impl GoalDag {
             if current == *to {
                 return true;
             }
-            if visited.insert(current) && let Some(deps) = self.edges.get(&current) {
+            if visited.insert(current)
+                && let Some(deps) = self.edges.get(&current)
+            {
                 stack.extend(deps.iter());
             }
         }
@@ -168,5 +187,7 @@ impl GoalDag {
 }
 
 impl Default for GoalDag {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }

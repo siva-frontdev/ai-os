@@ -1,7 +1,7 @@
 //! `ModelProviderRegistry` — routes model calls to registered providers.
+use super::*;
 use std::fmt::Debug;
 use std::sync::{Arc, RwLock};
-use super::*;
 
 /// Registry for resolving model providers by name.
 #[async_trait::async_trait]
@@ -33,12 +33,22 @@ impl InMemoryModelProviderRegistry {
 
     /// Find a provider by name.
     pub fn find_by_name(&self, name: &str) -> Option<Arc<dyn ModelProvider>> {
-        self.providers.read().unwrap().iter().find(|p| p.name() == name).cloned()
+        self.providers
+            .read()
+            .unwrap()
+            .iter()
+            .find(|p| p.name() == name)
+            .cloned()
     }
 
     /// List all registered provider names.
     pub fn list_providers(&self) -> Vec<String> {
-        self.providers.read().unwrap().iter().map(|p| p.name().to_string()).collect()
+        self.providers
+            .read()
+            .unwrap()
+            .iter()
+            .map(|p| p.name().to_string())
+            .collect()
     }
 
     /// Set the default provider name.
@@ -49,7 +59,9 @@ impl InMemoryModelProviderRegistry {
 
 impl ModelProviderRegistry for InMemoryModelProviderRegistry {
     fn resolve(&self, provider_name: Option<&str>) -> Option<Arc<dyn ModelProvider>> {
-        let name = provider_name.map(String::from).or_else(|| self.default_provider.read().unwrap().clone());
+        let name = provider_name
+            .map(String::from)
+            .or_else(|| self.default_provider.read().unwrap().clone());
         name.as_deref().and_then(|n| self.find_by_name(n))
     }
 

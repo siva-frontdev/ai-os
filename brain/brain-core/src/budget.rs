@@ -1,5 +1,5 @@
 //! `CognitiveBudget` and `BudgetUsage` — resource accounting for a reasoning cycle.
-use crate::types::{BudgetDimension};
+use crate::types::BudgetDimension;
 use memory_core::Timestamp;
 use serde::{Deserialize, Serialize};
 
@@ -74,7 +74,8 @@ impl CognitiveBudget {
 
     /// Return the remaining cost budget in cents.
     pub fn remaining_cost_cents(&self, usage: &BudgetUsage) -> u64 {
-        self.max_cost_budget_cents.saturating_sub(usage.cost_incurred_cents)
+        self.max_cost_budget_cents
+            .saturating_sub(usage.cost_incurred_cents)
     }
 
     /// Return true if the current time has passed the deadline.
@@ -100,11 +101,14 @@ impl CognitiveBudget {
     pub fn dimension_exhausted(&self, usage: &BudgetUsage, dim: BudgetDimension) -> bool {
         match dim {
             BudgetDimension::WallTime => {
-                    let now = Timestamp::now();
-                    now.as_nanos().saturating_sub(usage.started_at.as_nanos()) >= self.max_thinking_time_ns as i64
-                },
+                let now = Timestamp::now();
+                now.as_nanos().saturating_sub(usage.started_at.as_nanos())
+                    >= self.max_thinking_time_ns as i64
+            }
             BudgetDimension::Iterations => usage.iterations_used >= self.max_iterations,
-            BudgetDimension::ReasoningDepth => usage.reasoning_depth_reached >= self.max_reasoning_depth,
+            BudgetDimension::ReasoningDepth => {
+                usage.reasoning_depth_reached >= self.max_reasoning_depth
+            }
             BudgetDimension::Branches => usage.branches_spawned >= self.max_branches,
             BudgetDimension::ModelCalls => usage.model_calls_used >= self.max_model_calls,
             BudgetDimension::Tokens => usage.tokens_consumed >= self.max_token_budget,
@@ -181,7 +185,6 @@ impl BudgetUsage {
     pub fn record_depth(&mut self, depth: usize) {
         self.reasoning_depth_reached = self.reasoning_depth_reached.max(depth);
     }
-
 }
 
 /// Trait for checking budget consumption at phase boundaries.

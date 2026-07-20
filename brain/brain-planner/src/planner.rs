@@ -3,10 +3,10 @@ use crate::optimizer::PlanOptimizer;
 use crate::selector::ToolSelector;
 use crate::task_graph::TaskGraphBuilder;
 use crate::types::{AlternativePlan, PlanValidation, TaskGraph, ToolMatch};
+use brain_core::BrainResult;
 use brain_core::budget::CognitiveBudget;
 use brain_core::ids::{GoalId, PlanId};
 use brain_core::tool::{ExecutablePlan, ToolRegistry, ToolRequirement};
-use brain_core::BrainResult;
 use std::sync::Arc;
 
 pub struct Planner {
@@ -39,13 +39,13 @@ impl Planner {
         let validated = self.validate_plan(&optimized);
 
         if !validated.is_valid {
-            return Err(PlannerError::ValidationError(
-                validated.errors.join("; ")
-            ));
+            return Err(PlannerError::ValidationError(validated.errors.join("; ")));
         }
 
         let plan_id = PlanId::new();
-        let reqs: Vec<ToolRequirement> = optimized.nodes.iter()
+        let reqs: Vec<ToolRequirement> = optimized
+            .nodes
+            .iter()
             .map(|n| n.tool_requirement.clone())
             .collect();
 
@@ -70,7 +70,10 @@ impl Planner {
     pub async fn select_tools(&self, plan: &ExecutablePlan) -> BrainResult<Vec<ToolMatch>> {
         let mut matches = Vec::new();
         for req in &plan.tool_requirements {
-            let candidates = self.selector.select_for_requirement(req, &*self.tool_registry).await?;
+            let candidates = self
+                .selector
+                .select_for_requirement(req, &*self.tool_registry)
+                .await?;
             if let Some(best) = self.selector.best_match(&candidates) {
                 matches.push(ToolMatch {
                     requirement_id: req.requirement_id.to_string(),
@@ -104,7 +107,11 @@ impl Planner {
 
         if errors.is_empty() && graph.nodes.len() > 1 {
             let critical = graph.critical_path_duration();
-            let total = graph.nodes.iter().map(|n| n.estimated_duration_ms).sum::<u64>();
+            let total = graph
+                .nodes
+                .iter()
+                .map(|n| n.estimated_duration_ms)
+                .sum::<u64>();
             if critical < total / 2 {
                 warnings.push("plan has significant parallelism opportunity".into());
             }

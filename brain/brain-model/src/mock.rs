@@ -1,7 +1,7 @@
 //! `MockModelProvider` — controllable test double that returns predetermined responses.
 use super::*;
 use async_trait::async_trait;
-use brain_core::context::{ReasoningContext, PlanningContext};
+use brain_core::context::{PlanningContext, ReasoningContext};
 use brain_core::errors::BrainError;
 use memory_core::Timestamp;
 use std::collections::HashMap;
@@ -40,7 +40,11 @@ impl MockModelProvider {
             id: ModelId::new(),
             model: "mock-model".into(),
             content: text.into(),
-            usage: TokenCount { prompt_tokens: 10, completion_tokens: tokens, total_tokens: 10 + tokens },
+            usage: TokenCount {
+                prompt_tokens: 10,
+                completion_tokens: tokens,
+                total_tokens: 10 + tokens,
+            },
             finish_reason: FinishReason::Stop,
             created_at: Timestamp::now(),
         };
@@ -70,12 +74,18 @@ impl MockModelProvider {
 
 #[async_trait]
 impl ModelProvider for MockModelProvider {
-    fn id(&self) -> ModelId { ModelId::new() }
-    fn name(&self) -> &str { "mock-model" }
+    fn id(&self) -> ModelId {
+        ModelId::new()
+    }
+    fn name(&self) -> &str {
+        "mock-model"
+    }
 
-    async fn complete(&self, _messages: &[Message], _config: &ModelConfig)
-        -> Result<Completion, ModelProviderError>
-    {
+    async fn complete(
+        &self,
+        _messages: &[Message],
+        _config: &ModelConfig,
+    ) -> Result<Completion, ModelProviderError> {
         self.call_count.fetch_add(1, Ordering::Relaxed);
 
         if *self.fail_next_call.read().unwrap() {
@@ -84,7 +94,8 @@ impl ModelProvider for MockModelProvider {
         }
 
         self.responses
-            .write().unwrap()
+            .write()
+            .unwrap()
             .pop_front()
             .ok_or_else(|| BrainError::ModelProviderError("no more queued responses".into()).into())
     }
@@ -93,10 +104,20 @@ impl ModelProvider for MockModelProvider {
         self.call_count.fetch_add(1, Ordering::Relaxed);
 
         self.embeddings
-            .write().unwrap()
+            .write()
+            .unwrap()
             .pop_front()
-            .ok_or_else(|| BrainError::ModelProviderError("no more queued embeddings".into()).into())
-            .map(|values| { let dim = values.len(); Embedding { model: "mock-embed".into(), values, dimensions: dim } })
+            .ok_or_else(|| {
+                BrainError::ModelProviderError("no more queued embeddings".into()).into()
+            })
+            .map(|values| {
+                let dim = values.len();
+                Embedding {
+                    model: "mock-embed".into(),
+                    values,
+                    dimensions: dim,
+                }
+            })
     }
 
     fn status(&self) -> ProviderStatus {
@@ -106,7 +127,9 @@ impl ModelProvider for MockModelProvider {
     async fn health_check(&self) -> Result<(), ModelProviderError> {
         match self.status() {
             ProviderStatus::Healthy => Ok(()),
-            ProviderStatus::Unavailable => Err(BrainError::ModelProviderError("unavailable".into()).into()),
+            ProviderStatus::Unavailable => {
+                Err(BrainError::ModelProviderError("unavailable".into()).into())
+            }
             _ => Ok(()),
         }
     }
@@ -114,24 +137,31 @@ impl ModelProvider for MockModelProvider {
 
 #[async_trait]
 impl ReasoningModel for MockModelProvider {
-    async fn reason(&self, _ctx: &ReasoningContext, _config: &ModelConfig)
-        -> Result<Completion, ModelProviderError>
-    {
+    async fn reason(
+        &self,
+        _ctx: &ReasoningContext,
+        _config: &ModelConfig,
+    ) -> Result<Completion, ModelProviderError> {
         self.complete(&[], _config).await
     }
 
-    async fn generate_hypotheses(&self, _obs: &[String], _config: &ModelConfig)
-        -> Result<Vec<String>, ModelProviderError>
-    {
+    async fn generate_hypotheses(
+        &self,
+        _obs: &[String],
+        _config: &ModelConfig,
+    ) -> Result<Vec<String>, ModelProviderError> {
         Ok(vec!["mock-hypothesis".into()])
     }
 }
 
 #[async_trait]
 impl PlanningModel for MockModelProvider {
-    async fn generate_plan(&self, _goal: &str, _ctx: &PlanningContext, _config: &ModelConfig)
-        -> Result<String, ModelProviderError>
-    {
+    async fn generate_plan(
+        &self,
+        _goal: &str,
+        _ctx: &PlanningContext,
+        _config: &ModelConfig,
+    ) -> Result<String, ModelProviderError> {
         Ok("mock-plan".into())
     }
 }
@@ -146,14 +176,18 @@ impl EmbeddingProvider for MockModelProvider {
         Ok(out)
     }
 
-    fn dimensions(&self) -> usize { 768 }
+    fn dimensions(&self) -> usize {
+        768
+    }
 }
 
 #[async_trait]
 impl PromptRenderer for MockModelProvider {
-    fn render_system_prompt(&self, template: &str, vars: &HashMap<String, String>)
-        -> Result<String, ModelProviderError>
-    {
+    fn render_system_prompt(
+        &self,
+        template: &str,
+        vars: &HashMap<String, String>,
+    ) -> Result<String, ModelProviderError> {
         let mut out = template.to_string();
         for (k, v) in vars {
             out = out.replace(&format!("{{{{{}}}}}", k), v);
@@ -162,7 +196,10 @@ impl PromptRenderer for MockModelProvider {
     }
 
     fn render_messages(&self, messages: &[Message]) -> Result<String, ModelProviderError> {
-        Ok(messages.iter().map(|m| format!("{:?}: {}", m.role, m.content)).collect())
+        Ok(messages
+            .iter()
+            .map(|m| format!("{:?}: {}", m.role, m.content))
+            .collect())
     }
 }
 
@@ -173,7 +210,11 @@ impl ResponseParser for MockModelProvider {
             id: ModelId::new(),
             model: "mock-model".into(),
             content: raw.to_string(),
-            usage: TokenCount { prompt_tokens: 10, completion_tokens: (raw.len() / 4) as u32, total_tokens: 20 },
+            usage: TokenCount {
+                prompt_tokens: 10,
+                completion_tokens: (raw.len() / 4) as u32,
+                total_tokens: 20,
+            },
             finish_reason: FinishReason::Stop,
             created_at: Timestamp::now(),
         })
@@ -182,13 +223,19 @@ impl ResponseParser for MockModelProvider {
 
 impl ConversationContext for MockModelProvider {
     fn push(&mut self, _message: Message) {}
-    fn history(&self) -> Vec<Message> { Vec::new() }
+    fn history(&self) -> Vec<Message> {
+        Vec::new()
+    }
     fn clear(&mut self) {}
 }
 
 impl TokenCounter for MockModelProvider {
     fn count_tokens(&self, text: &str) -> TokenCount {
         let total = (text.len() / 4) as u32;
-        TokenCount { prompt_tokens: total, completion_tokens: 0, total_tokens: total }
+        TokenCount {
+            prompt_tokens: total,
+            completion_tokens: 0,
+            total_tokens: total,
+        }
     }
 }

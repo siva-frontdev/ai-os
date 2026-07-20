@@ -86,7 +86,10 @@ pub struct FormatDescriptor {
 pub trait FormatParser: Debug + Send + Sync {
     fn mime_type(&self) -> &str;
     async fn detect(&self, bytes: &[u8]) -> bool;
-    async fn parse(&self, bytes: &[u8]) -> Result<ObservationPayload, perception_core::PerceptionError>;
+    async fn parse(
+        &self,
+        bytes: &[u8],
+    ) -> Result<ObservationPayload, perception_core::PerceptionError>;
 }
 
 // ── FormatDetector trait ──────────────────────────────────
@@ -98,7 +101,8 @@ pub trait FormatDetectorFn: Debug + Send + Sync {
 
 #[async_trait]
 pub trait FormatDetector: Debug + Send + Sync {
-    async fn detect(&self, bytes: &[u8]) -> Result<(String, f64), perception_core::PerceptionError>;
+    async fn detect(&self, bytes: &[u8])
+        -> Result<(String, f64), perception_core::PerceptionError>;
     fn register_detector(&self, mime: &str, detector: Arc<dyn FormatDetectorFn>);
 }
 
@@ -137,7 +141,10 @@ impl Default for NormalizerConfig {
 
 #[async_trait]
 pub trait Normalizer: Debug + Send + Sync {
-    async fn normalize(&self, observation: Observation) -> Result<Observation, perception_core::PerceptionError>;
+    async fn normalize(
+        &self,
+        observation: Observation,
+    ) -> Result<Observation, perception_core::PerceptionError>;
     async fn normalize_batch(
         &self,
         observations: Vec<Observation>,
@@ -238,11 +245,14 @@ impl Normalizer for DefaultNormalizer {
         self.validate_against_schema(&observation.payload, &observation.modality)?;
 
         // Record transformation
-        observation.provenance.transformation_log.push(TransformationStep {
-            stage: "normalizer".into(),
-            timestamp: Timestamp::now(),
-            description: "schema validated, format normalized".into(),
-        });
+        observation
+            .provenance
+            .transformation_log
+            .push(TransformationStep {
+                stage: "normalizer".into(),
+                timestamp: Timestamp::now(),
+                description: "schema validated, format normalized".into(),
+            });
 
         // Optionally strip raw bytes
         if self.config.strip_raw_bytes {
@@ -281,7 +291,10 @@ impl Normalizer for DefaultNormalizer {
 
 #[async_trait]
 impl FormatDetector for DefaultNormalizer {
-    async fn detect(&self, bytes: &[u8]) -> Result<(String, f64), perception_core::PerceptionError> {
+    async fn detect(
+        &self,
+        bytes: &[u8],
+    ) -> Result<(String, f64), perception_core::PerceptionError> {
         // Collect detector references under the lock, then iterate outside it
         let detector_list: Vec<(String, Arc<dyn FormatDetectorFn>)> = self
             .detectors
@@ -386,13 +399,9 @@ impl FormatParser for JsonParser {
         &self,
         bytes: &[u8],
     ) -> Result<ObservationPayload, perception_core::PerceptionError> {
-        let value: serde_json::Value =
-            serde_json::from_slice(bytes).map_err(|e| {
-                perception_core::PerceptionError::SanitizationFailed(format!(
-                    "invalid JSON: {}",
-                    e
-                ))
-            })?;
+        let value: serde_json::Value = serde_json::from_slice(bytes).map_err(|e| {
+            perception_core::PerceptionError::SanitizationFailed(format!("invalid JSON: {}", e))
+        })?;
         match value {
             serde_json::Value::Object(map) => {
                 let fields: HashMap<String, serde_json::Value> = map.into_iter().collect();

@@ -6,7 +6,9 @@ use brain_core::context::ReasoningContext;
 pub struct ConstraintSolver;
 
 impl ConstraintSolver {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 
     pub fn solve(
         &self,
@@ -35,5 +37,7 @@ impl ConstraintSolver {
 }
 
 impl Default for ConstraintSolver {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }

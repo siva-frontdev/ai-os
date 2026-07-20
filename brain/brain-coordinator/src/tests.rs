@@ -1,16 +1,16 @@
 #[cfg(test)]
 mod tests {
+    use brain_core::BrainResult;
     use brain_core::budget::CognitiveBudget;
+    use brain_core::context::DecisionContext;
     use brain_core::ids::{GoalId, ToolCapabilityId, ToolId};
+    use brain_core::tool::ExecutablePlan;
     use brain_core::tool::{ToolCandidate, ToolCapability, ToolRegistry, ToolRequirement};
     use brain_core::types::GoalPriority;
-    use brain_core::BrainResult;
-    use brain_core::context::DecisionContext;
-    use brain_core::tool::ExecutablePlan;
-    use brain_goals::types::GoalRecord;
     use brain_goals::InMemoryGoalStore;
-    use brain_policy::types::PolicyEvaluation;
+    use brain_goals::types::GoalRecord;
     use brain_policy::PolicyEvaluator;
+    use brain_policy::types::PolicyEvaluation;
     use std::sync::Arc;
 
     use crate::orchestrator::BrainOrchestrator;

@@ -16,7 +16,11 @@ pub struct GoalManager {
 
 impl GoalManager {
     pub fn new(store: Arc<dyn GoalStore>) -> Self {
-        Self { store, dag: std::sync::RwLock::new(GoalDag::new()), validator: GoalValidator::new() }
+        Self {
+            store,
+            dag: std::sync::RwLock::new(GoalDag::new()),
+            validator: GoalValidator::new(),
+        }
     }
 
     pub async fn create_goal(
@@ -36,12 +40,18 @@ impl GoalManager {
         self.validator.validate_new(&record, &existing_ids)?;
 
         {
-            let mut dag = self.dag.write().map_err(|e| GoalsError::Internal(e.to_string()))?;
+            let mut dag = self
+                .dag
+                .write()
+                .map_err(|e| GoalsError::Internal(e.to_string()))?;
             dag.add_node(record.goal_id);
 
             for dep in &record.dependencies {
                 if !dag.has_node(dep) {
-                    return Err(GoalsError::DependencyNotFound { goal: record.goal_id, dependency: *dep });
+                    return Err(GoalsError::DependencyNotFound {
+                        goal: record.goal_id,
+                        dependency: *dep,
+                    });
                 }
                 dag.add_dependency(record.goal_id, *dep)?;
             }
@@ -61,9 +71,10 @@ impl GoalManager {
         }
 
         if !self.validator.can_activate(&record, &dep_statuses) {
-            return Err(GoalsError::ValidationError(
-                format!("goal {:?} is not ready to activate; dependencies not satisfied", goal_id)
-            ));
+            return Err(GoalsError::ValidationError(format!(
+                "goal {:?} is not ready to activate; dependencies not satisfied",
+                goal_id
+            )));
         }
 
         record.status = GoalStatus::Active;
@@ -72,7 +83,11 @@ impl GoalManager {
         Ok(record)
     }
 
-    pub async fn complete_goal(&self, goal_id: &GoalId, outcome: impl Into<String>) -> GoalsResult<GoalRecord> {
+    pub async fn complete_goal(
+        &self,
+        goal_id: &GoalId,
+        outcome: impl Into<String>,
+    ) -> GoalsResult<GoalRecord> {
         let mut record = self.store.get(goal_id).await?;
         record.status = GoalStatus::Completed;
         record.completed_at = Some(Timestamp::now());
@@ -82,29 +97,47 @@ impl GoalManager {
         Ok(record)
     }
 
-    pub async fn fail_goal(&self, goal_id: &GoalId, reason: impl Into<String>) -> GoalsResult<GoalRecord> {
+    pub async fn fail_goal(
+        &self,
+        goal_id: &GoalId,
+        reason: impl Into<String>,
+    ) -> GoalsResult<GoalRecord> {
         let mut record = self.store.get(goal_id).await?;
         record.status = GoalStatus::Failed;
         record.failure_count += 1;
         record.updated_at = Timestamp::now();
-        record.metadata.insert("failure_reason".into(), reason.into());
+        record
+            .metadata
+            .insert("failure_reason".into(), reason.into());
         self.store.update(record.clone()).await?;
         Ok(record)
     }
 
-    pub async fn cancel_goal(&self, goal_id: &GoalId, reason: impl Into<String>) -> GoalsResult<GoalRecord> {
+    pub async fn cancel_goal(
+        &self,
+        goal_id: &GoalId,
+        reason: impl Into<String>,
+    ) -> GoalsResult<GoalRecord> {
         let mut record = self.store.get(goal_id).await?;
         if record.status == GoalStatus::Completed {
-            return Err(GoalsError::ValidationError("cannot cancel a completed goal".into()));
+            return Err(GoalsError::ValidationError(
+                "cannot cancel a completed goal".into(),
+            ));
         }
         record.status = GoalStatus::Cancelled;
         record.updated_at = Timestamp::now();
-        record.metadata.insert("cancel_reason".into(), reason.into());
+        record
+            .metadata
+            .insert("cancel_reason".into(), reason.into());
         self.store.update(record.clone()).await?;
         Ok(record)
     }
 
-    pub async fn pause_goal(&self, goal_id: &GoalId, reason: Option<impl Into<String>>) -> GoalsResult<GoalRecord> {
+    pub async fn pause_goal(
+        &self,
+        goal_id: &GoalId,
+        reason: Option<impl Into<String>>,
+    ) -> GoalsResult<GoalRecord> {
         let mut record = self.store.get(goal_id).await?;
         record.status = GoalStatus::Paused;
         record.updated_at = Timestamp::now();
@@ -118,9 +151,10 @@ impl GoalManager {
     pub async fn recover_goal(&self, goal_id: &GoalId) -> GoalsResult<GoalRecord> {
         let mut record = self.store.get(goal_id).await?;
         if record.status != GoalStatus::Failed && record.status != GoalStatus::Recovering {
-            return Err(GoalsError::ValidationError(
-                format!("goal {:?} cannot be recovered from status {:?}", goal_id, record.status)
-            ));
+            return Err(GoalsError::ValidationError(format!(
+                "goal {:?} cannot be recovered from status {:?}",
+                goal_id, record.status
+            )));
         }
         record.status = GoalStatus::Recovering;
         record.recovery_attempts += 1;
@@ -143,7 +177,10 @@ impl GoalManager {
 
     pub async fn add_dependency(&self, goal: GoalId, dependency: GoalId) -> GoalsResult<()> {
         {
-            let mut dag = self.dag.write().map_err(|e| GoalsError::Internal(e.to_string()))?;
+            let mut dag = self
+                .dag
+                .write()
+                .map_err(|e| GoalsError::Internal(e.to_string()))?;
             dag.add_node(goal);
             dag.add_node(dependency);
             dag.add_dependency(goal, dependency)?;
@@ -159,6 +196,9 @@ impl GoalManager {
     }
 
     pub fn dag(&self) -> Result<GoalDag, GoalsError> {
-        self.dag.read().map(|d| d.clone()).map_err(|e| GoalsError::Internal(e.to_string()))
+        self.dag
+            .read()
+            .map(|d| d.clone())
+            .map_err(|e| GoalsError::Internal(e.to_string()))
     }
 }

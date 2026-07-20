@@ -1,5 +1,5 @@
 use crate::errors::{WorkflowError, WorkflowResult};
-use crate::types::{StepStatus, Workflow, WorkflowStep, WorkflowStatus};
+use crate::types::{StepStatus, Workflow, WorkflowStatus, WorkflowStep};
 use brain_core::ids::WorkflowId;
 use brain_core::tool::ExecutablePlan;
 use memory_core::Timestamp;
@@ -7,7 +7,9 @@ use memory_core::Timestamp;
 pub struct WorkflowBuilder;
 
 impl WorkflowBuilder {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 
     pub fn build(&self, name: &str, plan: ExecutablePlan, max_retries: u32) -> Workflow {
         let steps: Vec<WorkflowStep> = plan
@@ -24,7 +26,11 @@ impl WorkflowBuilder {
                 error: None,
                 started_at: None,
                 completed_at: None,
-                parallel_group: if i % 2 == 0 { Some("group-a".into()) } else { Some("group-b".into()) },
+                parallel_group: if i % 2 == 0 {
+                    Some("group-a".into())
+                } else {
+                    Some("group-b".into())
+                },
             })
             .collect();
 
@@ -42,11 +48,18 @@ impl WorkflowBuilder {
         }
     }
 
-    pub fn build_with_steps(&self, name: &str, plan: ExecutablePlan, step_configs: Vec<StepConfig>) -> WorkflowResult<Workflow> {
+    pub fn build_with_steps(
+        &self,
+        name: &str,
+        plan: ExecutablePlan,
+        step_configs: Vec<StepConfig>,
+    ) -> WorkflowResult<Workflow> {
         if plan.tool_requirements.len() != step_configs.len() {
-            return Err(WorkflowError::Internal(
-                format!("plan has {} requirements but {} configs provided", plan.tool_requirements.len(), step_configs.len())
-            ));
+            return Err(WorkflowError::Internal(format!(
+                "plan has {} requirements but {} configs provided",
+                plan.tool_requirements.len(),
+                step_configs.len()
+            )));
         }
 
         let steps: Vec<WorkflowStep> = plan
@@ -86,7 +99,9 @@ impl WorkflowBuilder {
 }
 
 impl Default for WorkflowBuilder {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 pub struct StepConfig {

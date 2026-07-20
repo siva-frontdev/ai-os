@@ -10,9 +10,7 @@ pub use errors::{LearningError, LearningResult};
 pub use knowledge_base::KnowledgeBase;
 pub use learning_engine::LearningEngine;
 pub use pattern_recognizer::PatternRecognizer;
-pub use types::{
-    ConsolidationReport, Knowledge, LearningSignal, Pattern,
-};
+pub use types::{ConsolidationReport, Knowledge, LearningSignal, Pattern};
 
 #[cfg(test)]
 mod tests;

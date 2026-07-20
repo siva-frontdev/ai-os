@@ -1,8 +1,5 @@
 #[cfg(test)]
 mod tests {
-    use brain_core::ids::GoalId;
-    use brain_core::types::GoalPriority;
-    use uuid::Uuid;
     use crate::dag::GoalDag;
     use crate::errors::GoalsError;
     use crate::manager::GoalManager;
@@ -10,7 +7,10 @@ mod tests {
     use crate::store::GoalStore;
     use crate::types::GoalRecord;
     use crate::validator::GoalValidator;
+    use brain_core::ids::GoalId;
+    use brain_core::types::GoalPriority;
     use std::sync::Arc;
+    use uuid::Uuid;
 
     fn make_id(n: u8) -> GoalId {
         let mut buf = [0u8; 16];
@@ -182,8 +182,19 @@ mod tests {
     #[tokio::test]
     async fn test_memory_store_list_all() {
         let store = InMemoryGoalStore::new();
-        store.insert(GoalRecord::new(make_id(1), "a", "desc", GoalPriority::Normal)).await.unwrap();
-        store.insert(GoalRecord::new(make_id(2), "b", "desc", GoalPriority::High)).await.unwrap();
+        store
+            .insert(GoalRecord::new(
+                make_id(1),
+                "a",
+                "desc",
+                GoalPriority::Normal,
+            ))
+            .await
+            .unwrap();
+        store
+            .insert(GoalRecord::new(make_id(2), "b", "desc", GoalPriority::High))
+            .await
+            .unwrap();
         let all = store.list_all().await.unwrap();
         assert_eq!(all.len(), 2);
     }
@@ -193,7 +204,10 @@ mod tests {
         let store = Arc::new(InMemoryGoalStore::new());
         let manager = GoalManager::new(store);
         let id = make_id(1);
-        let goal = manager.create_goal(id, "test", "test description", GoalPriority::Normal, vec![]).await.unwrap();
+        let goal = manager
+            .create_goal(id, "test", "test description", GoalPriority::Normal, vec![])
+            .await
+            .unwrap();
         assert_eq!(goal.status, brain_core::types::GoalStatus::Pending);
         let activated = manager.activate_goal(&id).await.unwrap();
         assert_eq!(activated.status, brain_core::types::GoalStatus::Active);
@@ -204,7 +218,10 @@ mod tests {
         let store = Arc::new(InMemoryGoalStore::new());
         let manager = GoalManager::new(store);
         let id = make_id(1);
-        manager.create_goal(id, "test", "desc", GoalPriority::Normal, vec![]).await.unwrap();
+        manager
+            .create_goal(id, "test", "desc", GoalPriority::Normal, vec![])
+            .await
+            .unwrap();
         manager.activate_goal(&id).await.unwrap();
         let completed = manager.complete_goal(&id, "success").await.unwrap();
         assert_eq!(completed.status, brain_core::types::GoalStatus::Completed);
@@ -215,8 +232,14 @@ mod tests {
         let store = Arc::new(InMemoryGoalStore::new());
         let manager = GoalManager::new(store);
         let id = make_id(1);
-        manager.create_goal(id, "test", "desc", GoalPriority::Normal, vec![]).await.unwrap();
-        let failed = manager.fail_goal(&id, "something went wrong").await.unwrap();
+        manager
+            .create_goal(id, "test", "desc", GoalPriority::Normal, vec![])
+            .await
+            .unwrap();
+        let failed = manager
+            .fail_goal(&id, "something went wrong")
+            .await
+            .unwrap();
         assert_eq!(failed.status, brain_core::types::GoalStatus::Failed);
     }
 
@@ -225,7 +248,10 @@ mod tests {
         let store = Arc::new(InMemoryGoalStore::new());
         let manager = GoalManager::new(store);
         let id = make_id(1);
-        manager.create_goal(id, "test", "desc", GoalPriority::Normal, vec![]).await.unwrap();
+        manager
+            .create_goal(id, "test", "desc", GoalPriority::Normal, vec![])
+            .await
+            .unwrap();
         let cancelled = manager.cancel_goal(&id, "no longer needed").await.unwrap();
         assert_eq!(cancelled.status, brain_core::types::GoalStatus::Cancelled);
     }
@@ -235,9 +261,15 @@ mod tests {
         let store = Arc::new(InMemoryGoalStore::new());
         let manager = GoalManager::new(store);
         let id = make_id(1);
-        manager.create_goal(id, "test", "desc", GoalPriority::Normal, vec![]).await.unwrap();
+        manager
+            .create_goal(id, "test", "desc", GoalPriority::Normal, vec![])
+            .await
+            .unwrap();
         manager.activate_goal(&id).await.unwrap();
-        let paused = manager.pause_goal(&id, Some("operator request")).await.unwrap();
+        let paused = manager
+            .pause_goal(&id, Some("operator request"))
+            .await
+            .unwrap();
         assert_eq!(paused.status, brain_core::types::GoalStatus::Paused);
     }
 
@@ -246,7 +278,10 @@ mod tests {
         let store = Arc::new(InMemoryGoalStore::new());
         let manager = GoalManager::new(store);
         let id = make_id(1);
-        manager.create_goal(id, "test", "desc", GoalPriority::Normal, vec![]).await.unwrap();
+        manager
+            .create_goal(id, "test", "desc", GoalPriority::Normal, vec![])
+            .await
+            .unwrap();
         manager.fail_goal(&id, "error").await.unwrap();
         let recovering = manager.recover_goal(&id).await.unwrap();
         assert_eq!(recovering.status, brain_core::types::GoalStatus::Recovering);
@@ -257,10 +292,22 @@ mod tests {
         let store = Arc::new(InMemoryGoalStore::new());
         let manager = GoalManager::new(store.clone());
         let dep_id = make_id(1);
-        manager.create_goal(dep_id, "dep", "dependency", GoalPriority::Normal, vec![]).await.unwrap();
+        manager
+            .create_goal(dep_id, "dep", "dependency", GoalPriority::Normal, vec![])
+            .await
+            .unwrap();
 
         let goal_id = make_id(2);
-        let goal = manager.create_goal(goal_id, "main", "main goal", GoalPriority::High, vec![dep_id]).await.unwrap();
+        let goal = manager
+            .create_goal(
+                goal_id,
+                "main",
+                "main goal",
+                GoalPriority::High,
+                vec![dep_id],
+            )
+            .await
+            .unwrap();
         assert_eq!(goal.dependencies, vec![dep_id]);
 
         let result = manager.activate_goal(&goal_id).await;

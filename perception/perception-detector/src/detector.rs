@@ -76,11 +76,7 @@ impl Default for DetectorConfig {
 
 #[async_trait]
 pub trait StateDetector: Debug + Send + Sync {
-    fn register_machine(
-        &self,
-        scope: ScopeId,
-        machine: StateMachine,
-    ) -> DetectorResult<()>;
+    fn register_machine(&self, scope: ScopeId, machine: StateMachine) -> DetectorResult<()>;
 
     async fn detect(
         &self,
@@ -114,11 +110,7 @@ impl DefaultStateDetector {
 
 #[async_trait]
 impl StateDetector for DefaultStateDetector {
-    fn register_machine(
-        &self,
-        scope: ScopeId,
-        machine: StateMachine,
-    ) -> DetectorResult<()> {
+    fn register_machine(&self, scope: ScopeId, machine: StateMachine) -> DetectorResult<()> {
         let initial = machine.initial_state.clone();
         if let Ok(mut machines) = self.machines.write() {
             machines.insert(scope.clone(), machine);
@@ -146,9 +138,7 @@ impl StateDetector for DefaultStateDetector {
             .states
             .read()
             .map_err(|_| {
-                perception_core::PerceptionError::ConfigurationError(
-                    "state lock poisoned".into(),
-                )
+                perception_core::PerceptionError::ConfigurationError("state lock poisoned".into())
             })?
             .get(&scope)
             .cloned();
@@ -157,9 +147,7 @@ impl StateDetector for DefaultStateDetector {
             .machines
             .read()
             .map_err(|_| {
-                perception_core::PerceptionError::ConfigurationError(
-                    "machine lock poisoned".into(),
-                )
+                perception_core::PerceptionError::ConfigurationError("machine lock poisoned".into())
             })?
             .get(&scope)
             .cloned();
@@ -174,7 +162,8 @@ impl StateDetector for DefaultStateDetector {
         // Evaluate transition rules
         for rule in &machine.transitions {
             if rule.from == current_state {
-                let modality_match = format!("{:?}", observation.modality).contains(&rule.condition)
+                let modality_match = format!("{:?}", observation.modality)
+                    .contains(&rule.condition)
                     || payload_to_string(&observation.payload).contains(&rule.condition);
 
                 if modality_match {
@@ -270,11 +259,7 @@ pub struct MetricStats {
 
 #[async_trait]
 pub trait ChangeDetector: Debug + Send + Sync {
-    fn register_metric(
-        &self,
-        key: String,
-        config: ChangeDetectorConfig,
-    ) -> DetectorResult<()>;
+    fn register_metric(&self, key: String, config: ChangeDetectorConfig) -> DetectorResult<()>;
 
     async fn feed(
         &self,
@@ -319,11 +304,7 @@ impl Default for DefaultChangeDetector {
 
 #[async_trait]
 impl ChangeDetector for DefaultChangeDetector {
-    fn register_metric(
-        &self,
-        key: String,
-        config: ChangeDetectorConfig,
-    ) -> DetectorResult<()> {
+    fn register_metric(&self, key: String, config: ChangeDetectorConfig) -> DetectorResult<()> {
         let mut metrics = self
             .metrics
             .write()
@@ -348,14 +329,9 @@ impl ChangeDetector for DefaultChangeDetector {
         value: f64,
         timestamp: Timestamp,
     ) -> Result<Option<ChangeEvent>, perception_core::PerceptionError> {
-        let mut metrics = self
-            .metrics
-            .write()
-            .map_err(|_| {
-                perception_core::PerceptionError::ConfigurationError(
-                    "metrics lock poisoned".into(),
-                )
-            })?;
+        let mut metrics = self.metrics.write().map_err(|_| {
+            perception_core::PerceptionError::ConfigurationError("metrics lock poisoned".into())
+        })?;
         let Some(window) = metrics.get_mut(key) else {
             return Ok(None);
         };
@@ -487,10 +463,7 @@ mod tests {
         };
 
         detector.register_machine(scope.clone(), machine).unwrap();
-        assert_eq!(
-            detector.current_state(&scope).unwrap(),
-            Some("idle".into())
-        );
+        assert_eq!(detector.current_state(&scope).unwrap(), Some("idle".into()));
 
         let source = ObservationSource {
             observer_id: "test".into(),
@@ -521,10 +494,7 @@ mod tests {
         );
 
         detector.reset(&scope).unwrap();
-        assert_eq!(
-            detector.current_state(&scope).unwrap(),
-            Some("idle".into())
-        );
+        assert_eq!(detector.current_state(&scope).unwrap(), Some("idle".into()));
     }
 
     #[tokio::test]
@@ -549,14 +519,22 @@ mod tests {
         assert!(result.is_none());
 
         let result = detector
-            .feed("cpu", 51.0, Timestamp::from_nanos(ts.as_nanos() + 1_000_000_000))
+            .feed(
+                "cpu",
+                51.0,
+                Timestamp::from_nanos(ts.as_nanos() + 1_000_000_000),
+            )
             .await
             .unwrap();
         assert!(result.is_none());
 
         // Large delta should trigger change
         let result = detector
-            .feed("cpu", 70.0, Timestamp::from_nanos(ts.as_nanos() + 2_000_000_000))
+            .feed(
+                "cpu",
+                70.0,
+                Timestamp::from_nanos(ts.as_nanos() + 2_000_000_000),
+            )
             .await
             .unwrap();
         assert!(result.is_some());
@@ -570,15 +548,16 @@ mod tests {
         let ts = Timestamp::now();
 
         detector
-            .register_metric(
-                "memory".into(),
-                ChangeDetectorConfig::default(),
-            )
+            .register_metric("memory".into(), ChangeDetectorConfig::default())
             .unwrap();
 
         detector.feed("memory", 100.0, ts).await.unwrap();
         detector
-            .feed("memory", 200.0, Timestamp::from_nanos(ts.as_nanos() + 1_000_000_000))
+            .feed(
+                "memory",
+                200.0,
+                Timestamp::from_nanos(ts.as_nanos() + 1_000_000_000),
+            )
             .await
             .unwrap();
 

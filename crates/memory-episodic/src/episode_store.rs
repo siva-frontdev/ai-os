@@ -1,10 +1,10 @@
+use crate::error::{EpisodicError, EpisodicResult};
+use crate::event::EpisodicEvent;
+use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::RwLock;
 use uuid::Uuid;
-use serde::{Serialize, Deserialize};
-use async_trait::async_trait;
-use crate::error::{EpisodicError, EpisodicResult};
-use crate::event::EpisodicEvent;
 
 /// Low-level storage trait for episodic events by ID.
 #[async_trait]
@@ -13,7 +13,11 @@ pub trait EpisodeStore: Send + Sync + std::fmt::Debug {
     async fn get(&self, id: &Uuid) -> EpisodicResult<Option<EpisodicEvent>>;
     async fn delete(&self, id: &Uuid) -> EpisodicResult<()>;
     async fn list_by_session(&self, session_id: &Uuid) -> EpisodicResult<Vec<EpisodicEvent>>;
-    async fn list_by_time_range(&self, start_ns: i64, end_ns: i64) -> EpisodicResult<Vec<EpisodicEvent>>;
+    async fn list_by_time_range(
+        &self,
+        start_ns: i64,
+        end_ns: i64,
+    ) -> EpisodicResult<Vec<EpisodicEvent>>;
     async fn count(&self) -> EpisodicResult<u64>;
     async fn clear(&self) -> EpisodicResult<()>;
 }
@@ -40,7 +44,8 @@ impl EpisodeStore for InMemoryEpisodeStore {
         Ok(())
     }
     async fn get(&self, id: &Uuid) -> EpisodicResult<Option<EpisodicEvent>> {
-        Ok(self.events
+        Ok(self
+            .events
             .read()
             .map_err(|e| EpisodicError::Internal(e.to_string()))?
             .get(id)
@@ -54,7 +59,8 @@ impl EpisodeStore for InMemoryEpisodeStore {
         Ok(())
     }
     async fn list_by_session(&self, session_id: &Uuid) -> EpisodicResult<Vec<EpisodicEvent>> {
-        let mut results: Vec<_> = self.events
+        let mut results: Vec<_> = self
+            .events
             .read()
             .map_err(|e| EpisodicError::Internal(e.to_string()))?
             .values()
@@ -64,8 +70,13 @@ impl EpisodeStore for InMemoryEpisodeStore {
         results.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
         Ok(results)
     }
-    async fn list_by_time_range(&self, start_ns: i64, end_ns: i64) -> EpisodicResult<Vec<EpisodicEvent>> {
-        let mut results: Vec<_> = self.events
+    async fn list_by_time_range(
+        &self,
+        start_ns: i64,
+        end_ns: i64,
+    ) -> EpisodicResult<Vec<EpisodicEvent>> {
+        let mut results: Vec<_> = self
+            .events
             .read()
             .map_err(|e| EpisodicError::Internal(e.to_string()))?
             .values()
@@ -76,7 +87,8 @@ impl EpisodeStore for InMemoryEpisodeStore {
         Ok(results)
     }
     async fn count(&self) -> EpisodicResult<u64> {
-        Ok(self.events
+        Ok(self
+            .events
             .read()
             .map_err(|e| EpisodicError::Internal(e.to_string()))?
             .len() as u64)
@@ -96,11 +108,25 @@ pub struct DefaultEpisodeStore;
 
 #[async_trait]
 impl EpisodeStore for DefaultEpisodeStore {
-    async fn insert(&self, _: EpisodicEvent) -> EpisodicResult<()> { Ok(()) }
-    async fn get(&self, _: &Uuid) -> EpisodicResult<Option<EpisodicEvent>> { Ok(None) }
-    async fn delete(&self, _: &Uuid) -> EpisodicResult<()> { Ok(()) }
-    async fn list_by_session(&self, _: &Uuid) -> EpisodicResult<Vec<EpisodicEvent>> { Ok(Vec::new()) }
-    async fn list_by_time_range(&self, _: i64, _: i64) -> EpisodicResult<Vec<EpisodicEvent>> { Ok(Vec::new()) }
-    async fn count(&self) -> EpisodicResult<u64> { Ok(0) }
-    async fn clear(&self) -> EpisodicResult<()> { Ok(()) }
+    async fn insert(&self, _: EpisodicEvent) -> EpisodicResult<()> {
+        Ok(())
+    }
+    async fn get(&self, _: &Uuid) -> EpisodicResult<Option<EpisodicEvent>> {
+        Ok(None)
+    }
+    async fn delete(&self, _: &Uuid) -> EpisodicResult<()> {
+        Ok(())
+    }
+    async fn list_by_session(&self, _: &Uuid) -> EpisodicResult<Vec<EpisodicEvent>> {
+        Ok(Vec::new())
+    }
+    async fn list_by_time_range(&self, _: i64, _: i64) -> EpisodicResult<Vec<EpisodicEvent>> {
+        Ok(Vec::new())
+    }
+    async fn count(&self) -> EpisodicResult<u64> {
+        Ok(0)
+    }
+    async fn clear(&self) -> EpisodicResult<()> {
+        Ok(())
+    }
 }

@@ -1,6 +1,6 @@
 //! `DecisionContext` — context passed to the DecisionMaker.
-use crate::ids::DecisionId;
 use crate::budget::CognitiveBudget;
+use crate::ids::DecisionId;
 use crate::types::Confidence;
 use serde::{Deserialize, Serialize};
 

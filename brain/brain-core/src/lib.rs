@@ -26,27 +26,23 @@
 //!
 //! This crate must compile with zero dependencies on other Brain crates.
 
-pub mod ids;
-pub mod types;
-pub mod events;
-pub mod errors;
-pub mod context;
 pub mod budget;
+pub mod context;
+pub mod errors;
+pub mod events;
+pub mod ids;
 pub mod state;
 pub mod tool;
 pub mod traits;
+pub mod types;
 
 // Re-export the most commonly used types at the crate root.
-pub use ids::{
-    CheckpointId, GoalId, LessonId, PlanId, DecisionId, ReflectionId, ThoughtId,
-    ToolCapabilityId, ToolId, WorkflowId,
-};
-pub use types::{
-    BudgetDimension, BrainState, Confidence, GoalPriority, GoalStatus,
-};
+pub use budget::{BudgetChecker, BudgetUsage, CognitiveBudget};
+pub use context::{DecisionContext, GoalContext, PlanningContext, ReasoningContext};
 pub use errors::{BrainError, BrainResult};
-pub use budget::{CognitiveBudget, BudgetUsage, BudgetChecker};
-pub use context::{
-    DecisionContext, GoalContext, PlanningContext, ReasoningContext,
+pub use ids::{
+    CheckpointId, DecisionId, GoalId, LessonId, PlanId, ReflectionId, ThoughtId, ToolCapabilityId,
+    ToolId, WorkflowId,
 };
 pub use tool::{ExecutablePlan, ToolCandidate, ToolRequirement};
+pub use types::{BrainState, BudgetDimension, Confidence, GoalPriority, GoalStatus};

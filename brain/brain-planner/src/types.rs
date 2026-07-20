@@ -23,15 +23,21 @@ pub struct TaskGraph {
 
 impl TaskGraph {
     pub fn new(nodes: Vec<TaskNode>) -> Self {
-        let entry_points: Vec<String> = nodes.iter()
+        let entry_points: Vec<String> = nodes
+            .iter()
             .filter(|n| n.dependencies.is_empty())
             .map(|n| n.id.clone())
             .collect();
-        let exit_points: Vec<String> = nodes.iter()
+        let exit_points: Vec<String> = nodes
+            .iter()
             .filter(|n| !nodes.iter().any(|other| other.dependencies.contains(&n.id)))
             .map(|n| n.id.clone())
             .collect();
-        TaskGraph { nodes, entry_points, exit_points }
+        TaskGraph {
+            nodes,
+            entry_points,
+            exit_points,
+        }
     }
 
     pub fn total_duration_ms(&self) -> u64 {
@@ -51,7 +57,8 @@ impl TaskGraph {
             let pred_max = if node.dependencies.is_empty() {
                 0
             } else {
-                node.dependencies.iter()
+                node.dependencies
+                    .iter()
                     .filter_map(|d| longest.get(d.as_str()))
                     .max()
                     .copied()
@@ -64,10 +71,13 @@ impl TaskGraph {
 
     #[allow(clippy::collapsible_if)]
     pub fn topological_order(&self) -> Vec<String> {
-        let mut in_degree: std::collections::HashMap<&str, usize> = self.nodes.iter()
+        let mut in_degree: std::collections::HashMap<&str, usize> = self
+            .nodes
+            .iter()
             .map(|n| (n.id.as_str(), n.dependencies.len()))
             .collect();
-        let mut queue: Vec<&str> = in_degree.iter()
+        let mut queue: Vec<&str> = in_degree
+            .iter()
             .filter(|&(_, deg)| *deg == 0)
             .map(|(id, _)| *id)
             .collect();

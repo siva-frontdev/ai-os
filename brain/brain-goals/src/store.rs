@@ -10,7 +10,10 @@ pub trait GoalStore: Send + Sync {
     async fn update(&self, record: GoalRecord) -> GoalsResult<()>;
     async fn delete(&self, goal_id: &GoalId) -> GoalsResult<()>;
     async fn list_by_status(&self, status: GoalStatus) -> GoalsResult<Vec<GoalRecord>>;
-    async fn list_by_priority(&self, priority: brain_core::types::GoalPriority) -> GoalsResult<Vec<GoalRecord>>;
+    async fn list_by_priority(
+        &self,
+        priority: brain_core::types::GoalPriority,
+    ) -> GoalsResult<Vec<GoalRecord>>;
     async fn list_ready(&self) -> GoalsResult<Vec<GoalRecord>>;
     async fn list_all(&self) -> GoalsResult<Vec<GoalRecord>>;
     async fn exists(&self, goal_id: &GoalId) -> GoalsResult<bool>;

@@ -1,9 +1,9 @@
 //! Reasoning events.
 use crate::ids::{GoalId, ThoughtId};
-use crate::types::Confidence;
 use crate::types::BudgetDimension;
-use memory_core::Timestamp;
+use crate::types::Confidence;
 use ai_os_core::events::Event;
+use memory_core::Timestamp;
 use serde::{Deserialize, Serialize};
 
 /// Published when a reasoning cycle starts.

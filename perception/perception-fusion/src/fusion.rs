@@ -93,20 +93,24 @@ impl CorrelationWindow {
     }
 
     fn add(&mut self, observation: Observation) {
-        self.received_sources.insert(observation.source.observer_kind.clone());
+        self.received_sources
+            .insert(observation.source.observer_kind.clone());
         self.observations.push(observation);
     }
 
     fn is_complete(&self) -> bool {
         self.observations.len() >= self.rule.min_observations
-            && self.rule.expected_sources.iter().all(|k| self.received_sources.contains(k))
+            && self
+                .rule
+                .expected_sources
+                .iter()
+                .all(|k| self.received_sources.contains(k))
     }
 
     fn synthesize(&self, timestamp: Timestamp) -> FusedObservation {
         let sources: Vec<ObservationSource> =
             self.observations.iter().map(|o| o.source.clone()).collect();
-        let constituent_ids: Vec<ObservationId> =
-            self.observations.iter().map(|o| o.id).collect();
+        let constituent_ids: Vec<ObservationId> = self.observations.iter().map(|o| o.id).collect();
 
         let fused_payload = match self.rule.fusion_fn {
             FusionFn::TakeFirst => self
@@ -238,7 +242,10 @@ impl DefaultFusionEngine {
         if let Some(cid) = &observation.correlation_id {
             return Some(CorrelationKey(format!("cid:{}", cid)));
         }
-        let fallback = format!("{}:{:?}", observation.source.instance_id, observation.modality);
+        let fallback = format!(
+            "{}:{:?}",
+            observation.source.instance_id, observation.modality
+        );
         let key = observation
             .metadata
             .get(&rule.correlation_key_expr)
@@ -272,7 +279,10 @@ impl FusionEngine for DefaultFusionEngine {
             .map(|rules| {
                 rules
                     .iter()
-                    .filter(|r| r.expected_sources.contains(&observation.source.observer_kind))
+                    .filter(|r| {
+                        r.expected_sources
+                            .contains(&observation.source.observer_kind)
+                    })
                     .cloned()
                     .collect()
             })
@@ -444,8 +454,7 @@ mod tests {
             fs_source,
             Modality::FileSystem,
             ObservationPayload::Structured {
-                fields: [("path".into(), serde_json::Value::String("/tmp/test".into()))]
-                    .into(),
+                fields: [("path".into(), serde_json::Value::String("/tmp/test".into()))].into(),
             },
             Some(cid),
         );
@@ -454,8 +463,7 @@ mod tests {
             proc_source,
             Modality::Process,
             ObservationPayload::Structured {
-                fields: [("pid".into(), serde_json::Value::Number(1234.into()))]
-                    .into(),
+                fields: [("pid".into(), serde_json::Value::Number(1234.into()))].into(),
             },
             Some(cid),
         );

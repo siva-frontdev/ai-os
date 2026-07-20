@@ -29,7 +29,11 @@ pub enum RuleCondition {
     /// Context key matches a regex pattern.
     ContextMatches { key: String, pattern: String },
     /// A numeric metric crosses a threshold.
-    Threshold { metric: String, operator: Comparison, value: f64 },
+    Threshold {
+        metric: String,
+        operator: Comparison,
+        value: f64,
+    },
     /// A budget dimension is exhausted.
     BudgetExceeded { dimension: String },
     /// A specific guard rail triggered.
@@ -49,7 +53,12 @@ pub enum RuleAction {
 /// Comparison operator for threshold rules.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Comparison {
-    Eq, Ne, Lt, Le, Gt, Ge,
+    Eq,
+    Ne,
+    Lt,
+    Le,
+    Gt,
+    Ge,
 }
 
 /// Channel for escalated policy decisions.
@@ -64,7 +73,10 @@ pub enum EscalationChannel {
 /// Log level for `RuleAction::Log`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum LogLevel {
-    Debug, Info, Warn, Error,
+    Debug,
+    Info,
+    Warn,
+    Error,
 }
 
 // ── Rule / ruleset types ─────────────────────────────────────
@@ -83,9 +95,16 @@ pub struct PolicyRule {
 }
 
 impl PolicyRule {
-    pub fn new<N1, N2, D>(name: N1, description: D, condition: RuleCondition, action: RuleAction) -> Self
+    pub fn new<N1, N2, D>(
+        name: N1,
+        description: D,
+        condition: RuleCondition,
+        action: RuleAction,
+    ) -> Self
     where
-        N1: Into<String>, N2: Into<String>, D: Into<String>,
+        N1: Into<String>,
+        N2: Into<String>,
+        D: Into<String>,
     {
         Self {
             rule_id: uuid::Uuid::new_v4().to_string(),
@@ -111,7 +130,12 @@ pub struct RuleSet {
 
 impl RuleSet {
     pub fn new<N: Into<String>>(name: N) -> Self {
-        Self { name: name.into(), version: 1, active: true, rules: Vec::new() }
+        Self {
+            name: name.into(),
+            version: 1,
+            active: true,
+            rules: Vec::new(),
+        }
     }
 }
 
@@ -128,9 +152,16 @@ pub struct GuardRail {
 }
 
 impl GuardRail {
-    pub fn new<N1, N2, D>(name: N1, description: D, condition: RuleCondition, action: RuleAction) -> Self
+    pub fn new<N1, N2, D>(
+        name: N1,
+        description: D,
+        condition: RuleCondition,
+        action: RuleAction,
+    ) -> Self
     where
-        N1: Into<String>, N2: Into<String>, D: Into<String>,
+        N1: Into<String>,
+        N2: Into<String>,
+        D: Into<String>,
     {
         Self {
             id: uuid::Uuid::new_v4().to_string(),
@@ -180,12 +211,16 @@ pub struct PolicyEvaluation {
 impl PolicyEvaluation {
     /// Whether any blocking violation was detected.
     pub fn has_blocking_violation(&self) -> bool {
-        self.violated_rules.iter().any(|v| v.severity == ViolationSeverity::Blocking || v.severity == ViolationSeverity::Critical)
+        self.violated_rules.iter().any(|v| {
+            v.severity == ViolationSeverity::Blocking || v.severity == ViolationSeverity::Critical
+        })
     }
 
     /// Whether any critical violation was detected.
     pub fn has_critical_violation(&self) -> bool {
-        self.violated_rules.iter().any(|v| v.severity == ViolationSeverity::Critical)
+        self.violated_rules
+            .iter()
+            .any(|v| v.severity == ViolationSeverity::Critical)
     }
 }
 

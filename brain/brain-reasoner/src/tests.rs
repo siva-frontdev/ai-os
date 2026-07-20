@@ -1,16 +1,16 @@
 #[cfg(test)]
 mod tests {
-    use brain_core::budget::CognitiveBudget;
-    use brain_core::context::ReasoningContext;
-    use brain_core::ids::{GoalId, ThoughtId};
-        use uuid::Uuid;
     use crate::constraints::ConstraintSolver;
     use crate::engine::ReasoningPipeline;
-        use crate::hypothesis::HypothesisGenerator;
+    use crate::hypothesis::HypothesisGenerator;
     use crate::inference::InferenceEngine;
     use crate::risk::RiskAnalyzer;
     use crate::tradeoff::TradeoffAnalyzer;
     use crate::types::{ConstraintSeverity, Hypothesis, InferenceType};
+    use brain_core::budget::CognitiveBudget;
+    use brain_core::context::ReasoningContext;
+    use brain_core::ids::{GoalId, ThoughtId};
+    use uuid::Uuid;
 
     fn make_thought_id(n: u8) -> ThoughtId {
         let mut buf = [0u8; 16];
@@ -63,8 +63,16 @@ mod tests {
         };
         let inferences = engine.infer(&ctx, &hyp, &budget).unwrap();
         assert_eq!(inferences.len(), 2);
-        assert!(inferences.iter().any(|i| i.inference_type == InferenceType::Deductive));
-        assert!(inferences.iter().any(|i| i.inference_type == InferenceType::Inductive));
+        assert!(
+            inferences
+                .iter()
+                .any(|i| i.inference_type == InferenceType::Deductive)
+        );
+        assert!(
+            inferences
+                .iter()
+                .any(|i| i.inference_type == InferenceType::Inductive)
+        );
     }
 
     #[test]
@@ -82,7 +90,11 @@ mod tests {
         };
         let constraints = solver.solve(&ctx, &hyp, &budget).unwrap();
         assert!(!constraints.is_empty());
-        assert!(constraints.iter().any(|c| c.severity == ConstraintSeverity::Hard));
+        assert!(
+            constraints
+                .iter()
+                .any(|c| c.severity == ConstraintSeverity::Hard)
+        );
     }
 
     #[test]

@@ -1,7 +1,7 @@
 //! Workflow events.
 use crate::ids::{CheckpointId, WorkflowId};
-use memory_core::Timestamp;
 use ai_os_core::events::Event;
+use memory_core::Timestamp;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -14,7 +14,9 @@ pub struct WorkflowStarted {
 }
 
 impl Event for WorkflowStarted {
-    fn event_type(&self) -> &'static str { "brain.workflow.started" }
+    fn event_type(&self) -> &'static str {
+        "brain.workflow.started"
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -26,7 +28,9 @@ pub struct WorkflowStepStarted {
 }
 
 impl Event for WorkflowStepStarted {
-    fn event_type(&self) -> &'static str { "brain.workflow.step.started" }
+    fn event_type(&self) -> &'static str {
+        "brain.workflow.step.started"
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -39,7 +43,9 @@ pub struct WorkflowStepCompleted {
 }
 
 impl Event for WorkflowStepCompleted {
-    fn event_type(&self) -> &'static str { "brain.workflow.step.completed" }
+    fn event_type(&self) -> &'static str {
+        "brain.workflow.step.completed"
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -53,7 +59,9 @@ pub struct WorkflowCheckpointed {
 }
 
 impl Event for WorkflowCheckpointed {
-    fn event_type(&self) -> &'static str { "brain.workflow.checkpointed" }
+    fn event_type(&self) -> &'static str {
+        "brain.workflow.checkpointed"
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -66,7 +74,9 @@ pub struct WorkflowCompleted {
 }
 
 impl Event for WorkflowCompleted {
-    fn event_type(&self) -> &'static str { "brain.workflow.completed" }
+    fn event_type(&self) -> &'static str {
+        "brain.workflow.completed"
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -79,5 +89,7 @@ pub struct WorkflowFailed {
 }
 
 impl Event for WorkflowFailed {
-    fn event_type(&self) -> &'static str { "brain.workflow.failed" }
+    fn event_type(&self) -> &'static str {
+        "brain.workflow.failed"
+    }
 }

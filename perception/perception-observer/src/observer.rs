@@ -1,7 +1,5 @@
 use async_trait::async_trait;
-use perception_core::{
-    Observation, ObservationPriority, ObservationSource, ObserverKind,
-};
+use perception_core::{Observation, ObservationPriority, ObservationSource, ObserverKind};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use tokio::sync::mpsc;
@@ -162,9 +160,7 @@ impl Observer for DefaultObserver {
 
     async fn stop(&self) -> ObserverResult<()> {
         if self.status_from_atomic() != ObserverStatus::Running {
-            return Err(ObserverError::NotStarted(
-                self.config.observer_id.clone(),
-            ));
+            return Err(ObserverError::NotStarted(self.config.observer_id.clone()));
         }
         self.set_status(ObserverStatus::Stopped);
         Ok(())

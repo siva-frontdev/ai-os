@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 /// Event emitted when a new entity is added to the knowledge base.
@@ -17,7 +17,9 @@ pub struct KnowledgeAdded {
 
 impl KnowledgeAdded {
     /// Unique event type identifier.
-    pub fn event_type(&self) -> &'static str { "memory.knowledge.knowledge_added" }
+    pub fn event_type(&self) -> &'static str {
+        "memory.knowledge.knowledge_added"
+    }
 
     /// Structured metadata for logging and observability.
     pub fn metadata(&self) -> HashMap<String, String> {
@@ -45,14 +47,19 @@ pub struct KnowledgeMerged {
 
 impl KnowledgeMerged {
     /// Unique event type identifier.
-    pub fn event_type(&self) -> &'static str { "memory.knowledge.knowledge_merged" }
+    pub fn event_type(&self) -> &'static str {
+        "memory.knowledge.knowledge_merged"
+    }
 
     /// Structured metadata for logging and observability.
     pub fn metadata(&self) -> HashMap<String, String> {
         let mut m = HashMap::new();
         m.insert("event_type".into(), self.event_type().into());
         m.insert("target_id".into(), self.target_id.to_string());
-        m.insert("merged_fact_count".into(), self.merged_fact_count.to_string());
+        m.insert(
+            "merged_fact_count".into(),
+            self.merged_fact_count.to_string(),
+        );
         m
     }
 }
@@ -70,14 +77,18 @@ pub struct KnowledgeRemoved {
 
 impl KnowledgeRemoved {
     /// Unique event type identifier.
-    pub fn event_type(&self) -> &'static str { "memory.knowledge.knowledge_removed" }
+    pub fn event_type(&self) -> &'static str {
+        "memory.knowledge.knowledge_removed"
+    }
 
     /// Structured metadata for logging and observability.
     pub fn metadata(&self) -> HashMap<String, String> {
         let mut m = HashMap::new();
         m.insert("event_type".into(), self.event_type().into());
         m.insert("entity_id".into(), self.id.to_string());
-        if let Some(ref r) = self.reason { m.insert("reason".into(), r.clone()); }
+        if let Some(ref r) = self.reason {
+            m.insert("reason".into(), r.clone());
+        }
         m
     }
 }

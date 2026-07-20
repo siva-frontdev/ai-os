@@ -26,7 +26,10 @@ fn bench_get_set(c: &mut Criterion) {
             for i in 0..iters {
                 let key = format!("key{i}");
                 let obj = make_obj(vec![0u8; 1024]);
-                cache.set(black_box(key), black_box(obj), None).await.unwrap();
+                cache
+                    .set(black_box(key), black_box(obj), None)
+                    .await
+                    .unwrap();
             }
             start.elapsed()
         });

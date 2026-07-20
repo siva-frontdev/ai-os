@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use uuid::Uuid;
     use memory_knowledge::KnowledgeError;
+    use uuid::Uuid;
 
     #[test]
     fn all_error_variants_display() {

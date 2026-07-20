@@ -1,9 +1,9 @@
+use crate::error::{SemanticError, SemanticResult};
+use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::RwLock;
 use uuid::Uuid;
-use serde::{Serialize, Deserialize};
-use async_trait::async_trait;
-use crate::error::{SemanticError, SemanticResult};
 
 /// A typed relationship between two concepts.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -47,14 +47,16 @@ impl RelationshipStore for InMemoryRelationshipStore {
         Ok(())
     }
     async fn get(&self, id: &Uuid) -> SemanticResult<Option<ConceptRelation>> {
-        Ok(self.inner
+        Ok(self
+            .inner
             .read()
             .map_err(|e| SemanticError::Internal(e.to_string()))?
             .get(id)
             .cloned())
     }
     async fn list_by_subject(&self, subject: &Uuid) -> SemanticResult<Vec<ConceptRelation>> {
-        Ok(self.inner
+        Ok(self
+            .inner
             .read()
             .map_err(|e| SemanticError::Internal(e.to_string()))?
             .values()
@@ -63,7 +65,8 @@ impl RelationshipStore for InMemoryRelationshipStore {
             .collect())
     }
     async fn list_by_predicate(&self, pred: &str) -> SemanticResult<Vec<ConceptRelation>> {
-        Ok(self.inner
+        Ok(self
+            .inner
             .read()
             .map_err(|e| SemanticError::Internal(e.to_string()))?
             .values()
@@ -72,7 +75,8 @@ impl RelationshipStore for InMemoryRelationshipStore {
             .collect())
     }
     async fn count(&self) -> SemanticResult<u64> {
-        Ok(self.inner
+        Ok(self
+            .inner
             .read()
             .map_err(|e| SemanticError::Internal(e.to_string()))?
             .len() as u64)
@@ -85,9 +89,19 @@ pub struct DefaultRelationshipStore;
 
 #[async_trait]
 impl RelationshipStore for DefaultRelationshipStore {
-    async fn insert(&self, _: ConceptRelation) -> SemanticResult<()> { Ok(()) }
-    async fn get(&self, _: &Uuid) -> SemanticResult<Option<ConceptRelation>> { Ok(None) }
-    async fn list_by_subject(&self, _: &Uuid) -> SemanticResult<Vec<ConceptRelation>> { Ok(Vec::new()) }
-    async fn list_by_predicate(&self, _: &str) -> SemanticResult<Vec<ConceptRelation>> { Ok(Vec::new()) }
-    async fn count(&self) -> SemanticResult<u64> { Ok(0) }
+    async fn insert(&self, _: ConceptRelation) -> SemanticResult<()> {
+        Ok(())
+    }
+    async fn get(&self, _: &Uuid) -> SemanticResult<Option<ConceptRelation>> {
+        Ok(None)
+    }
+    async fn list_by_subject(&self, _: &Uuid) -> SemanticResult<Vec<ConceptRelation>> {
+        Ok(Vec::new())
+    }
+    async fn list_by_predicate(&self, _: &str) -> SemanticResult<Vec<ConceptRelation>> {
+        Ok(Vec::new())
+    }
+    async fn count(&self) -> SemanticResult<u64> {
+        Ok(0)
+    }
 }

@@ -1,6 +1,6 @@
 //! Tool contracts: `ToolRequirement`, `ToolCandidate`, `ExecutablePlan`, `ToolRegistry`.
-use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 use crate::ids::{GoalId, PlanId, ToolCapabilityId, ToolId};
 use crate::types::Confidence;
@@ -30,10 +30,21 @@ pub struct ToolParameter {
 
 impl ToolParameter {
     pub fn new<N, D>(name: N, param_type: ToolParameterType, description: D) -> Self
-    where N: Into<String>, D: Into<String> {
-        Self { name: name.into(), param_type, required: true, description: description.into() }
+    where
+        N: Into<String>,
+        D: Into<String>,
+    {
+        Self {
+            name: name.into(),
+            param_type,
+            required: true,
+            description: description.into(),
+        }
     }
-    pub fn optional(mut self) -> Self { self.required = false; self }
+    pub fn optional(mut self) -> Self {
+        self.required = false;
+        self
+    }
 }
 
 // ── Capability ─────────────────────────────────────────────────
@@ -52,8 +63,17 @@ pub struct ToolCapability {
 
 impl ToolCapability {
     pub fn new<N, D>(id: ToolCapabilityId, name: N, description: D) -> Self
-    where N: Into<String>, D: Into<String> {
-        Self { id, name: name.into(), description: description.into(), input_schema: Vec::new(), output_schema: None }
+    where
+        N: Into<String>,
+        D: Into<String>,
+    {
+        Self {
+            id,
+            name: name.into(),
+            description: description.into(),
+            input_schema: Vec::new(),
+            output_schema: None,
+        }
     }
 }
 
@@ -73,11 +93,25 @@ pub enum ToolValue {
 }
 
 impl ToolValue {
-    pub fn as_str(&self) -> Option<&str> { match self { Self::String(s) => Some(s), _ => None } }
-    pub fn as_f64(&self) -> Option<f64> { match self { Self::Number(n) => Some(*n), _ => None } }
+    pub fn as_str(&self) -> Option<&str> {
+        match self {
+            Self::String(s) => Some(s),
+            _ => None,
+        }
+    }
+    pub fn as_f64(&self) -> Option<f64> {
+        match self {
+            Self::Number(n) => Some(*n),
+            _ => None,
+        }
+    }
 }
 
-impl Default for ToolValue { fn default() -> Self { Self::Null } }
+impl Default for ToolValue {
+    fn default() -> Self {
+        Self::Null
+    }
+}
 
 // ── Side effects ──────────────────────────────────────────────
 
@@ -114,12 +148,24 @@ pub struct RetryPolicy {
 
 impl RetryPolicy {
     pub fn new(max_retries: u32, initial_delay_ms: u64) -> Self {
-        Self { max_retries, initial_delay_ms }
+        Self {
+            max_retries,
+            initial_delay_ms,
+        }
     }
-    pub fn none() -> Self { Self { max_retries: 0, initial_delay_ms: 0 } }
+    pub fn none() -> Self {
+        Self {
+            max_retries: 0,
+            initial_delay_ms: 0,
+        }
+    }
 }
 
-impl Default for RetryPolicy { fn default() -> Self { Self::new(1, 500) } }
+impl Default for RetryPolicy {
+    fn default() -> Self {
+        Self::new(1, 500)
+    }
+}
 
 // ── ToolRequirement ─────────────────────────────────────────
 
@@ -139,7 +185,11 @@ pub struct ToolRequirement {
 }
 
 impl ToolRequirement {
-    pub fn new(capability: ToolCapabilityId, inputs: HashMap<String, ToolValue>, expected_outputs: Vec<String>) -> Self {
+    pub fn new(
+        capability: ToolCapabilityId,
+        inputs: HashMap<String, ToolValue>,
+        expected_outputs: Vec<String>,
+    ) -> Self {
         Self {
             requirement_id: uuid::Uuid::new_v4(),
             capability,
@@ -167,7 +217,12 @@ pub struct ToolCandidate {
 }
 
 impl ToolCandidate {
-    pub fn new(tool_id: ToolId, provider: impl Into<String>, capability: ToolCapabilityId, confidence: Confidence) -> Self {
+    pub fn new(
+        tool_id: ToolId,
+        provider: impl Into<String>,
+        capability: ToolCapabilityId,
+        confidence: Confidence,
+    ) -> Self {
         Self {
             tool_id,
             provider: provider.into(),
@@ -240,7 +295,10 @@ impl std::fmt::Display for PlanStatus {
 /// Trait for looking up tool candidates by capability.
 #[async_trait::async_trait]
 pub trait ToolRegistry: Send + Sync {
-    async fn find_candidates(&self, capability: ToolCapabilityId) -> crate::BrainResult<Vec<ToolCandidate>>;
+    async fn find_candidates(
+        &self,
+        capability: ToolCapabilityId,
+    ) -> crate::BrainResult<Vec<ToolCandidate>>;
     async fn register(&self, candidate: ToolCandidate) -> crate::BrainResult<()>;
     async fn deregister(&self, tool_id: ToolId) -> crate::BrainResult<()>;
     async fn list_capabilities(&self) -> crate::BrainResult<Vec<ToolCapability>>;

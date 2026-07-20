@@ -55,7 +55,9 @@ impl SpatialContext {
     pub fn local() -> Self {
         Self {
             hostname: hostname(),
-            cwd: std::env::current_dir().ok().map(|p| p.to_string_lossy().into()),
+            cwd: std::env::current_dir()
+                .ok()
+                .map(|p| p.to_string_lossy().into()),
             session_id: None,
             network_addr: None,
         }
@@ -93,9 +95,7 @@ fn hostname() -> String {
 }
 
 fn timezone() -> Option<String> {
-    Some(
-        chrono_tz_wrapper()
-    )
+    Some(chrono_tz_wrapper())
 }
 
 fn chrono_tz_wrapper() -> String {
@@ -209,11 +209,14 @@ impl ContextEnricher for DefaultContextEnricher {
             }
         }
 
-        observation.provenance.transformation_log.push(TransformationStep {
-            stage: "context_enricher".into(),
-            timestamp: Timestamp::now(),
-            description: "temporal, spatial, and session context attached".into(),
-        });
+        observation
+            .provenance
+            .transformation_log
+            .push(TransformationStep {
+                stage: "context_enricher".into(),
+                timestamp: Timestamp::now(),
+                description: "temporal, spatial, and session context attached".into(),
+            });
 
         Ok(observation)
     }

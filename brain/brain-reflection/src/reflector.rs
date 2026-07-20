@@ -1,7 +1,7 @@
 use crate::errors::ReflectionResult;
 use crate::types::{
-    ComparisonResult, Improvement, ImprovementCategory, Lesson, Mistake,
-    MistakeCategory, MistakeSeverity, Reflection,
+    ComparisonResult, Improvement, ImprovementCategory, Lesson, Mistake, MistakeCategory,
+    MistakeSeverity, Reflection,
 };
 use brain_core::ids::{GoalId, LessonId, ReflectionId};
 use brain_core::types::Confidence;
@@ -10,7 +10,9 @@ use memory_core::Timestamp;
 pub struct Reflector;
 
 impl Reflector {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 
     pub fn reflect(
         &self,
@@ -39,16 +41,27 @@ impl Reflector {
         let expected_words: Vec<&str> = expected.split_whitespace().collect();
         let actual_words: Vec<&str> = actual.split_whitespace().collect();
 
-        let common = expected_words.iter().filter(|w| actual_words.contains(w)).count();
+        let common = expected_words
+            .iter()
+            .filter(|w| actual_words.contains(w))
+            .count();
         let total = expected_words.len().max(actual_words.len());
-        let match_score = if total == 0 { 1.0 } else { common as f64 / total as f64 };
+        let match_score = if total == 0 {
+            1.0
+        } else {
+            common as f64 / total as f64
+        };
 
         let mut deviations = Vec::new();
         if match_score < 0.5 {
             deviations.push("significant deviation between expected and actual outcome".into());
         }
         if expected_words.len() != actual_words.len() {
-            deviations.push(format!("length mismatch: expected {} words, got {}", expected_words.len(), actual_words.len()));
+            deviations.push(format!(
+                "length mismatch: expected {} words, got {}",
+                expected_words.len(),
+                actual_words.len()
+            ));
         }
 
         Ok(ComparisonResult {
@@ -82,28 +95,38 @@ impl Reflector {
     }
 
     fn generate_improvements(&self, mistakes: &[Mistake]) -> Vec<Improvement> {
-        mistakes.iter().map(|m| {
-            let category = match m.category {
-                MistakeCategory::Planning => ImprovementCategory::Strategy,
-                MistakeCategory::Execution => ImprovementCategory::Coordination,
-                _ => ImprovementCategory::Prompt,
-            };
-            Improvement {
-                id: format!("improve-{}", m.id),
-                description: format!("address root cause: {}", m.root_cause),
-                expected_impact: match m.severity {
-                    MistakeSeverity::Critical => 0.8,
-                    MistakeSeverity::Major => 0.5,
-                    MistakeSeverity::Minor => 0.2,
-                },
-                category,
-            }
-        }).collect()
+        mistakes
+            .iter()
+            .map(|m| {
+                let category = match m.category {
+                    MistakeCategory::Planning => ImprovementCategory::Strategy,
+                    MistakeCategory::Execution => ImprovementCategory::Coordination,
+                    _ => ImprovementCategory::Prompt,
+                };
+                Improvement {
+                    id: format!("improve-{}", m.id),
+                    description: format!("address root cause: {}", m.root_cause),
+                    expected_impact: match m.severity {
+                        MistakeSeverity::Critical => 0.8,
+                        MistakeSeverity::Major => 0.5,
+                        MistakeSeverity::Minor => 0.2,
+                    },
+                    category,
+                }
+            })
+            .collect()
     }
 
-    fn extract_lessons(&self, goal_id: GoalId, mistakes: &[Mistake], improvements: &[Improvement]) -> Vec<Lesson> {
-        mistakes.iter().zip(improvements.iter()).map(|(m, i)| {
-            Lesson {
+    fn extract_lessons(
+        &self,
+        goal_id: GoalId,
+        mistakes: &[Mistake],
+        improvements: &[Improvement],
+    ) -> Vec<Lesson> {
+        mistakes
+            .iter()
+            .zip(improvements.iter())
+            .map(|(m, i)| Lesson {
                 lesson_id: LessonId::new(),
                 goal_id,
                 summary: format!("lesson from {}: {}", m.category.as_str(), m.root_cause),
@@ -112,13 +135,15 @@ impl Reflector {
                 confidence: Confidence::new(0.7),
                 created_at: Timestamp::now(),
                 applied_count: 0,
-            }
-        }).collect()
+            })
+            .collect()
     }
 }
 
 impl Default for Reflector {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl MistakeCategory {

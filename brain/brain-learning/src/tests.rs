@@ -1,18 +1,21 @@
 #[cfg(test)]
 mod tests {
+    use crate::knowledge_base::KnowledgeBase;
+    use crate::learning_engine::LearningEngine;
+    use crate::pattern_recognizer::PatternRecognizer;
+    use crate::types::LearningSignal;
     use brain_core::ids::LessonId;
     use brain_core::types::Confidence;
     use brain_reflection::types::{Lesson, MistakeCategory};
     use memory_core::Timestamp;
     use uuid::Uuid;
-    use crate::knowledge_base::KnowledgeBase;
-    use crate::learning_engine::LearningEngine;
-    use crate::pattern_recognizer::PatternRecognizer;
-    use crate::types::LearningSignal;
 
     fn make_lesson_id(b: u8) -> LessonId {
         LessonId::from(Uuid::from_bytes({
-            let mut buf = [0u8; 16]; buf[0] = b; buf[15] = b; buf
+            let mut buf = [0u8; 16];
+            buf[0] = b;
+            buf[15] = b;
+            buf
         }))
     }
 
@@ -43,7 +46,8 @@ mod tests {
                 context: "ctx".into(),
                 success: false,
                 timestamp: Timestamp::now(),
-            }).unwrap();
+            })
+            .unwrap();
         }
         let patterns = r.extract_patterns().unwrap();
         assert_eq!(patterns.len(), 1);
@@ -75,7 +79,10 @@ mod tests {
         let lesson = Lesson {
             lesson_id: make_lesson_id(1),
             goal_id: brain_core::ids::GoalId::from(Uuid::from_bytes({
-                let mut buf = [0u8; 16]; buf[0] = 1; buf[15] = 1; buf
+                let mut buf = [0u8; 16];
+                buf[0] = 1;
+                buf[15] = 1;
+                buf
             })),
             summary: "test lesson".into(),
             details: "details".into(),
@@ -96,7 +103,10 @@ mod tests {
             let lesson = Lesson {
                 lesson_id: make_lesson_id(i),
                 goal_id: brain_core::ids::GoalId::from(Uuid::from_bytes({
-                    let mut buf = [0u8; 16]; buf[0] = i; buf[15] = i; buf
+                    let mut buf = [0u8; 16];
+                    buf[0] = i;
+                    buf[15] = i;
+                    buf
                 })),
                 summary: format!("lesson {}", i),
                 details: "details".into(),

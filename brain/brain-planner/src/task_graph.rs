@@ -7,7 +7,9 @@ use brain_core::tool::ToolRequirement;
 pub struct TaskGraphBuilder;
 
 impl TaskGraphBuilder {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 
     pub fn build_linear(&self, goal_id: GoalId, requirements: Vec<ToolRequirement>) -> TaskGraph {
         let mut nodes = Vec::with_capacity(requirements.len());
@@ -32,12 +34,17 @@ impl TaskGraphBuilder {
         TaskGraph::new(nodes)
     }
 
-    pub fn build_parallel(&self, goal_id: GoalId, requirements: Vec<Vec<ToolRequirement>>) -> TaskGraph {
+    pub fn build_parallel(
+        &self,
+        goal_id: GoalId,
+        requirements: Vec<Vec<ToolRequirement>>,
+    ) -> TaskGraph {
         let mut nodes = Vec::new();
         for (group_idx, group) in requirements.iter().enumerate() {
             let group_deps: Vec<String> = (0..group_idx)
-                .flat_map(|i| (0..requirements[i].len())
-                    .map(move |j| format!("{}-step-{}-{}", goal_id, i, j)))
+                .flat_map(|i| {
+                    (0..requirements[i].len()).map(move |j| format!("{}-step-{}-{}", goal_id, i, j))
+                })
                 .collect();
             for (step_idx, req) in group.iter().enumerate() {
                 nodes.push(TaskNode {
@@ -57,23 +64,30 @@ impl TaskGraphBuilder {
     pub fn validate(&self, graph: &TaskGraph) -> PlannerResult<()> {
         for node in &graph.nodes {
             if node.id.is_empty() {
-                return Err(PlannerError::ValidationError("node id must not be empty".into()));
+                return Err(PlannerError::ValidationError(
+                    "node id must not be empty".into(),
+                ));
             }
             for dep in &node.dependencies {
                 if !graph.nodes.iter().any(|n| &n.id == dep) {
-                    return Err(PlannerError::ValidationError(
-                        format!("dependency {} not found for node {}", dep, node.id)
-                    ));
+                    return Err(PlannerError::ValidationError(format!(
+                        "dependency {} not found for node {}",
+                        dep, node.id
+                    )));
                 }
             }
         }
         if graph.nodes.is_empty() {
-            return Err(PlannerError::ValidationError("task graph must have at least one node".into()));
+            return Err(PlannerError::ValidationError(
+                "task graph must have at least one node".into(),
+            ));
         }
         Ok(())
     }
 }
 
 impl Default for TaskGraphBuilder {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }

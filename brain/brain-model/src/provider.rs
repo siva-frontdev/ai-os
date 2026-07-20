@@ -14,11 +14,21 @@ pub type ModelProviderError = BrainError;
 pub struct ModelId(pub uuid::Uuid);
 
 impl ModelId {
-    pub fn new() -> Self { Self(uuid::Uuid::new_v4()) }
-    pub const fn from_uuid(uuid: uuid::Uuid) -> Self { Self(uuid) }
-    pub const fn as_uuid(&self) -> &uuid::Uuid { &self.0 }
+    pub fn new() -> Self {
+        Self(uuid::Uuid::new_v4())
+    }
+    pub const fn from_uuid(uuid: uuid::Uuid) -> Self {
+        Self(uuid)
+    }
+    pub const fn as_uuid(&self) -> &uuid::Uuid {
+        &self.0
+    }
 }
-impl Default for ModelId { fn default() -> Self { Self::new() } }
+impl Default for ModelId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 /// Configuration for a specific model call.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -31,7 +41,12 @@ pub struct ModelConfig {
 
 impl ModelConfig {
     pub fn new(provider: impl Into<String>, model_name: impl Into<String>) -> Self {
-        Self { provider: provider.into(), model_name: model_name.into(), parameters: HashMap::new(), timeout_ms: Some(30000) }
+        Self {
+            provider: provider.into(),
+            model_name: model_name.into(),
+            parameters: HashMap::new(),
+            timeout_ms: Some(30000),
+        }
     }
 }
 
@@ -86,13 +101,25 @@ pub struct Message {
 
 impl Message {
     pub fn system(content: impl Into<String>) -> Self {
-        Self { role: MessageRole::System, content: content.into(), name: None }
+        Self {
+            role: MessageRole::System,
+            content: content.into(),
+            name: None,
+        }
     }
     pub fn user(content: impl Into<String>) -> Self {
-        Self { role: MessageRole::User, content: content.into(), name: None }
+        Self {
+            role: MessageRole::User,
+            content: content.into(),
+            name: None,
+        }
     }
     pub fn assistant(content: impl Into<String>) -> Self {
-        Self { role: MessageRole::Assistant, content: content.into(), name: None }
+        Self {
+            role: MessageRole::Assistant,
+            content: content.into(),
+            name: None,
+        }
     }
 }
 
@@ -138,7 +165,11 @@ pub struct Embedding {
 pub trait ModelProvider: Debug + Send + Sync {
     fn id(&self) -> ModelId;
     fn name(&self) -> &str;
-    async fn complete(&self, messages: &[Message], config: &ModelConfig) -> Result<Completion, ModelProviderError>;
+    async fn complete(
+        &self,
+        messages: &[Message],
+        config: &ModelConfig,
+    ) -> Result<Completion, ModelProviderError>;
     async fn embed(&self, text: &str) -> Result<Embedding, ModelProviderError>;
     fn status(&self) -> ProviderStatus;
     async fn health_check(&self) -> Result<(), ModelProviderError>;
@@ -147,14 +178,27 @@ pub trait ModelProvider: Debug + Send + Sync {
 /// Model capable of chain-of-thought reasoning.
 #[async_trait::async_trait]
 pub trait ReasoningModel: Send + Sync {
-    async fn reason(&self, ctx: &ReasoningContext, config: &ModelConfig) -> Result<Completion, ModelProviderError>;
-    async fn generate_hypotheses(&self, observations: &[String], config: &ModelConfig) -> Result<Vec<String>, ModelProviderError>;
+    async fn reason(
+        &self,
+        ctx: &ReasoningContext,
+        config: &ModelConfig,
+    ) -> Result<Completion, ModelProviderError>;
+    async fn generate_hypotheses(
+        &self,
+        observations: &[String],
+        config: &ModelConfig,
+    ) -> Result<Vec<String>, ModelProviderError>;
 }
 
 /// Model capable of generating plans.
 #[async_trait::async_trait]
 pub trait PlanningModel: Send + Sync {
-    async fn generate_plan(&self, goal: &str, context: &PlanningContext, config: &ModelConfig) -> Result<String, ModelProviderError>;
+    async fn generate_plan(
+        &self,
+        goal: &str,
+        context: &PlanningContext,
+        config: &ModelConfig,
+    ) -> Result<String, ModelProviderError>;
 }
 
 /// Embedding provider.
@@ -167,7 +211,11 @@ pub trait EmbeddingProvider: Send + Sync {
 /// Prompt template renderer.
 #[async_trait::async_trait]
 pub trait PromptRenderer: Send + Sync {
-    fn render_system_prompt(&self, template: &str, vars: &HashMap<String, String>) -> Result<String, ModelProviderError>;
+    fn render_system_prompt(
+        &self,
+        template: &str,
+        vars: &HashMap<String, String>,
+    ) -> Result<String, ModelProviderError>;
     fn render_messages(&self, messages: &[Message]) -> Result<String, ModelProviderError>;
 }
 

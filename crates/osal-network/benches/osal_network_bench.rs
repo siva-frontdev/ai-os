@@ -44,7 +44,8 @@ fn bench_default_dns_lookup(c: &mut Criterion) {
     let ctx = context();
 
     c.bench_function("DefaultNetworkManager::dns_lookup", |ben| {
-        ben.to_async(&rt).iter(|| mgr.dns_lookup(&ctx, "example.com"))
+        ben.to_async(&rt)
+            .iter(|| mgr.dns_lookup(&ctx, "example.com"))
     });
 }
 

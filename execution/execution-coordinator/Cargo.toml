@@ -1,0 +1,35 @@
+[package]
+name = "execution-coordinator"
+version.workspace = true
+edition.workspace = true
+description = "Execution Platform — top-level orchestration, pipeline wiring, lifecycle"
+
+[dependencies]
+execution-core = { path = "../execution-core" }
+execution-registry = { path = "../execution-registry" }
+execution-planner = { path = "../execution-planner" }
+execution-dispatcher = { path = "../execution-dispatcher" }
+execution-runner = { path = "../execution-runner" }
+execution-sandbox = { path = "../execution-sandbox" }
+execution-monitor = { path = "../execution-monitor" }
+execution-results = { path = "../execution-results" }
+execution-recovery = { path = "../execution-recovery" }
+ai-os-core = { path = "../../core" }
+brain-core = { path = "../../brain/brain-core" }
+memory-core = { path = "../../crates/memory-core" }
+tokio = { version = "1", features = ["sync", "time"] }
+thiserror = "2"
+async-trait = "0.1"
+uuid = { version = "1", features = ["v4", "v7"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+
+[dev-dependencies]
+criterion = { workspace = true }
+tokio = { version = "1", features = ["rt", "macros"] }
+tokio-test = "0.4"
+
+[[bench]]
+name = "coordinator_bench"
+harness = false

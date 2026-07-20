@@ -8,11 +8,15 @@ use brain_core::types::GoalStatus;
 pub struct GoalValidator;
 
 impl GoalValidator {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 
     pub fn validate_new(&self, record: &GoalRecord, existing: &[GoalId]) -> GoalsResult<()> {
         if record.description.is_empty() {
-            return Err(GoalsError::ValidationError("goal description must not be empty".into()));
+            return Err(GoalsError::ValidationError(
+                "goal description must not be empty".into(),
+            ));
         }
         if existing.contains(&record.goal_id) {
             return Err(GoalsError::AlreadyExists(record.goal_id));
@@ -25,7 +29,11 @@ impl GoalValidator {
         Ok(())
     }
 
-    pub fn validate_dependencies_exist(&self, dependencies: &[GoalId], dag: &GoalDag) -> GoalsResult<()> {
+    pub fn validate_dependencies_exist(
+        &self,
+        dependencies: &[GoalId],
+        dag: &GoalDag,
+    ) -> GoalsResult<()> {
         for dep in dependencies {
             if !dag.has_node(dep) {
                 return Err(GoalsError::DependencyNotFound {
@@ -44,10 +52,14 @@ impl GoalValidator {
         if !record.dependencies.is_empty() && dep_statuses.len() != record.dependencies.len() {
             return false;
         }
-        dep_statuses.iter().all(|s| matches!(s, GoalStatus::Completed))
+        dep_statuses
+            .iter()
+            .all(|s| matches!(s, GoalStatus::Completed))
     }
 }
 
 impl Default for GoalValidator {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }

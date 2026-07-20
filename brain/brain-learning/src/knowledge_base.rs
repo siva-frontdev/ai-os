@@ -30,13 +30,20 @@ impl KnowledgeBase {
             patterns.iter().map(|p| p.confidence.raw()).sum::<f32>() / patterns.len() as f32
         };
 
-        let mut version = self.version_counter.write().map_err(|e| LearningError::Internal(e.to_string()))?;
+        let mut version = self
+            .version_counter
+            .write()
+            .map_err(|e| LearningError::Internal(e.to_string()))?;
         let current_version = *version;
         *version += 1;
 
         let knowledge = Knowledge {
             id: format!("knowledge-{}", current_version),
-            summary: format!("consolidated learning from {} patterns across {} lessons", patterns.len(), lesson_count),
+            summary: format!(
+                "consolidated learning from {} patterns across {} lessons",
+                patterns.len(),
+                lesson_count
+            ),
             patterns: patterns.clone(),
             confidence: Confidence::new(avg_conf),
             created_at: Timestamp::now(),
@@ -52,7 +59,10 @@ impl KnowledgeBase {
             merged_patterns,
         };
 
-        let mut store = self.store.write().map_err(|e| LearningError::Internal(e.to_string()))?;
+        let mut store = self
+            .store
+            .write()
+            .map_err(|e| LearningError::Internal(e.to_string()))?;
         store.insert(knowledge.id.clone(), knowledge);
 
         Ok(report)
@@ -76,12 +86,20 @@ impl KnowledgeBase {
     }
 
     pub fn get_knowledge(&self, id: &str) -> LearningResult<Knowledge> {
-        let store = self.store.read().map_err(|e| LearningError::Internal(e.to_string()))?;
-        store.get(id).cloned().ok_or_else(|| LearningError::ConsolidationFailed(format!("knowledge {} not found", id)))
+        let store = self
+            .store
+            .read()
+            .map_err(|e| LearningError::Internal(e.to_string()))?;
+        store.get(id).cloned().ok_or_else(|| {
+            LearningError::ConsolidationFailed(format!("knowledge {} not found", id))
+        })
     }
 
     pub fn list_knowledge(&self) -> LearningResult<Vec<Knowledge>> {
-        let store = self.store.read().map_err(|e| LearningError::Internal(e.to_string()))?;
+        let store = self
+            .store
+            .read()
+            .map_err(|e| LearningError::Internal(e.to_string()))?;
         let mut all: Vec<Knowledge> = store.values().cloned().collect();
         all.sort_by_key(|b| std::cmp::Reverse(b.version));
         Ok(all)
@@ -89,5 +107,7 @@ impl KnowledgeBase {
 }
 
 impl Default for KnowledgeBase {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }

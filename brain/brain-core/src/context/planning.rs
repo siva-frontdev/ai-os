@@ -1,6 +1,6 @@
 //! `PlanningContext` — context passed to the Planner.
-use crate::ids::GoalId;
 use crate::budget::CognitiveBudget;
+use crate::ids::GoalId;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

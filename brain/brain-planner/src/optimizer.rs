@@ -5,7 +5,9 @@ use brain_core::ids::PlanId;
 pub struct PlanOptimizer;
 
 impl PlanOptimizer {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 
     pub fn optimize_duration(&self, graph: &TaskGraph) -> TaskGraph {
         let _critical = graph.critical_path_duration();
@@ -52,5 +54,7 @@ impl PlanOptimizer {
 }
 
 impl Default for PlanOptimizer {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }

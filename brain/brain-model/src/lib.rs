@@ -39,13 +39,11 @@ pub mod reasoning;
 pub mod registry;
 pub mod response;
 
+pub use mock::MockModelProvider;
 pub use provider::{
-    Completion, ConversationContext, Embedding, EmbeddingProvider, FinishReason,
-    Message, MessageRole, ModelConfig, ModelId, ModelProvider, ModelProviderError,
-    PlanningModel, PromptRenderer, ProviderCapabilities, ProviderStatus,
-    ProviderStatus::CircuitBreakerOpen,
-    ProviderStatus::CircuitBreakerClosed,
-    ReasoningModel, ResponseParser, TokenCount, TokenCounter,
+    Completion, ConversationContext, Embedding, EmbeddingProvider, FinishReason, Message,
+    MessageRole, ModelConfig, ModelId, ModelProvider, ModelProviderError, PlanningModel,
+    PromptRenderer, ProviderCapabilities, ProviderStatus, ProviderStatus::CircuitBreakerClosed,
+    ProviderStatus::CircuitBreakerOpen, ReasoningModel, ResponseParser, TokenCount, TokenCounter,
 };
 pub use registry::ModelProviderRegistry;
-pub use mock::MockModelProvider;

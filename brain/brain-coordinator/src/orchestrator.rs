@@ -6,8 +6,8 @@ use brain_core::ids::{GoalId, WorkflowId};
 use brain_core::tool::{ExecutablePlan, ToolRegistry, ToolRequirement};
 use brain_core::types::Confidence;
 use brain_decision::DecisionMaker;
-use brain_goals::types::GoalRecord;
 use brain_goals::GoalManager;
+use brain_goals::types::GoalRecord;
 use brain_learning::LearningEngine;
 use brain_planner::Planner;
 use brain_policy::PolicyEvaluator;
@@ -162,7 +162,8 @@ impl BrainOrchestrator {
         name: &str,
         max_retries: u32,
     ) -> CoordinatorResult<WorkflowId> {
-        let exec_plan = ExecutablePlan::new(plan.plan_id, plan.goal_id, plan.tool_requirements.clone());
+        let exec_plan =
+            ExecutablePlan::new(plan.plan_id, plan.goal_id, plan.tool_requirements.clone());
 
         let workflow_id = self
             .workflow_executor

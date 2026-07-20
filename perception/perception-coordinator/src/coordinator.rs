@@ -129,13 +129,25 @@ pub trait PerceptionCoordinator: Debug + Send + Sync {
 
     async fn register_normalizer(&self, normalizer: Arc<dyn Normalizer>) -> CoordinatorResult<()>;
 
-    async fn register_state_detector(&self, detector: Arc<dyn StateDetector>) -> CoordinatorResult<()>;
+    async fn register_state_detector(
+        &self,
+        detector: Arc<dyn StateDetector>,
+    ) -> CoordinatorResult<()>;
 
-    async fn register_entity_extractor(&self, extractor: Arc<dyn EntityExtractor>) -> CoordinatorResult<()>;
+    async fn register_entity_extractor(
+        &self,
+        extractor: Arc<dyn EntityExtractor>,
+    ) -> CoordinatorResult<()>;
 
-    async fn register_context_enricher(&self, enricher: Arc<dyn ContextEnricher>) -> CoordinatorResult<()>;
+    async fn register_context_enricher(
+        &self,
+        enricher: Arc<dyn ContextEnricher>,
+    ) -> CoordinatorResult<()>;
 
-    async fn register_anomaly_detector(&self, detector: Arc<dyn AnomalyDetector>) -> CoordinatorResult<()>;
+    async fn register_anomaly_detector(
+        &self,
+        detector: Arc<dyn AnomalyDetector>,
+    ) -> CoordinatorResult<()>;
 
     async fn register_fusion_engine(&self, engine: Arc<dyn FusionEngine>) -> CoordinatorResult<()>;
 
@@ -289,7 +301,13 @@ impl DefaultPerceptionCoordinator {
         let manager = Arc::new(DefaultPipelineManager::new());
 
         let stage_names = [
-            "observer", "normalizer", "detector", "entities", "context", "anomaly", "fusion",
+            "observer",
+            "normalizer",
+            "detector",
+            "entities",
+            "context",
+            "anomaly",
+            "fusion",
         ];
 
         let mut statuses = HashMap::new();
@@ -320,11 +338,7 @@ impl DefaultPerceptionCoordinator {
         }
 
         for i in 0..stage_names.len() - 1 {
-            let _ = manager.connect(
-                stage_names[i],
-                stage_names[i + 1],
-                config.channel_capacity,
-            );
+            let _ = manager.connect(stage_names[i], stage_names[i + 1], config.channel_capacity);
         }
 
         Self {
@@ -383,7 +397,10 @@ impl PerceptionCoordinator for DefaultPerceptionCoordinator {
         Ok(())
     }
 
-    async fn register_state_detector(&self, detector: Arc<dyn StateDetector>) -> CoordinatorResult<()> {
+    async fn register_state_detector(
+        &self,
+        detector: Arc<dyn StateDetector>,
+    ) -> CoordinatorResult<()> {
         let mut d = self
             .state_detector
             .write()
@@ -392,7 +409,10 @@ impl PerceptionCoordinator for DefaultPerceptionCoordinator {
         Ok(())
     }
 
-    async fn register_entity_extractor(&self, extractor: Arc<dyn EntityExtractor>) -> CoordinatorResult<()> {
+    async fn register_entity_extractor(
+        &self,
+        extractor: Arc<dyn EntityExtractor>,
+    ) -> CoordinatorResult<()> {
         let mut e = self
             .entity_extractor
             .write()
@@ -401,7 +421,10 @@ impl PerceptionCoordinator for DefaultPerceptionCoordinator {
         Ok(())
     }
 
-    async fn register_context_enricher(&self, enricher: Arc<dyn ContextEnricher>) -> CoordinatorResult<()> {
+    async fn register_context_enricher(
+        &self,
+        enricher: Arc<dyn ContextEnricher>,
+    ) -> CoordinatorResult<()> {
         let mut c = self
             .context_enricher
             .write()
@@ -410,7 +433,10 @@ impl PerceptionCoordinator for DefaultPerceptionCoordinator {
         Ok(())
     }
 
-    async fn register_anomaly_detector(&self, detector: Arc<dyn AnomalyDetector>) -> CoordinatorResult<()> {
+    async fn register_anomaly_detector(
+        &self,
+        detector: Arc<dyn AnomalyDetector>,
+    ) -> CoordinatorResult<()> {
         let mut d = self
             .anomaly_detector
             .write()
@@ -450,7 +476,13 @@ impl PerceptionCoordinator for DefaultPerceptionCoordinator {
         }
 
         for name in &[
-            "observer", "normalizer", "detector", "entities", "context", "anomaly", "fusion",
+            "observer",
+            "normalizer",
+            "detector",
+            "entities",
+            "context",
+            "anomaly",
+            "fusion",
         ] {
             self.update_stage_status(name, |s| {
                 s.active = true;
@@ -468,7 +500,13 @@ impl PerceptionCoordinator for DefaultPerceptionCoordinator {
         self.running.store(false, Ordering::SeqCst);
 
         for name in &[
-            "observer", "normalizer", "detector", "entities", "context", "anomaly", "fusion",
+            "observer",
+            "normalizer",
+            "detector",
+            "entities",
+            "context",
+            "anomaly",
+            "fusion",
         ] {
             self.update_stage_status(name, |s| {
                 s.active = false;
@@ -598,13 +636,17 @@ mod tests {
             timeout_ms: 1000,
         };
         manager.register_stage("test", config).unwrap();
-        assert!(manager.register_stage("test", StageChannelConfig {
-            name: "test".into(),
-            input_capacity: 200,
-            output_capacity: 200,
-            timeout_ms: 2000,
-        })
-        .is_err());
+        assert!(manager
+            .register_stage(
+                "test",
+                StageChannelConfig {
+                    name: "test".into(),
+                    input_capacity: 200,
+                    output_capacity: 200,
+                    timeout_ms: 2000,
+                }
+            )
+            .is_err());
     }
 
     #[tokio::test]

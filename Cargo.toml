@@ -43,6 +43,16 @@ members = [
     "perception/perception-anomaly",
     "perception/perception-fusion",
     "perception/perception-coordinator",
+    "execution/execution-core",
+    "execution/execution-registry",
+    "execution/execution-planner",
+    "execution/execution-dispatcher",
+    "execution/execution-runner",
+    "execution/execution-sandbox",
+    "execution/execution-monitor",
+    "execution/execution-results",
+    "execution/execution-recovery",
+    "execution/execution-coordinator",
 ]
 
 [workspace.package]

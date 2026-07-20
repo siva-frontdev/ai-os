@@ -1,11 +1,11 @@
-use std::sync::RwLock;
 use async_trait::async_trait;
-use uuid::Uuid;
 use std::collections::HashMap;
+use std::sync::RwLock;
+use uuid::Uuid;
 
+use crate::episode_store::EpisodeStore;
 use crate::error::{EpisodicError, EpisodicResult};
 use crate::event::EpisodicEvent;
-use crate::episode_store::EpisodeStore;
 use crate::timeline::Timeline;
 
 /// Records experiences into episodic memory with automatic importance scoring.
@@ -68,10 +68,14 @@ impl ExperienceRecorder for InMemoryExperienceRecorder {
             let age_ns = now_ns.saturating_sub(event_ns);
             let hour_ns: u64 = 3_600_000_000_000;
             if age_ns < hour_ns { 0.1 } else { 0.0 }
-        } else { 0.0 };
+        } else {
+            0.0
+        };
         let repetition_boost = if let Some(count_str) = event.metadata.get("access_count") {
             count_str.parse::<f32>().unwrap_or(0.0) * 0.01
-        } else { 0.0 };
+        } else {
+            0.0
+        };
         Ok((event.importance + recency_boost + repetition_boost).clamp(0.0, 1.0))
     }
     async fn should_consolidate(&self, event: &EpisodicEvent) -> EpisodicResult<bool> {
@@ -91,9 +95,17 @@ pub struct DefaultExperienceRecorder;
 #[async_trait]
 impl ExperienceRecorder for DefaultExperienceRecorder {
     async fn record(&self, _: EpisodicEvent) -> EpisodicResult<Uuid> {
-        Err(EpisodicError::Internal("DefaultExperienceRecorder not configured".into()))
+        Err(EpisodicError::Internal(
+            "DefaultExperienceRecorder not configured".into(),
+        ))
     }
-    async fn score_importance(&self, _: &EpisodicEvent) -> EpisodicResult<f32> { Ok(0.0) }
-    async fn should_consolidate(&self, _: &EpisodicEvent) -> EpisodicResult<bool> { Ok(false) }
-    async fn count(&self) -> EpisodicResult<u64> { Ok(0) }
+    async fn score_importance(&self, _: &EpisodicEvent) -> EpisodicResult<f32> {
+        Ok(0.0)
+    }
+    async fn should_consolidate(&self, _: &EpisodicEvent) -> EpisodicResult<bool> {
+        Ok(false)
+    }
+    async fn count(&self) -> EpisodicResult<u64> {
+        Ok(0)
+    }
 }

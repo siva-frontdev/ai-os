@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 /// Event emitted when a new concept is created in semantic memory.
@@ -17,7 +17,9 @@ pub struct ConceptCreated {
 
 impl ConceptCreated {
     /// Unique event type identifier.
-    pub fn event_type(&self) -> &'static str { "memory.semantic.concept_created" }
+    pub fn event_type(&self) -> &'static str {
+        "memory.semantic.concept_created"
+    }
 
     /// Structured metadata for logging and observability.
     pub fn metadata(&self) -> HashMap<String, String> {
@@ -45,14 +47,18 @@ pub struct ConceptUpdated {
 
 impl ConceptUpdated {
     /// Unique event type identifier.
-    pub fn event_type(&self) -> &'static str { "memory.semantic.concept_updated" }
+    pub fn event_type(&self) -> &'static str {
+        "memory.semantic.concept_updated"
+    }
 
     /// Structured metadata for logging and observability.
     pub fn metadata(&self) -> HashMap<String, String> {
         let mut m = HashMap::new();
         m.insert("event_type".into(), self.event_type().into());
         m.insert("concept_id".into(), self.id.to_string());
-        if let Some(ref n) = self.name { m.insert("name".into(), n.clone()); }
+        if let Some(ref n) = self.name {
+            m.insert("name".into(), n.clone());
+        }
         m
     }
 }
@@ -76,7 +82,9 @@ pub struct FactCreated {
 
 impl FactCreated {
     /// Unique event type identifier.
-    pub fn event_type(&self) -> &'static str { "memory.semantic.fact_created" }
+    pub fn event_type(&self) -> &'static str {
+        "memory.semantic.fact_created"
+    }
 
     /// Structured metadata for logging and observability.
     pub fn metadata(&self) -> HashMap<String, String> {
@@ -105,14 +113,18 @@ pub struct FactUpdated {
 
 impl FactUpdated {
     /// Unique event type identifier.
-    pub fn event_type(&self) -> &'static str { "memory.semantic.fact_updated" }
+    pub fn event_type(&self) -> &'static str {
+        "memory.semantic.fact_updated"
+    }
 
     /// Structured metadata for logging and observability.
     pub fn metadata(&self) -> HashMap<String, String> {
         let mut m = HashMap::new();
         m.insert("event_type".into(), self.event_type().into());
         m.insert("fact_id".into(), self.id.to_string());
-        if let Some(c) = self.confidence { m.insert("confidence".into(), c.to_string()); }
+        if let Some(c) = self.confidence {
+            m.insert("confidence".into(), c.to_string());
+        }
         m
     }
 }

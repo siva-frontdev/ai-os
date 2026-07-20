@@ -1,0 +1,26 @@
+[package]
+name = "execution-runner"
+version.workspace = true
+edition.workspace = true
+description = "Execution Platform — subprocess/WASM/container execution backends"
+
+[dependencies]
+execution-core = { path = "../execution-core" }
+execution-sandbox = { path = "../execution-sandbox" }
+ai-os-core = { path = "../../core" }
+tokio = { version = "1", features = ["sync", "io-util", "process"] }
+thiserror = "2"
+async-trait = "0.1"
+uuid = { version = "1", features = ["v4", "v7"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+criterion = { workspace = true }
+tokio = { version = "1", features = ["rt", "macros"] }
+tokio-test = "0.4"
+memory-core = { path = "../../crates/memory-core" }
+
+[[bench]]
+name = "runner_bench"
+harness = false

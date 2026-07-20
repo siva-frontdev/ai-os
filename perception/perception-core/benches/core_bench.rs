@@ -43,5 +43,10 @@ fn bench_confidence_creation(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, bench_observation_creation, bench_observation_id_generation, bench_confidence_creation);
+criterion_group!(
+    benches,
+    bench_observation_creation,
+    bench_observation_id_generation,
+    bench_confidence_creation
+);
 criterion_main!(benches);

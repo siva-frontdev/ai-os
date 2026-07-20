@@ -11,7 +11,10 @@ pub struct InMemoryConversationContext {
 
 impl InMemoryConversationContext {
     pub fn new(max_turns: usize) -> Self {
-        Self { messages: Vec::new(), max_turns }
+        Self {
+            messages: Vec::new(),
+            max_turns,
+        }
     }
 }
 

@@ -1,30 +1,22 @@
 #[cfg(test)]
 mod tests {
-    use brain_core::ids::{GoalId, PlanId, ToolCapabilityId};
-    use brain_core::tool::{ExecutablePlan, ToolRequirement, ToolValue};
-    use std::collections::HashMap;
     use crate::types::WorkflowStatus;
     use crate::workflow_builder::WorkflowBuilder;
     use crate::workflow_executor::WorkflowExecutor;
+    use brain_core::ids::{GoalId, PlanId, ToolCapabilityId};
+    use brain_core::tool::{ExecutablePlan, ToolRequirement, ToolValue};
+    use std::collections::HashMap;
 
     fn make_plan(_name: &str, step_count: usize) -> ExecutablePlan {
         let reqs: Vec<ToolRequirement> = (0..step_count)
             .map(|i| {
                 let mut inputs = HashMap::new();
                 inputs.insert("idx".into(), ToolValue::Number(i as f64));
-                ToolRequirement::new(
-                    ToolCapabilityId::new(),
-                    inputs,
-                    vec!["output".into()],
-                )
+                ToolRequirement::new(ToolCapabilityId::new(), inputs, vec!["output".into()])
             })
             .collect();
 
-        ExecutablePlan::new(
-            PlanId::new(),
-            GoalId::new(),
-            reqs,
-        )
+        ExecutablePlan::new(PlanId::new(), GoalId::new(), reqs)
     }
 
     #[test]
@@ -112,7 +104,7 @@ mod tests {
 
         let prog = exec.get_progress(&id).unwrap();
         assert_eq!(prog.completed_steps, 2);
-        assert!((prog.progress_pct - 2.0/3.0).abs() < 0.01);
+        assert!((prog.progress_pct - 2.0 / 3.0).abs() < 0.01);
     }
 
     #[test]

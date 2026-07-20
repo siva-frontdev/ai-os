@@ -72,19 +72,27 @@ impl ReasoningPipeline {
         })
     }
 
-    fn compute_confidence(&self, hypotheses: &[Hypothesis], inferences: &[Inference]) -> Confidence {
+    fn compute_confidence(
+        &self,
+        hypotheses: &[Hypothesis],
+        inferences: &[Inference],
+    ) -> Confidence {
         if hypotheses.is_empty() {
             return Confidence::DEFAULT;
         }
-        let avg_hy: f32 = hypotheses.iter().map(|h| h.confidence.raw()).sum::<f32>() / hypotheses.len() as f32;
+        let avg_hy: f32 =
+            hypotheses.iter().map(|h| h.confidence.raw()).sum::<f32>() / hypotheses.len() as f32;
         if inferences.is_empty() {
             return Confidence::new(avg_hy);
         }
-        let avg_inf: f32 = inferences.iter().map(|i| i.confidence.raw()).sum::<f32>() / inferences.len() as f32;
+        let avg_inf: f32 =
+            inferences.iter().map(|i| i.confidence.raw()).sum::<f32>() / inferences.len() as f32;
         Confidence::new(avg_hy * 0.4 + avg_inf * 0.6)
     }
 }
 
 impl Default for ReasoningPipeline {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }

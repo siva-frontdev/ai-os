@@ -1,6 +1,6 @@
 //! Learning events.
-use memory_core::Timestamp;
 use ai_os_core::events::Event;
+use memory_core::Timestamp;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -12,7 +12,9 @@ pub struct LearningCycleStarted {
 }
 
 impl Event for LearningCycleStarted {
-    fn event_type(&self) -> &'static str { "brain.learning.cycle.started" }
+    fn event_type(&self) -> &'static str {
+        "brain.learning.cycle.started"
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -25,7 +27,9 @@ pub struct LearningCycleCompleted {
 }
 
 impl Event for LearningCycleCompleted {
-    fn event_type(&self) -> &'static str { "brain.learning.cycle.completed" }
+    fn event_type(&self) -> &'static str {
+        "brain.learning.cycle.completed"
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -37,5 +41,7 @@ pub struct PromotionApplied {
 }
 
 impl Event for PromotionApplied {
-    fn event_type(&self) -> &'static str { "brain.learning.promotion.applied" }
+    fn event_type(&self) -> &'static str {
+        "brain.learning.promotion.applied"
+    }
 }

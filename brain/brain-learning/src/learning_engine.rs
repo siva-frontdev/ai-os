@@ -41,5 +41,7 @@ impl LearningEngine {
 }
 
 impl Default for LearningEngine {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }

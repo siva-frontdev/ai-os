@@ -15,10 +15,7 @@ pub trait ObservationProvider: Debug + Send + Sync {
 
     async fn publish(&self, observation: Observation) -> PerceptionResult<()>;
 
-    async fn publish_batch(
-        &self,
-        observations: Vec<Observation>,
-    ) -> PerceptionResult<()>;
+    async fn publish_batch(&self, observations: Vec<Observation>) -> PerceptionResult<()>;
 
     fn register_pipeline(&self, kind: ObserverKind, tx: mpsc::Sender<Observation>);
 }
@@ -33,10 +30,7 @@ pub trait ObservationStore: Debug + Send + Sync {
 
     async fn get(&self, id: &ObservationId) -> PerceptionResult<Option<Observation>>;
 
-    async fn query(
-        &self,
-        filter: &ObservationFilter,
-    ) -> PerceptionResult<Vec<Observation>>;
+    async fn query(&self, filter: &ObservationFilter) -> PerceptionResult<Vec<Observation>>;
 
     async fn prune(&self, older_than: Timestamp) -> PerceptionResult<u64>;
 }
@@ -45,10 +39,8 @@ pub trait ObservationStore: Debug + Send + Sync {
 
 #[async_trait]
 pub trait AttentionFilter: Debug + Send + Sync {
-    async fn evaluate(
-        &self,
-        observation: &Observation,
-    ) -> PerceptionResult<Option<AttentionScore>>;
+    async fn evaluate(&self, observation: &Observation)
+        -> PerceptionResult<Option<AttentionScore>>;
 
     fn record(&self, observation: &Observation);
 

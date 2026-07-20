@@ -4,7 +4,9 @@ use std::time::Duration;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use osal_capabilities::{CapabilityContext, CapabilitySet};
 use osal_core::{Gid, Pid, Uid};
-use osal_process::{DefaultProcessManager, ProcessConfig, ProcessManager, ProcessState, ProcessStatus};
+use osal_process::{
+    DefaultProcessManager, ProcessConfig, ProcessManager, ProcessState, ProcessStatus,
+};
 
 fn create_process_config() -> ProcessConfig {
     let mut env = HashMap::new();

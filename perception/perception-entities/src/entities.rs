@@ -226,9 +226,8 @@ impl EntityExtractor for DefaultEntityExtractor {
             .write()
             .map_err(|_| EntityError::PatternNotFound("lock poisoned".into()))?;
         // Validate regex
-        regex::Regex::new(&pattern.pattern).map_err(|e| {
-            EntityError::PatternNotFound(format!("invalid regex: {}", e))
-        })?;
+        regex::Regex::new(&pattern.pattern)
+            .map_err(|e| EntityError::PatternNotFound(format!("invalid regex: {}", e)))?;
         patterns.push(pattern);
         Ok(())
     }
@@ -306,7 +305,10 @@ impl EntityResolver for DefaultEntityResolver {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use perception_core::{Observation, ObservationPayload, ObservationPriority, ObservationSource, ObserverKind, Modality};
+    use perception_core::{
+        Modality, Observation, ObservationPayload, ObservationPriority, ObservationSource,
+        ObserverKind,
+    };
 
     #[tokio::test]
     async fn test_entity_extraction_with_pattern() {
@@ -372,10 +374,7 @@ mod tests {
     async fn test_entity_resolver() {
         let resolver = DefaultEntityResolver::new();
 
-        let result = resolver
-            .resolve(EntityKind::Process, "5678")
-            .await
-            .unwrap();
+        let result = resolver.resolve(EntityKind::Process, "5678").await.unwrap();
         assert!(result.is_some());
         assert_eq!(result.unwrap().entity_id, "5678");
     }

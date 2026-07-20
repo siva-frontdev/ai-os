@@ -29,12 +29,11 @@ pub mod types;
 
 pub use errors::{PolicyError, PolicyResult};
 pub use traits::{
-    GuardRails, PolicyCompiler, PolicyEngine, PolicyEvaluator, PolicyLoader,
-    PolicyStore,
+    GuardRails, PolicyCompiler, PolicyEngine, PolicyEvaluator, PolicyLoader, PolicyStore,
 };
-pub use types::{CompiledRuleSet, PolicyChange};
 pub use types::{
     Comparison, CompiledRule, EscalationChannel, GuardRail, LogLevel, PolicyConfig,
-    PolicyEvaluation, PolicyRule, RuleAction, RuleCondition, RuleSet,
-    ViolatedRule, ViolationSeverity,
+    PolicyEvaluation, PolicyRule, RuleAction, RuleCondition, RuleSet, ViolatedRule,
+    ViolationSeverity,
 };
+pub use types::{CompiledRuleSet, PolicyChange};

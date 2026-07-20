@@ -1,6 +1,6 @@
 //! `GoalContext` — context for a single goal.
-use crate::ids::GoalId;
 use crate::budget::CognitiveBudget;
+use crate::ids::GoalId;
 use crate::types::GoalStatus;
 use memory_core::Timestamp;
 use serde::{Deserialize, Serialize};

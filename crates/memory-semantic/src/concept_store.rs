@@ -1,8 +1,8 @@
+use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::RwLock;
-use async_trait::async_trait;
 use uuid::Uuid;
-use serde::{Serialize, Deserialize};
 
 use crate::error::{SemanticError, SemanticResult};
 
@@ -48,7 +48,8 @@ impl ConceptStore for InMemoryConceptStore {
         Ok(())
     }
     async fn get(&self, id: &Uuid) -> SemanticResult<Option<Concept>> {
-        Ok(self.inner
+        Ok(self
+            .inner
             .read()
             .map_err(|e| SemanticError::Internal(e.to_string()))?
             .get(id)
@@ -69,7 +70,8 @@ impl ConceptStore for InMemoryConceptStore {
         Ok(())
     }
     async fn list(&self) -> SemanticResult<Vec<Concept>> {
-        Ok(self.inner
+        Ok(self
+            .inner
             .read()
             .map_err(|e| SemanticError::Internal(e.to_string()))?
             .values()
@@ -77,7 +79,8 @@ impl ConceptStore for InMemoryConceptStore {
             .collect())
     }
     async fn count(&self) -> SemanticResult<u64> {
-        Ok(self.inner
+        Ok(self
+            .inner
             .read()
             .map_err(|e| SemanticError::Internal(e.to_string()))?
             .len() as u64)
@@ -90,10 +93,22 @@ pub struct DefaultConceptStore;
 
 #[async_trait]
 impl ConceptStore for DefaultConceptStore {
-    async fn insert(&self, _: Concept) -> SemanticResult<()> { Ok(()) }
-    async fn get(&self, _: &Uuid) -> SemanticResult<Option<Concept>> { Ok(None) }
-    async fn update(&self, _: Concept) -> SemanticResult<()> { Ok(()) }
-    async fn delete(&self, _: &Uuid) -> SemanticResult<()> { Ok(()) }
-    async fn list(&self) -> SemanticResult<Vec<Concept>> { Ok(Vec::new()) }
-    async fn count(&self) -> SemanticResult<u64> { Ok(0) }
+    async fn insert(&self, _: Concept) -> SemanticResult<()> {
+        Ok(())
+    }
+    async fn get(&self, _: &Uuid) -> SemanticResult<Option<Concept>> {
+        Ok(None)
+    }
+    async fn update(&self, _: Concept) -> SemanticResult<()> {
+        Ok(())
+    }
+    async fn delete(&self, _: &Uuid) -> SemanticResult<()> {
+        Ok(())
+    }
+    async fn list(&self) -> SemanticResult<Vec<Concept>> {
+        Ok(Vec::new())
+    }
+    async fn count(&self) -> SemanticResult<u64> {
+        Ok(0)
+    }
 }

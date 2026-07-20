@@ -9,8 +9,8 @@ pub use errors::{ReflectionError, ReflectionResult};
 pub use lesson_store::LessonStore;
 pub use reflector::Reflector;
 pub use types::{
-    ComparisonResult, Improvement, ImprovementCategory, Lesson, Mistake,
-    MistakeCategory, MistakeSeverity, Reflection,
+    ComparisonResult, Improvement, ImprovementCategory, Lesson, Mistake, MistakeCategory,
+    MistakeSeverity, Reflection,
 };
 
 #[cfg(test)]
