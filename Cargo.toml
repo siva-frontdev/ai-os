@@ -34,6 +34,15 @@ members = [
   "brain/brain-learning",
   "brain/brain-workflow",
   "brain/brain-coordinator",
+  "perception/perception-core",
+  "perception/perception-observer",
+  "perception/perception-normalizer",
+  "perception/perception-detector",
+  "perception/perception-entities",
+  "perception/perception-context",
+    "perception/perception-anomaly",
+    "perception/perception-fusion",
+    "perception/perception-coordinator",
 ]
 
 [workspace.package]

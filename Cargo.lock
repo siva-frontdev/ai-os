@@ -1144,6 +1144,160 @@ dependencies = [
 ]
 
 [[package]]
+name = "perception-anomaly"
+version = "0.1.0"
+dependencies = [
+ "ai-os-core",
+ "async-trait",
+ "memory-core",
+ "perception-core",
+ "perception-detector",
+ "proptest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "tokio-test",
+]
+
+[[package]]
+name = "perception-context"
+version = "0.1.0"
+dependencies = [
+ "ai-os-core",
+ "async-trait",
+ "memory-core",
+ "perception-core",
+ "perception-observer",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "tokio-test",
+]
+
+[[package]]
+name = "perception-coordinator"
+version = "0.1.0"
+dependencies = [
+ "ai-os-core",
+ "async-trait",
+ "criterion",
+ "memory-core",
+ "perception-anomaly",
+ "perception-context",
+ "perception-core",
+ "perception-detector",
+ "perception-entities",
+ "perception-fusion",
+ "perception-normalizer",
+ "perception-observer",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "tokio-test",
+]
+
+[[package]]
+name = "perception-core"
+version = "0.1.0"
+dependencies = [
+ "ai-os-core",
+ "async-trait",
+ "criterion",
+ "memory-core",
+ "proptest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "tokio-test",
+ "uuid",
+]
+
+[[package]]
+name = "perception-detector"
+version = "0.1.0"
+dependencies = [
+ "ai-os-core",
+ "async-trait",
+ "memory-core",
+ "perception-core",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "tokio-test",
+]
+
+[[package]]
+name = "perception-entities"
+version = "0.1.0"
+dependencies = [
+ "ai-os-core",
+ "async-trait",
+ "memory-core",
+ "perception-core",
+ "perception-normalizer",
+ "regex",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "tokio-test",
+]
+
+[[package]]
+name = "perception-fusion"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "criterion",
+ "memory-core",
+ "perception-core",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "tokio-test",
+ "uuid",
+]
+
+[[package]]
+name = "perception-normalizer"
+version = "0.1.0"
+dependencies = [
+ "ai-os-core",
+ "async-trait",
+ "memory-core",
+ "perception-core",
+ "proptest",
+ "regex",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "tokio-test",
+]
+
+[[package]]
+name = "perception-observer"
+version = "0.1.0"
+dependencies = [
+ "ai-os-core",
+ "async-trait",
+ "memory-core",
+ "perception-core",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "tokio-test",
+ "uuid",
+]
+
+[[package]]
 name = "pin-project-lite"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"

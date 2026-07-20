@@ -1,0 +1,19 @@
+[package]
+name = "perception-detector"
+version.workspace = true
+edition.workspace = true
+description = "Perception Platform — state detection, change detection, temporal detection"
+
+[dependencies]
+perception-core = { path = "../perception-core" }
+ai-os-core = { path = "../../core" }
+memory-core = { path = "../../crates/memory-core" }
+tokio = { version = "1", features = ["sync"] }
+thiserror = "2"
+async-trait = "0.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }
+tokio-test = "0.4"
