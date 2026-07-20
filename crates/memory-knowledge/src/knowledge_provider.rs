@@ -34,9 +34,17 @@ pub trait KnowledgeProvider: Send + Sync + std::fmt::Debug {
 /// In-memory implementation wrapping a single `Arc<dyn KnowledgeBase>`.
 /// In production this would compose episodic + semantic backends. For now
 /// it delegates to the wrapped knowledge base, satisfying the trait contract.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct DefaultKnowledgeProvider {
     base: std::sync::Arc<dyn KnowledgeBase>,
+}
+
+impl Default for DefaultKnowledgeProvider {
+    fn default() -> Self {
+        Self {
+            base: std::sync::Arc::new(crate::knowledge_base::DefaultKnowledgeBase),
+        }
+    }
 }
 
 impl DefaultKnowledgeProvider {

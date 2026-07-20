@@ -62,9 +62,9 @@ impl ExperienceRecorder for InMemoryExperienceRecorder {
         Ok(id)
     }
     async fn score_importance(&self, event: &EpisodicEvent) -> EpisodicResult<f32> {
-        let recency_boost = if event.timestamp > 0 {
+        let recency_boost = if event.timestamp.as_nanos() > 0 {
             let now_ns = memory_core::Timestamp::now().as_nanos() as u64;
-            let event_ns = event.timestamp as u64;
+            let event_ns = event.timestamp.as_nanos() as u64;
             let age_ns = now_ns.saturating_sub(event_ns);
             let hour_ns: u64 = 3_600_000_000_000;
             if age_ns < hour_ns { 0.1 } else { 0.0 }

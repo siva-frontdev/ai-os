@@ -31,6 +31,6 @@ pub use event::{KnowledgeAdded, KnowledgeMerged, KnowledgeRemoved};
 pub use knowledge_base::{
     DefaultKnowledgeBase, Entity, Fact, InMemoryKnowledgeBase, KnowledgeBase,
 };
-pub use knowledge_graph::{DefaultKnowledgeGraph, KnowledgeGraph};
+pub use knowledge_graph::{DefaultKnowledgeGraph, KnowledgeEdge, KnowledgeGraph};
 pub use knowledge_provider::{DefaultKnowledgeProvider, KnowledgeProvider};
 pub use knowledge_query::{DefaultKnowledgeQuery, KnowledgeQuery as KQuery, QueryResult};

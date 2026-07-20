@@ -19,5 +19,4 @@ pub use facade::{
 };
 pub use types::*;
 
-#[cfg(test)]
 pub use facade::mock;

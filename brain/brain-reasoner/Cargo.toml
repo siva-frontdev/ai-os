@@ -1,0 +1,18 @@
+[package]
+name = "brain-reasoner"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "Brain Platform — reasoning engine, inference, hypothesis generation, constraint solving"
+
+[dependencies]
+brain-core = { path = "../brain-core" }
+memory-core = { path = "../../crates/memory-core" }
+thiserror = "2"
+async-trait = "0.1"
+uuid = { version = "1", features = ["v4", "serde"] }
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }
+uuid = { version = "1", features = ["v4"] }

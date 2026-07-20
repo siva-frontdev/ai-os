@@ -4,6 +4,7 @@ use uuid::Uuid;
 use serde::{Serialize, Deserialize};
 use async_trait::async_trait;
 use crate::error::{EpisodicError, EpisodicResult};
+use crate::event::EpisodicEvent;
 
 /// Low-level storage trait for episodic events by ID.
 #[async_trait]
@@ -68,7 +69,7 @@ impl EpisodeStore for InMemoryEpisodeStore {
             .read()
             .map_err(|e| EpisodicError::Internal(e.to_string()))?
             .values()
-            .filter(|e| e.timestamp >= start_ns && e.timestamp <= end_ns)
+            .filter(|e| e.timestamp.as_nanos() >= start_ns && e.timestamp.as_nanos() <= end_ns)
             .cloned()
             .collect();
         results.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));

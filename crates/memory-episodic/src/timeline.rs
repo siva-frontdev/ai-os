@@ -40,7 +40,7 @@ impl Timeline for InMemoryTimeline {
         self.by_timestamp
             .write()
             .map_err(|e| EpisodicError::Internal(e.to_string()))?
-            .entry(event.timestamp)
+            .entry(event.timestamp.as_nanos())
             .or_default()
             .push(event.id);
         self.by_id
@@ -128,7 +128,7 @@ impl Timeline for InMemoryTimeline {
             .map_err(|e| EpisodicError::Internal(e.to_string()))?;
         ts_map.clear();
         for (id, ev) in id_map.iter() {
-            ts_map.entry(ev.timestamp).or_default().push(*id);
+            ts_map.entry(ev.timestamp.as_nanos()).or_default().push(*id);
         }
         Ok(())
     }

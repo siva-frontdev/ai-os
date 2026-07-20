@@ -57,9 +57,17 @@ pub trait KnowledgeQuery: Send + Sync + std::fmt::Debug {
 }
 
 /// In-memory implementation scanning HashMap indexes.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct DefaultKnowledgeQuery {
     base: std::sync::Arc<dyn KnowledgeBase>,
+}
+
+impl Default for DefaultKnowledgeQuery {
+    fn default() -> Self {
+        Self {
+            base: std::sync::Arc::new(crate::knowledge_base::DefaultKnowledgeBase),
+        }
+    }
 }
 
 impl DefaultKnowledgeQuery {
@@ -72,9 +80,10 @@ impl DefaultKnowledgeQuery {
 #[async_trait]
 impl KnowledgeQuery for DefaultKnowledgeQuery {
     async fn query(&self, filter: KnowledgeFilter, limit: usize) -> KnowledgeResult<QueryResult> {
-        let entities = self.base.list_entities().await?;
+        let all_entities = self.base.list_entities().await?;
+        let examined = all_entities.len();
         let mut matches = Vec::new();
-        for ent in entities {
+        for ent in all_entities {
             if let Some(ref et) = filter.entity_type {
                 if ent.entity_type != *et {
                     continue;
@@ -96,7 +105,7 @@ impl KnowledgeQuery for DefaultKnowledgeQuery {
         matches.truncate(limit);
         Ok(QueryResult {
             matches,
-            examined: entities.len(),
+            examined,
         })
     }
     async fn search_by_predicate(&self, predicate: &str) -> KnowledgeResult<Vec<Fact>> {
@@ -136,7 +145,7 @@ impl KnowledgeQuery for DefaultKnowledgeQuery {
             let ents = self.base.list_entities().await?;
             let facts = self.base.facts_for_entity(&current).await?;
             for fact in facts {
-                if let Ok(Some(target)) = Uuid::parse_str(&fact.object) {
+                if let Ok(target) = Uuid::parse_str(&fact.object) {
                     if !visited.contains_key(&target) {
                         visited.insert(target, depth + 1);
                         if target == to {

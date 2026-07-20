@@ -26,6 +26,14 @@ members = [
   "brain/brain-core",
   "brain/brain-model",
   "brain/brain-policy",
+  "brain/brain-goals",
+  "brain/brain-planner",
+  "brain/brain-reasoner",
+  "brain/brain-decision",
+  "brain/brain-reflection",
+  "brain/brain-learning",
+  "brain/brain-workflow",
+  "brain/brain-coordinator",
 ]
 
 [workspace.package]

@@ -1,0 +1,22 @@
+[package]
+name = "brain-workflow"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "Brain Platform — workflow orchestration, stage tracking, retry, parallel execution"
+
+[dependencies]
+brain-core = { path = "../brain-core" }
+brain-goals = { path = "../brain-goals" }
+brain-planner = { path = "../brain-planner" }
+brain-policy = { path = "../brain-policy" }
+memory-core = { path = "../../crates/memory-core" }
+thiserror = "2"
+async-trait = "0.1"
+uuid = { version = "1", features = ["v4", "serde"] }
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["sync", "time"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }
+uuid = { version = "1", features = ["v4"] }

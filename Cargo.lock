@@ -118,6 +118,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "brain-coordinator"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "brain-core",
+ "brain-decision",
+ "brain-goals",
+ "brain-learning",
+ "brain-planner",
+ "brain-policy",
+ "brain-reasoner",
+ "brain-reflection",
+ "brain-workflow",
+ "memory-core",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "brain-core"
 version = "0.1.0"
 dependencies = [
@@ -127,6 +149,49 @@ dependencies = [
  "memory-core",
  "serde",
  "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "brain-decision"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "brain-core",
+ "brain-policy",
+ "memory-core",
+ "serde",
+ "thiserror 2.0.19",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "brain-goals"
+version = "0.1.0"
+dependencies = [
+ "ai-os-core",
+ "async-trait",
+ "brain-core",
+ "memory-core",
+ "serde",
+ "thiserror 2.0.19",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "brain-learning"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "brain-core",
+ "brain-goals",
+ "brain-reflection",
+ "memory-core",
+ "serde",
  "thiserror 2.0.19",
  "tokio",
  "uuid",
@@ -149,6 +214,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "brain-planner"
+version = "0.1.0"
+dependencies = [
+ "ai-os-core",
+ "async-trait",
+ "brain-core",
+ "memory-core",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "brain-policy"
 version = "0.1.0"
 dependencies = [
@@ -159,6 +239,49 @@ dependencies = [
  "memory-core",
  "serde",
  "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "brain-reasoner"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "brain-core",
+ "memory-core",
+ "serde",
+ "thiserror 2.0.19",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "brain-reflection"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "brain-core",
+ "brain-goals",
+ "memory-core",
+ "serde",
+ "thiserror 2.0.19",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "brain-workflow"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "brain-core",
+ "brain-goals",
+ "brain-planner",
+ "brain-policy",
+ "memory-core",
+ "serde",
  "thiserror 2.0.19",
  "tokio",
  "uuid",
@@ -935,6 +1058,7 @@ dependencies = [
  "osal-capabilities",
  "osal-core",
  "serde",
+ "serde_json",
  "tokio",
 ]
 

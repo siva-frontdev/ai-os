@@ -1,0 +1,19 @@
+[package]
+name = "brain-decision"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "Brain Platform — decision making, confidence scoring, conflict resolution"
+
+[dependencies]
+brain-core = { path = "../brain-core" }
+brain-policy = { path = "../brain-policy" }
+memory-core = { path = "../../crates/memory-core" }
+thiserror = "2"
+async-trait = "0.1"
+uuid = { version = "1", features = ["v4", "serde"] }
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }
+uuid = { version = "1", features = ["v4"] }

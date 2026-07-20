@@ -3,8 +3,8 @@ use std::time::Duration;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use osal_capabilities::{CapabilityContext, CapabilitySet};
-use osal_core::{Pid, Uid};
-use osal_process::{DefaultProcessManager, ProcessConfig, ProcessState, ProcessStatus};
+use osal_core::{Gid, Pid, Uid};
+use osal_process::{DefaultProcessManager, ProcessConfig, ProcessManager, ProcessState, ProcessStatus};
 
 fn create_process_config() -> ProcessConfig {
     let mut env = HashMap::new();
@@ -15,7 +15,7 @@ fn create_process_config() -> ProcessConfig {
         env,
         working_dir: Some("/tmp".into()),
         uid: Some(Uid(1000)),
-        gid: Some(Uid(1000).0.into()),
+        gid: Some(Gid(1000)),
         timeout: Some(Duration::from_secs(30)),
         capabilities: CapabilitySet::new(),
         stdin: None,
@@ -39,16 +39,16 @@ fn create_process_status() -> ProcessStatus {
 fn bench_process_config_serialize(c: &mut Criterion) {
     let config = create_process_config();
 
-    c.bench_function("process_config_serialize", |b| {
-        b.iter(|| serde_json::to_string(black_box(&config)).unwrap())
+    c.bench_function("process_config_serialize", |ben| {
+        ben.iter(|| serde_json::to_string(black_box(&config)).unwrap())
     });
 }
 
 fn bench_process_config_deserialize(c: &mut Criterion) {
     let json = serde_json::to_string(&create_process_config()).unwrap();
 
-    c.bench_function("process_config_deserialize", |b| {
-        b.iter(|| {
+    c.bench_function("process_config_deserialize", |ben| {
+        ben.iter(|| {
             let _: ProcessConfig = serde_json::from_str(black_box(&json)).unwrap();
         })
     });
@@ -57,16 +57,16 @@ fn bench_process_config_deserialize(c: &mut Criterion) {
 fn bench_process_status_serialize(c: &mut Criterion) {
     let status = create_process_status();
 
-    c.bench_function("process_status_serialize", |b| {
-        b.iter(|| serde_json::to_string(black_box(&status)).unwrap())
+    c.bench_function("process_status_serialize", |ben| {
+        ben.iter(|| serde_json::to_string(black_box(&status)).unwrap())
     });
 }
 
 fn bench_process_status_deserialize(c: &mut Criterion) {
     let json = serde_json::to_string(&create_process_status()).unwrap();
 
-    c.bench_function("process_status_deserialize", |b| {
-        b.iter(|| {
+    c.bench_function("process_status_deserialize", |ben| {
+        ben.iter(|| {
             let _: ProcessStatus = serde_json::from_str(black_box(&json)).unwrap();
         })
     });
@@ -77,8 +77,8 @@ fn bench_default_manager_spawn(c: &mut Criterion) {
     let pm = DefaultProcessManager;
     let ctx = CapabilityContext::new("bench");
 
-    c.bench_function("default_manager_spawn", |b| {
-        b.to_async(&rt).iter(|| {
+    c.bench_function("default_manager_spawn", |ben| {
+        ben.to_async(&rt).iter(|| {
             pm.spawn(
                 black_box(&ctx),
                 black_box("ls"),
@@ -91,8 +91,8 @@ fn bench_default_manager_spawn(c: &mut Criterion) {
 fn bench_default_manager_events(c: &mut Criterion) {
     let pm = DefaultProcessManager;
 
-    c.bench_function("default_manager_events", |b| {
-        b.iter(|| {
+    c.bench_function("default_manager_events", |ben| {
+        ben.iter(|| {
             let _rx = pm.events();
         })
     });

@@ -369,7 +369,6 @@ pub struct KernelFacade {
 // Mock implementations for testing
 // ---------------------------------------------------------------------------
 
-#[cfg(test)]
 pub mod mock {
     use std::sync::atomic::{AtomicU64, Ordering};
     use tokio::sync::mpsc;

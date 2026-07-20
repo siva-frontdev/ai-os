@@ -13,6 +13,8 @@ async-trait = "0.1"
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["async_futures"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt"] }
 
 [[bench]]
 name = "osal_network_bench"

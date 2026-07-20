@@ -1,0 +1,20 @@
+[package]
+name = "brain-goals"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "Brain Platform — goal lifecycle, DAG, dependency validation, and store"
+
+[dependencies]
+brain-core = { path = "../brain-core" }
+ai-os-core = { path = "../../core" }
+memory-core = { path = "../../crates/memory-core" }
+tokio = { version = "1", features = ["sync"] }
+thiserror = "2"
+async-trait = "0.1"
+uuid = { version = "1", features = ["v4", "serde"] }
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }
+uuid = { version = "1", features = ["v4"] }

@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::collections::HashMap;
+    use uuid::Uuid;
+    use memory_semantic::SemanticError;
 
     #[test]
     fn all_error_variants_display() {

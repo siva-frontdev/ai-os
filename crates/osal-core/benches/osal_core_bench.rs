@@ -1,6 +1,7 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use osal_capabilities::CapabilityContext;
 use osal_core::mock::{MockFileSystem, MockNetworkManager, MockProcessManager, MockSystemMonitor};
+use osal_core::{FileSystem, NetworkManager, ProcessManager, SystemMonitor};
 
 fn create_ctx() -> CapabilityContext {
     CapabilityContext::new("bench")
