@@ -23,6 +23,9 @@ members = [
   "crates/memory-episodic",
   "crates/memory-semantic",
   "crates/memory-knowledge",
+  "brain/brain-core",
+  "brain/brain-model",
+  "brain/brain-policy",
 ]
 
 [workspace.package]
