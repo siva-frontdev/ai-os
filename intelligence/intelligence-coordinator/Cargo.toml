@@ -1,0 +1,32 @@
+[package]
+name = "intelligence-coordinator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+intelligence-core = { path = "../intelligence-core" }
+intelligence-providers = { path = "../intelligence-providers" }
+intelligence-models = { path = "../intelligence-models" }
+intelligence-router = { path = "../intelligence-router" }
+intelligence-prompts = { path = "../intelligence-prompts" }
+intelligence-context = { path = "../intelligence-context" }
+intelligence-embeddings = { path = "../intelligence-embeddings" }
+intelligence-cache = { path = "../intelligence-cache" }
+intelligence-streaming = { path = "../intelligence-streaming" }
+intelligence-tools = { path = "../intelligence-tools" }
+intelligence-cost = { path = "../intelligence-cost" }
+intelligence-safety = { path = "../intelligence-safety" }
+intelligence-telemetry = { path = "../intelligence-telemetry" }
+ai-os-core = { path = "../../core" }
+ai-os-runtime = { path = "../../runtime" }
+brain-core = { path = "../../brain/brain-core" }
+memory-core = { path = "../../crates/memory-core" }
+execution-core = { path = "../../execution/execution-core" }
+tokio = { version = "1", features = ["macros", "sync", "time", "rt", "rt-multi-thread"] }
+thiserror = "1"
+async-trait = "0.1"
+futures = "0.3"
+bytes = "1"
+uuid = { version = "1", features = ["v4", "v7", "serde"] }
+serde = { version = "1", features = ["derive"] }
+indexmap = "2"

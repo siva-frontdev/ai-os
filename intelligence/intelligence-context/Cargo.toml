@@ -1,0 +1,11 @@
+[package]
+name = "intelligence-context"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+intelligence-core = { path = "../intelligence-core" }
+tokio = { version = "1", features = ["macros","sync","rt-multi-thread","time"] }
+thiserror = "1"
+uuid = { version = "1", features = ["v4"] }
+async-trait = "0.1"

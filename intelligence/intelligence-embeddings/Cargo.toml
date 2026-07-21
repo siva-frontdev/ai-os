@@ -1,0 +1,13 @@
+[package]
+name = "intelligence-embeddings"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+intelligence-core = { path = "../intelligence-core" }
+intelligence-models = { path = "../intelligence-models" }
+tokio = { version = "1", features = ["macros", "sync", "rt-multi-thread", "time"] }
+thiserror = "1"
+serde = { version = "1", features = ["derive"] }
+async-trait = "0.1"
+futures = "0.3"

@@ -1,0 +1,14 @@
+[package]
+name = "intelligence-safety"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+intelligence-core = { path = "../intelligence-core" }
+intelligence-models = { path = "../intelligence-models" }
+tokio = { version = "1", features = ["macros", "sync", "rt-multi-thread", "time"] }
+regex = "1"
+thiserror = "1"
+serde = { version = "1", features = ["derive"] }
+lazy_static = "1.4"
+async-trait = "0.1"

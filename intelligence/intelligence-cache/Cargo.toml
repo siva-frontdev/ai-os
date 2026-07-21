@@ -1,0 +1,15 @@
+[package]
+name = "intelligence-cache"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+intelligence-core = { path = "../intelligence-core" }
+tokio = { version = "1", features = ["macros", "sync", "time", "rt-multi-thread"] }
+dashmap = "5"
+sha2 = "0.10"
+serde = { version = "1", features = ["derive"] }
+thiserror = "1"
+hex = "0.4"
+async-trait = "0.1"
+futures = "0.3"

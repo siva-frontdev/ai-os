@@ -1,0 +1,23 @@
+[package]
+name = "intelligence-core"
+version = "0.1.0"
+edition = "2021"
+description = "Intelligence Platform core: shared types, errors, events, traits"
+
+[dependencies]
+ai-os-core = { path = "../../core" }
+ai-os-runtime = { path = "../../runtime" }
+memory-core = { path = "../../crates/memory-core" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+futures = "0.3"
+bytes = "1"
+thiserror = "1"
+async-trait = "0.1"
+uuid = { version = "1", features = ["v4","v7","serde"] }
+tokio = { version = "1", features = ["sync"] }
+indexmap = "2"
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["async_tokio"] }
+tokio = { version = "1", features = ["rt","macros"] }

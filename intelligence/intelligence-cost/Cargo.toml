@@ -1,0 +1,13 @@
+[package]
+name = "intelligence-cost"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+intelligence-core = { path = "../intelligence-core" }
+intelligence-telemetry = { path = "../intelligence-telemetry" }
+tokio = { version = "1", features = ["macros", "sync", "rt-multi-thread", "time"] }
+thiserror = "1"
+serde = { version = "1", features = ["derive"] }
+uuid = { version = "1", features = ["v4", "v7", "serde"] }
+async-trait = "0.1"

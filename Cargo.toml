@@ -53,6 +53,20 @@ members = [
     "execution/execution-results",
     "execution/execution-recovery",
     "execution/execution-coordinator",
+  "intelligence/intelligence-core",
+  "intelligence/intelligence-providers",
+  "intelligence/intelligence-models",
+  "intelligence/intelligence-router",
+  "intelligence/intelligence-prompts",
+  "intelligence/intelligence-context",
+  "intelligence/intelligence-embeddings",
+  "intelligence/intelligence-cache",
+  "intelligence/intelligence-streaming",
+  "intelligence/intelligence-tools",
+  "intelligence/intelligence-cost",
+  "intelligence/intelligence-safety",
+  "intelligence/intelligence-telemetry",
+  "intelligence/intelligence-coordinator",
 ]
 
 [workspace.package]

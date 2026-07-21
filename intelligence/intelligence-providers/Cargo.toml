@@ -1,0 +1,20 @@
+[package]
+name = "intelligence-providers"
+version = "0.1.0"
+edition = "2021"
+description = "Provider registry and default provider adapter for Intelligence Platform"
+
+[dependencies]
+intelligence-core = { path = "../intelligence-core" }
+ai-os-core = { path = "../../core" }
+tokio = { version = "1", features = ["macros", "sync", "time"] }
+thiserror = "1"
+async-trait = "0.1"
+uuid = { version = "1", features = ["v4","v7","serde"] }
+serde = { version = "1", features = ["derive"] }
+reqwest = { version = "0.11", features = ["json","rustls-tls","brotli","gzip"] }
+futures = "0.3"
+bytes = "1"
+tracing = "0.1"
+
+[dev-dependencies]
