@@ -10,3 +10,9 @@ mod budget_dimension;
 mod confidence;
 mod goal_priority;
 mod goal_status;
+mod reasoning_result;
+
+mod decision;
+pub use self::decision::Decision; // Added in Phase 6 cognitive loop
+
+pub use self::reasoning_result::{ExtractedEntity, InferredConstraint, ReasoningResult};

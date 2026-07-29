@@ -349,6 +349,94 @@ pub trait PlatformInfo: Send + Sync {
     fn kernel_version(&self) -> &str;
 }
 
+/// Rectangle dimensions (screen region or window geometry).
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct Rect {
+    pub x: i32,
+    pub y: i32,
+    pub width: u32,
+    pub height: u32,
+}
+
+/// Information about a desktop window.
+#[derive(Debug, Clone)]
+pub struct WindowInfo {
+    pub window_id: String,
+    pub title: String,
+    pub process: Option<String>,
+    pub geometry: Option<Rect>,
+    pub is_visible: bool,
+}
+
+// ---------------------------------------------------------------------------
+// Desktop subsystem traits
+// ---------------------------------------------------------------------------
+
+/// Window management — list, focus, close windows; screen dimensions.
+#[async_trait]
+pub trait WindowManager: Send + Sync {
+    async fn list_windows(&self, ctx: &CapabilityContext) -> Result<Vec<WindowInfo>, WindowError>;
+
+    async fn focused_window(
+        &self,
+        ctx: &CapabilityContext,
+    ) -> Result<Option<WindowInfo>, WindowError>;
+
+    async fn focus_window(
+        &self,
+        ctx: &CapabilityContext,
+        title: &str,
+        partial: bool,
+    ) -> Result<(), WindowError>;
+
+    async fn close_window(&self, ctx: &CapabilityContext, title: &str) -> Result<(), WindowError>;
+
+    async fn screen_dimensions(&self, ctx: &CapabilityContext) -> Result<(u32, u32), WindowError>;
+}
+
+/// Input device abstraction — mouse and keyboard.
+#[async_trait]
+pub trait InputDevice: Send + Sync {
+    async fn mouse_move(&self, ctx: &CapabilityContext, x: i32, y: i32) -> Result<(), InputError>;
+
+    async fn mouse_click(&self, ctx: &CapabilityContext, button: &str) -> Result<(), InputError>;
+
+    async fn keyboard_type(&self, ctx: &CapabilityContext, text: &str) -> Result<(), InputError>;
+
+    async fn keyboard_combo(
+        &self,
+        ctx: &CapabilityContext,
+        keys: &[&str],
+    ) -> Result<(), InputError>;
+
+    async fn cursor_position(&self, ctx: &CapabilityContext) -> Result<(i32, i32), InputError>;
+}
+
+/// Clipboard access — read and write text content.
+#[async_trait]
+pub trait ClipboardProvider: Send + Sync {
+    async fn get_text(&self, ctx: &CapabilityContext) -> Result<Option<String>, DesktopError>;
+
+    async fn set_text(&self, ctx: &CapabilityContext, text: &str) -> Result<(), DesktopError>;
+}
+
+/// Higher-level desktop operations — URL opening, app launching, screenshots, display info.
+#[async_trait]
+pub trait DesktopProvider: Send + Sync {
+    async fn open_url(&self, ctx: &CapabilityContext, url: &str) -> Result<(), DesktopError>;
+
+    async fn launch_app(&self, ctx: &CapabilityContext, app: &str) -> Result<(), DesktopError>;
+
+    async fn take_screenshot(
+        &self,
+        ctx: &CapabilityContext,
+        path: &str,
+    ) -> Result<(), DesktopError>;
+
+    /// Returns "x11", "wayland", or an error if no display server is available.
+    fn display_server(&self) -> Result<String, DesktopError>;
+}
+
 // ---------------------------------------------------------------------------
 // KernelFacade — the central access point
 // ---------------------------------------------------------------------------
@@ -363,6 +451,10 @@ pub struct KernelFacade {
     pub devices: Arc<dyn DeviceManager>,
     pub users: Arc<dyn UserManager>,
     pub platform: Arc<dyn PlatformInfo>,
+    pub windows: Arc<dyn WindowManager>,
+    pub input: Arc<dyn InputDevice>,
+    pub clipboard: Arc<dyn ClipboardProvider>,
+    pub desktop: Arc<dyn DesktopProvider>,
 }
 
 // ---------------------------------------------------------------------------
@@ -854,6 +946,194 @@ pub mod mock {
         }
     }
 
+    pub struct MockWindowManager;
+    impl MockWindowManager {
+        pub fn new() -> Self {
+            Self
+        }
+    }
+    impl std::fmt::Debug for MockWindowManager {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("MockWindowManager").finish()
+        }
+    }
+    #[async_trait]
+    impl WindowManager for MockWindowManager {
+        async fn list_windows(
+            &self,
+            _ctx: &CapabilityContext,
+        ) -> Result<Vec<WindowInfo>, WindowError> {
+            Ok(vec![WindowInfo {
+                window_id: "1".into(),
+                title: "Mock Window".into(),
+                process: Some("mock_app".into()),
+                geometry: Some(Rect {
+                    x: 0,
+                    y: 0,
+                    width: 1024,
+                    height: 768,
+                }),
+                is_visible: true,
+            }])
+        }
+        async fn focused_window(
+            &self,
+            _ctx: &CapabilityContext,
+        ) -> Result<Option<WindowInfo>, WindowError> {
+            Ok(Some(WindowInfo {
+                window_id: "1".into(),
+                title: "Mock Window".into(),
+                process: Some("mock_app".into()),
+                geometry: Some(Rect {
+                    x: 0,
+                    y: 0,
+                    width: 1024,
+                    height: 768,
+                }),
+                is_visible: true,
+            }))
+        }
+        async fn focus_window(
+            &self,
+            _ctx: &CapabilityContext,
+            title: &str,
+            _partial: bool,
+        ) -> Result<(), WindowError> {
+            if title.is_empty() {
+                Err(WindowError::NotFound("empty title".into()))
+            } else {
+                Ok(())
+            }
+        }
+        async fn close_window(
+            &self,
+            _ctx: &CapabilityContext,
+            title: &str,
+        ) -> Result<(), WindowError> {
+            if title.is_empty() {
+                Err(WindowError::NotFound("empty title".into()))
+            } else {
+                Ok(())
+            }
+        }
+        async fn screen_dimensions(
+            &self,
+            _ctx: &CapabilityContext,
+        ) -> Result<(u32, u32), WindowError> {
+            Ok((1920, 1080))
+        }
+    }
+
+    pub struct MockInputDevice;
+    impl MockInputDevice {
+        pub fn new() -> Self {
+            Self
+        }
+    }
+    impl std::fmt::Debug for MockInputDevice {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("MockInputDevice").finish()
+        }
+    }
+    #[async_trait]
+    impl InputDevice for MockInputDevice {
+        async fn mouse_move(
+            &self,
+            _ctx: &CapabilityContext,
+            _x: i32,
+            _y: i32,
+        ) -> Result<(), InputError> {
+            Ok(())
+        }
+        async fn mouse_click(
+            &self,
+            _ctx: &CapabilityContext,
+            _button: &str,
+        ) -> Result<(), InputError> {
+            Ok(())
+        }
+        async fn keyboard_type(
+            &self,
+            _ctx: &CapabilityContext,
+            _text: &str,
+        ) -> Result<(), InputError> {
+            Ok(())
+        }
+        async fn keyboard_combo(
+            &self,
+            _ctx: &CapabilityContext,
+            _keys: &[&str],
+        ) -> Result<(), InputError> {
+            Ok(())
+        }
+        async fn cursor_position(
+            &self,
+            _ctx: &CapabilityContext,
+        ) -> Result<(i32, i32), InputError> {
+            Ok((0, 0))
+        }
+    }
+
+    pub struct MockClipboardProvider;
+    impl MockClipboardProvider {
+        pub fn new() -> Self {
+            Self
+        }
+    }
+    impl std::fmt::Debug for MockClipboardProvider {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("MockClipboardProvider").finish()
+        }
+    }
+    #[async_trait]
+    impl ClipboardProvider for MockClipboardProvider {
+        async fn get_text(&self, _ctx: &CapabilityContext) -> Result<Option<String>, DesktopError> {
+            Ok(Some("mock clipboard content".into()))
+        }
+        async fn set_text(
+            &self,
+            _ctx: &CapabilityContext,
+            _text: &str,
+        ) -> Result<(), DesktopError> {
+            Ok(())
+        }
+    }
+
+    pub struct MockDesktopProvider;
+    impl MockDesktopProvider {
+        pub fn new() -> Self {
+            Self
+        }
+    }
+    impl std::fmt::Debug for MockDesktopProvider {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("MockDesktopProvider").finish()
+        }
+    }
+    #[async_trait]
+    impl DesktopProvider for MockDesktopProvider {
+        async fn open_url(&self, _ctx: &CapabilityContext, _url: &str) -> Result<(), DesktopError> {
+            Ok(())
+        }
+        async fn launch_app(
+            &self,
+            _ctx: &CapabilityContext,
+            _app: &str,
+        ) -> Result<(), DesktopError> {
+            Ok(())
+        }
+        async fn take_screenshot(
+            &self,
+            _ctx: &CapabilityContext,
+            _path: &str,
+        ) -> Result<(), DesktopError> {
+            Ok(())
+        }
+        fn display_server(&self) -> Result<String, DesktopError> {
+            Ok("mock".into())
+        }
+    }
+
     /// Build a fully-wired mock `KernelFacade` for testing.
     pub fn mock_kernel() -> KernelFacade {
         KernelFacade {
@@ -865,6 +1145,10 @@ pub mod mock {
             devices: Arc::new(MockDeviceManager::new()),
             users: Arc::new(MockUserManager::new()),
             platform: Arc::new(MockPlatformInfo::new()),
+            windows: Arc::new(MockWindowManager::new()),
+            input: Arc::new(MockInputDevice::new()),
+            clipboard: Arc::new(MockClipboardProvider::new()),
+            desktop: Arc::new(MockDesktopProvider::new()),
         }
     }
 
@@ -1093,6 +1377,95 @@ pub mod mock {
 
             let dev = k.devices.access(&ctx, "/dev/null").await.unwrap();
             assert_eq!(dev.path, "/dev/null");
+        }
+
+        #[tokio::test]
+        async fn test_mock_window_manager_list_windows() {
+            let wm = MockWindowManager::new();
+            let ctx = dummy_ctx();
+            let windows = wm.list_windows(&ctx).await.unwrap();
+            assert_eq!(windows.len(), 1);
+            assert_eq!(windows[0].title, "Mock Window");
+        }
+
+        #[tokio::test]
+        async fn test_mock_window_manager_focus_empty_title_returns_error() {
+            let wm = MockWindowManager::new();
+            let ctx = dummy_ctx();
+            let result = wm.focus_window(&ctx, "", false).await;
+            assert!(result.is_err());
+            assert!(matches!(result.unwrap_err(), WindowError::NotFound(_)));
+        }
+
+        #[tokio::test]
+        async fn test_mock_window_manager_focus_valid_title_returns_ok() {
+            let wm = MockWindowManager::new();
+            let ctx = dummy_ctx();
+            let result = wm.focus_window(&ctx, "Firefox", false).await;
+            assert!(result.is_ok());
+        }
+
+        #[tokio::test]
+        async fn test_mock_window_manager_screen_dimensions() {
+            let wm = MockWindowManager::new();
+            let ctx = dummy_ctx();
+            let (w, h) = wm.screen_dimensions(&ctx).await.unwrap();
+            assert_eq!(w, 1920);
+            assert_eq!(h, 1080);
+        }
+
+        #[tokio::test]
+        async fn test_mock_input_device_mouse_move() {
+            let input = MockInputDevice::new();
+            let ctx = dummy_ctx();
+            assert!(input.mouse_move(&ctx, 100, 200).await.is_ok());
+        }
+
+        #[tokio::test]
+        async fn test_mock_input_device_keyboard_type() {
+            let input = MockInputDevice::new();
+            let ctx = dummy_ctx();
+            assert!(input.keyboard_type(&ctx, "hello").await.is_ok());
+        }
+
+        #[tokio::test]
+        async fn test_mock_clipboard_get_set() {
+            let cb = MockClipboardProvider::new();
+            let ctx = dummy_ctx();
+            let text = cb.get_text(&ctx).await.unwrap();
+            assert_eq!(text, Some("mock clipboard content".into()));
+            assert!(cb.set_text(&ctx, "new content").await.is_ok());
+        }
+
+        #[tokio::test]
+        async fn test_mock_desktop_provider_open_url() {
+            let dp = MockDesktopProvider::new();
+            let ctx = dummy_ctx();
+            assert!(dp.open_url(&ctx, "https://example.com").await.is_ok());
+        }
+
+        #[test]
+        fn test_mock_desktop_provider_display_server() {
+            let dp = MockDesktopProvider::new();
+            assert_eq!(dp.display_server().unwrap(), "mock");
+        }
+
+        #[tokio::test]
+        async fn test_mock_kernel_facade_desktop_end_to_end() {
+            let k = mock_kernel();
+            let ctx = dummy_ctx();
+
+            let windows = k.windows.list_windows(&ctx).await.unwrap();
+            assert!(!windows.is_empty());
+
+            assert!(k.input.mouse_move(&ctx, 100, 200).await.is_ok());
+            assert!(k.clipboard.set_text(&ctx, "test").await.is_ok());
+
+            let cb_text = k.clipboard.get_text(&ctx).await.unwrap();
+            assert!(cb_text.is_some());
+
+            assert!(k.desktop.open_url(&ctx, "https://aios.dev").await.is_ok());
+            assert_eq!(k.desktop.display_server().unwrap(), "mock");
         }
     }
 }

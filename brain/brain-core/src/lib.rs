@@ -28,10 +28,13 @@
 
 pub mod budget;
 pub mod context;
+pub mod delegation;
 pub mod errors;
 pub mod events;
 pub mod ids;
+pub mod model;
 pub mod state;
+pub mod strategy;
 pub mod tool;
 pub mod traits;
 pub mod types;
@@ -41,8 +44,13 @@ pub use budget::{BudgetChecker, BudgetUsage, CognitiveBudget};
 pub use context::{DecisionContext, GoalContext, PlanningContext, ReasoningContext};
 pub use errors::{BrainError, BrainResult};
 pub use ids::{
-    CheckpointId, DecisionId, GoalId, LessonId, PlanId, ReflectionId, ThoughtId, ToolCapabilityId,
-    ToolId, WorkflowId,
+    AgentId, CheckpointId, DecisionId, GoalId, LessonId, MilestoneId, ObjectiveId, PlanId,
+    ReflectionId, StrategyId, TaskId, ThoughtId, ToolCapabilityId, ToolId, WorkflowId,
 };
+pub use model::{ResourceModel, ResourceState, WorldModel};
+pub use strategy::{ExecutionStrategy, StrategyProfile};
 pub use tool::{ExecutablePlan, ToolCandidate, ToolRequirement};
-pub use types::{BrainState, BudgetDimension, Confidence, GoalPriority, GoalStatus};
+pub use types::{
+    BrainState, BudgetDimension, Confidence, Decision, ExtractedEntity, GoalPriority, GoalStatus,
+    InferredConstraint, ReasoningResult,
+};

@@ -339,6 +339,42 @@ pub struct ObservationFilter {
     pub limit: Option<usize>,
 }
 
+// ── Desktop state types ──────────────────────────────────
+
+use osal_core::WindowInfo as OsalWindowInfo;
+
+/// Snapshot of desktop state for observation and verification.
+#[derive(Debug, Clone, Default)]
+pub struct DesktopState {
+    pub windows: Vec<WindowInfo>,
+    pub focused_window: Option<WindowInfo>,
+    pub cursor_position: (i32, i32),
+    pub clipboard: Option<String>,
+    pub screen_dimensions: (u32, u32),
+}
+
+/// Desktop window information (wraps OSAL type).
+#[derive(Debug, Clone)]
+pub struct WindowInfo {
+    pub window_id: String,
+    pub title: String,
+    pub process: Option<String>,
+    pub geometry: Option<osal_core::Rect>,
+    pub is_visible: bool,
+}
+
+impl From<OsalWindowInfo> for WindowInfo {
+    fn from(w: OsalWindowInfo) -> Self {
+        Self {
+            window_id: w.window_id,
+            title: w.title,
+            process: w.process,
+            geometry: w.geometry,
+            is_visible: w.is_visible,
+        }
+    }
+}
+
 // ── MemoryId re-export (alias for compatibility) ──────────
 
 pub use memory_core::MemoryId;

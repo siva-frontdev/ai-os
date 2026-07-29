@@ -4,6 +4,8 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use tokio::sync::mpsc;
 
+use memory_core::Timestamp;
+
 use crate::types::*;
 
 // ── ToolRegistry ───────────────────────────────────────────
@@ -340,6 +342,189 @@ pub trait ExecutionCoordinator: Debug + Send + Sync {
     async fn health(&self) -> crate::error::ExecutionResult<()>;
 
     async fn pipeline_stats(&self) -> PipelineStats;
+}
+
+// ── CapabilityDiscoverer ────────────────────────────────────
+
+#[async_trait]
+pub trait CapabilityDiscoverer: Debug + Send + Sync {
+    async fn discover_local(
+        &self,
+        query: &DiscoveryQuery,
+    ) -> crate::error::ExecutionResult<Vec<DiscoveredCapability>>;
+
+    async fn discover_external(
+        &self,
+        query: &DiscoveryQuery,
+    ) -> crate::error::ExecutionResult<Vec<DiscoveredCapability>>;
+
+    async fn check_installed(&self, provider_name: &str) -> crate::error::ExecutionResult<bool>;
+
+    async fn discover_installed_clis(&self)
+        -> crate::error::ExecutionResult<Vec<ProviderMetadata>>;
+
+    async fn discover_installed_runtimes(
+        &self,
+    ) -> crate::error::ExecutionResult<Vec<ProviderMetadata>>;
+}
+
+// ── AdapterGenerator ───────────────────────────────────────
+
+#[async_trait]
+pub trait AdapterGenerator: Debug + Send + Sync {
+    async fn can_synthesize(&self, capability: &DiscoveredCapability) -> bool;
+
+    async fn generate(
+        &self,
+        request: &CapabilitySynthesisRequest,
+    ) -> crate::error::ExecutionResult<AdapterTemplate>;
+
+    async fn generate_cli_wrapper(
+        &self,
+        request: &CapabilitySynthesisRequest,
+    ) -> crate::error::ExecutionResult<AdapterTemplate>;
+
+    async fn generate_rest_client(
+        &self,
+        request: &CapabilitySynthesisRequest,
+    ) -> crate::error::ExecutionResult<AdapterTemplate>;
+
+    async fn generate_script(
+        &self,
+        request: &CapabilitySynthesisRequest,
+        language: AdapterType,
+    ) -> crate::error::ExecutionResult<AdapterTemplate>;
+
+    fn supported_adapter_types(&self) -> Vec<AdapterType>;
+}
+
+// ── CapabilityCache ────────────────────────────────────────
+
+#[async_trait]
+pub trait CapabilityCache: Debug + Send + Sync {
+    async fn lookup(
+        &self,
+        capability_id: &str,
+    ) -> crate::error::ExecutionResult<Option<CapabilityCacheEntry>>;
+
+    async fn store(&self, entry: CapabilityCacheEntry) -> crate::error::ExecutionResult<()>;
+
+    async fn invalidate(&self, capability_id: &str) -> crate::error::ExecutionResult<()>;
+
+    async fn list_cached(&self) -> crate::error::ExecutionResult<Vec<CapabilityCacheEntry>>;
+
+    async fn lookup_by_provider(
+        &self,
+        provider_name: &str,
+    ) -> crate::error::ExecutionResult<Vec<CapabilityCacheEntry>>;
+
+    async fn hit_rate(&self) -> f64;
+
+    async fn clear(&self) -> crate::error::ExecutionResult<()>;
+}
+
+// ── LearningEngine ─────────────────────────────────────────
+
+#[async_trait]
+pub trait LearningEngine: Debug + Send + Sync {
+    async fn record_execution(
+        &self,
+        capability_id: &str,
+        success: bool,
+        duration_ms: u64,
+        failure_mode: Option<String>,
+    ) -> crate::error::ExecutionResult<()>;
+
+    async fn get_learned(
+        &self,
+        capability_id: &str,
+    ) -> crate::error::ExecutionResult<Option<LearnedCapability>>;
+
+    async fn update_trust_score(
+        &self,
+        capability_id: &str,
+        delta: f64,
+    ) -> crate::error::ExecutionResult<()>;
+
+    async fn list_learned(&self) -> crate::error::ExecutionResult<Vec<LearnedCapability>>;
+
+    async fn get_top_performers(
+        &self,
+        limit: usize,
+    ) -> crate::error::ExecutionResult<Vec<LearnedCapability>>;
+
+    async fn get_troublesome(
+        &self,
+        limit: usize,
+    ) -> crate::error::ExecutionResult<Vec<LearnedCapability>>;
+
+    async fn forget(&self, capability_id: &str) -> crate::error::ExecutionResult<()>;
+}
+
+// ── ResolutionPipeline ─────────────────────────────────────
+
+#[async_trait]
+pub trait ResolutionPipeline: Debug + Send + Sync {
+    async fn resolve(
+        &self,
+        request: ExecutionRequest,
+    ) -> crate::error::ExecutionResult<ExecutionPlan>;
+
+    async fn resolution_report(
+        &self,
+        capability_id: &str,
+    ) -> crate::error::ExecutionResult<Option<ResolutionReport>>;
+
+    async fn report_execution(
+        &self,
+        capability_id: &str,
+        plan: &ExecutionPlan,
+        result: &ExecutionResult,
+    ) -> crate::error::ExecutionResult<()>;
+
+    async fn invalidate_cache(&self, capability_id: &str) -> crate::error::ExecutionResult<()>;
+
+    fn pipeline_stats(&self) -> HashMap<String, u64>;
+
+    fn resolution_order(&self) -> Vec<ResolutionStage>;
+
+    fn set_bypass(&self, stage: ResolutionStage, bypass: bool);
+
+    fn bypass_state(&self, stage: &ResolutionStage) -> Option<StageBypassState>;
+}
+
+// ── HumanApproval ──────────────────────────────────────────
+
+#[async_trait]
+pub trait HumanApproval: Debug + Send + Sync {
+    async fn request_approval(
+        &self,
+        capability_id: &str,
+        description: &str,
+        provider: &ProviderMetadata,
+        trust: &TrustScore,
+    ) -> crate::error::ExecutionResult<bool>;
+
+    async fn request_destructive_approval(
+        &self,
+        capability_id: &str,
+        operation: &str,
+        details: &str,
+    ) -> crate::error::ExecutionResult<bool>;
+
+    async fn approval_history(
+        &self,
+        limit: usize,
+    ) -> crate::error::ExecutionResult<Vec<ApprovalRecord>>;
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ApprovalRecord {
+    pub capability_id: String,
+    pub description: String,
+    pub approved: bool,
+    pub approved_at: Timestamp,
+    pub reason: Option<String>,
 }
 
 #[cfg(test)]

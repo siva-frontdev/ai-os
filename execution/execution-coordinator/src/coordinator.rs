@@ -10,7 +10,8 @@ pub use execution_core::error::ExecutionResult;
 use execution_core::event::ExecutionEvent;
 use execution_core::traits::{
     ExecutionCoordinator, ExecutionMonitor, ExecutionPlanner, OutputRouter, PipelineManager,
-    PipelineStats, RecoveryManager, ResultCollector, SandboxEnforcer, StageStats, ToolRegistry,
+    PipelineStats, RecoveryManager, ResolutionPipeline, ResultCollector, SandboxEnforcer,
+    StageStats, ToolRegistry,
 };
 use execution_core::types::{
     ExecutionBudget, ExecutionHandle, ExecutionId, ExecutionPermissions, ExecutionPlan,
@@ -32,6 +33,7 @@ pub struct DefaultCoordinator {
     collector: Arc<dyn ResultCollector>,
     router: Arc<dyn OutputRouter>,
     recovery: Arc<dyn RecoveryManager>,
+    resolution_pipeline: Option<Arc<dyn ResolutionPipeline>>,
     plan_tx: Option<mpsc::Sender<ExecutionPlan>>,
     event_bus_tx: Option<mpsc::Sender<ExecutionEvent>>,
     running: AtomicBool,
@@ -59,6 +61,7 @@ impl DefaultCoordinator {
             collector,
             router,
             recovery,
+            resolution_pipeline: None,
             plan_tx: None,
             event_bus_tx: None,
             running: AtomicBool::new(false),
@@ -83,6 +86,20 @@ impl DefaultCoordinator {
     pub fn with_event_bus(mut self, tx: mpsc::Sender<ExecutionEvent>) -> Self {
         self.event_bus_tx = Some(tx);
         self
+    }
+
+    /// Attach the autonomous capability resolution pipeline.
+    /// When set, the coordinator will use the resolution pipeline to
+    /// discover, synthesize, and resolve capabilities before falling
+    /// back to the standard planner.
+    pub fn with_resolution_pipeline(mut self, pipeline: Arc<dyn ResolutionPipeline>) -> Self {
+        self.resolution_pipeline = Some(pipeline);
+        self
+    }
+
+    /// Access the resolution pipeline if configured.
+    pub fn resolution_pipeline(&self) -> Option<&Arc<dyn ResolutionPipeline>> {
+        self.resolution_pipeline.as_ref()
     }
 
     /// Whether the coordinator is currently running.
@@ -142,7 +159,30 @@ impl DefaultCoordinator {
 impl ExecutionCoordinator for DefaultCoordinator {
     async fn submit(&self, request: ExecutionRequest) -> ExecutionResult<ExecutionHandle> {
         self.bump_submitted();
-        let plan = self.planner.plan(request.clone()).await?;
+
+        let plan = if let Some(ref pipeline) = self.resolution_pipeline {
+            let plan = pipeline.resolve(request.clone()).await?;
+
+            let handle = self.dispatcher.dispatch(plan.clone()).await?;
+
+            self.emit_event(ExecutionEvent::PlanCreated(
+                execution_core::event::ExecutionPlanCreated {
+                    plan_id: plan.id,
+                    requirement_id: plan.request.requirement_id.clone(),
+                    candidate_name: "resolution_pipeline".into(),
+                    estimated_duration_ms: plan.budget.timeout_ms,
+                    timestamp: Timestamp::now(),
+                },
+            ));
+
+            if let Some(ref tx) = self.plan_tx {
+                let _ = tx.try_send(plan.clone());
+            }
+
+            return Ok(handle);
+        } else {
+            self.planner.plan(request.clone()).await?
+        };
 
         self.emit_event(ExecutionEvent::PlanCreated(
             execution_core::event::ExecutionPlanCreated {

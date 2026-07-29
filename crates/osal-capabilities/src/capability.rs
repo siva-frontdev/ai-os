@@ -137,6 +137,25 @@ pub enum Capability {
     // -----------------------------------------------------------------------
     // Admin — universal grant
     // -----------------------------------------------------------------------
+    // -----------------------------------------------------------------------
+    // Input
+    // -----------------------------------------------------------------------
+    /// Move mouse, click, scroll.
+    InputMouse,
+    /// Type text or press key combinations.
+    InputKeyboard,
+
+    // -----------------------------------------------------------------------
+    // Desktop
+    // -----------------------------------------------------------------------
+    /// Open URLs via the default browser.
+    DesktopOpenUrl,
+    /// Launch desktop applications.
+    DesktopLaunchApp,
+
+    // -----------------------------------------------------------------------
+    // Admin — universal grant
+    // -----------------------------------------------------------------------
     /// Grants every capability. Bypasses all individual checks.
     Admin,
 }
@@ -182,6 +201,10 @@ impl std::fmt::Display for Capability {
             Capability::SystemReboot => write!(f, "SystemReboot"),
             Capability::SystemSleep => write!(f, "SystemSleep"),
             Capability::SystemHibernate => write!(f, "SystemHibernate"),
+            Capability::InputMouse => write!(f, "InputMouse"),
+            Capability::InputKeyboard => write!(f, "InputKeyboard"),
+            Capability::DesktopOpenUrl => write!(f, "DesktopOpenUrl"),
+            Capability::DesktopLaunchApp => write!(f, "DesktopLaunchApp"),
             Capability::Admin => write!(f, "Admin"),
         }
     }

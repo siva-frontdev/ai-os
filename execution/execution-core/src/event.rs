@@ -326,6 +326,240 @@ impl Event for CoordinatorReady {
     }
 }
 
+// ── Discovery events ───────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CapabilityDiscovering {
+    pub capability_id: String,
+    pub stage: String,
+    pub timestamp: Timestamp,
+}
+
+impl Event for CapabilityDiscovering {
+    fn event_type(&self) -> &'static str {
+        "execution.capability_discovering"
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CapabilityDiscovered {
+    pub capability_id: String,
+    pub origin: String,
+    pub provider_name: String,
+    pub trust_score: f64,
+    pub timestamp: Timestamp,
+}
+
+impl Event for CapabilityDiscovered {
+    fn event_type(&self) -> &'static str {
+        "execution.capability_discovered"
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CapabilityDiscoveryFailed {
+    pub capability_id: String,
+    pub stage: String,
+    pub reason: String,
+    pub timestamp: Timestamp,
+}
+
+impl Event for CapabilityDiscoveryFailed {
+    fn event_type(&self) -> &'static str {
+        "execution.capability_discovery_failed"
+    }
+}
+
+// ── Synthesis events ───────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AdapterGenerating {
+    pub capability_id: String,
+    pub adapter_type: String,
+    pub timestamp: Timestamp,
+}
+
+impl Event for AdapterGenerating {
+    fn event_type(&self) -> &'static str {
+        "execution.adapter_generating"
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AdapterGenerated {
+    pub capability_id: String,
+    pub adapter_type: String,
+    pub sandbox_profile: String,
+    pub timestamp: Timestamp,
+}
+
+impl Event for AdapterGenerated {
+    fn event_type(&self) -> &'static str {
+        "execution.adapter_generated"
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AdapterGenerationFailed {
+    pub capability_id: String,
+    pub reason: String,
+    pub timestamp: Timestamp,
+}
+
+impl Event for AdapterGenerationFailed {
+    fn event_type(&self) -> &'static str {
+        "execution.adapter_generation_failed"
+    }
+}
+
+// ── Validation events ──────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CapabilityValidating {
+    pub capability_id: String,
+    pub sandbox_profile: String,
+    pub timestamp: Timestamp,
+}
+
+impl Event for CapabilityValidating {
+    fn event_type(&self) -> &'static str {
+        "execution.capability_validating"
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CapabilityValidated {
+    pub capability_id: String,
+    pub valid: bool,
+    pub timestamp: Timestamp,
+}
+
+impl Event for CapabilityValidated {
+    fn event_type(&self) -> &'static str {
+        "execution.capability_validated"
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CapabilityValidationFailed {
+    pub capability_id: String,
+    pub reason: String,
+    pub timestamp: Timestamp,
+}
+
+impl Event for CapabilityValidationFailed {
+    fn event_type(&self) -> &'static str {
+        "execution.capability_validation_failed"
+    }
+}
+
+// ── Learning events ────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CapabilityLearned {
+    pub capability_id: String,
+    pub provider_name: String,
+    pub trust_score: f64,
+    pub execution_count: u64,
+    pub timestamp: Timestamp,
+}
+
+impl Event for CapabilityLearned {
+    fn event_type(&self) -> &'static str {
+        "execution.capability_learned"
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CapabilityCached {
+    pub capability_id: String,
+    pub origin: String,
+    pub timestamp: Timestamp,
+}
+
+impl Event for CapabilityCached {
+    fn event_type(&self) -> &'static str {
+        "execution.capability_cached"
+    }
+}
+
+// ── Human Approval events ──────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HumanApprovalRequired {
+    pub capability_id: String,
+    pub description: String,
+    pub provider_name: String,
+    pub trust_score: f64,
+    pub timestamp: Timestamp,
+}
+
+impl Event for HumanApprovalRequired {
+    fn event_type(&self) -> &'static str {
+        "execution.human_approval_required"
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HumanApprovalResolved {
+    pub capability_id: String,
+    pub approved: bool,
+    pub timestamp: Timestamp,
+}
+
+impl Event for HumanApprovalResolved {
+    fn event_type(&self) -> &'static str {
+        "execution.human_approval_resolved"
+    }
+}
+
+// ── Resolution events ─────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ResolutionStageCompleted {
+    pub capability_id: String,
+    pub stage: String,
+    pub success: bool,
+    pub duration_ms: u64,
+    pub timestamp: Timestamp,
+}
+
+impl Event for ResolutionStageCompleted {
+    fn event_type(&self) -> &'static str {
+        "execution.resolution_stage_completed"
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ResolutionComplete {
+    pub capability_id: String,
+    pub success: bool,
+    pub origin: String,
+    pub provider_name: String,
+    pub total_duration_ms: u64,
+    pub timestamp: Timestamp,
+}
+
+impl Event for ResolutionComplete {
+    fn event_type(&self) -> &'static str {
+        "execution.resolution_complete"
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ResolutionFailed {
+    pub capability_id: String,
+    pub reason: String,
+    pub stages_attempted: Vec<String>,
+    pub timestamp: Timestamp,
+}
+
+impl Event for ResolutionFailed {
+    fn event_type(&self) -> &'static str {
+        "execution.resolution_failed"
+    }
+}
+
 // ── Enum dispatch ──────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -375,6 +609,38 @@ pub enum ExecutionEvent {
     BypassDisengaged(BypassDisengaged),
     #[serde(rename = "execution.coordinator_ready")]
     CoordinatorReady(CoordinatorReady),
+    #[serde(rename = "execution.capability_discovering")]
+    CapabilityDiscovering(CapabilityDiscovering),
+    #[serde(rename = "execution.capability_discovered")]
+    CapabilityDiscovered(CapabilityDiscovered),
+    #[serde(rename = "execution.capability_discovery_failed")]
+    CapabilityDiscoveryFailed(CapabilityDiscoveryFailed),
+    #[serde(rename = "execution.adapter_generating")]
+    AdapterGenerating(AdapterGenerating),
+    #[serde(rename = "execution.adapter_generated")]
+    AdapterGenerated(AdapterGenerated),
+    #[serde(rename = "execution.adapter_generation_failed")]
+    AdapterGenerationFailed(AdapterGenerationFailed),
+    #[serde(rename = "execution.capability_validating")]
+    CapabilityValidating(CapabilityValidating),
+    #[serde(rename = "execution.capability_validated")]
+    CapabilityValidated(CapabilityValidated),
+    #[serde(rename = "execution.capability_validation_failed")]
+    CapabilityValidationFailed(CapabilityValidationFailed),
+    #[serde(rename = "execution.capability_learned")]
+    CapabilityLearned(CapabilityLearned),
+    #[serde(rename = "execution.capability_cached")]
+    CapabilityCached(CapabilityCached),
+    #[serde(rename = "execution.human_approval_required")]
+    HumanApprovalRequired(HumanApprovalRequired),
+    #[serde(rename = "execution.human_approval_resolved")]
+    HumanApprovalResolved(HumanApprovalResolved),
+    #[serde(rename = "execution.resolution_stage_completed")]
+    ResolutionStageCompleted(ResolutionStageCompleted),
+    #[serde(rename = "execution.resolution_complete")]
+    ResolutionComplete(ResolutionComplete),
+    #[serde(rename = "execution.resolution_failed")]
+    ResolutionFailed(ResolutionFailed),
 }
 
 impl ExecutionEvent {
@@ -402,6 +668,22 @@ impl ExecutionEvent {
             Self::BypassEngaged(_) => "execution.bypass_engaged",
             Self::BypassDisengaged(_) => "execution.bypass_disengaged",
             Self::CoordinatorReady(_) => "execution.coordinator_ready",
+            Self::CapabilityDiscovering(_) => "execution.capability_discovering",
+            Self::CapabilityDiscovered(_) => "execution.capability_discovered",
+            Self::CapabilityDiscoveryFailed(_) => "execution.capability_discovery_failed",
+            Self::AdapterGenerating(_) => "execution.adapter_generating",
+            Self::AdapterGenerated(_) => "execution.adapter_generated",
+            Self::AdapterGenerationFailed(_) => "execution.adapter_generation_failed",
+            Self::CapabilityValidating(_) => "execution.capability_validating",
+            Self::CapabilityValidated(_) => "execution.capability_validated",
+            Self::CapabilityValidationFailed(_) => "execution.capability_validation_failed",
+            Self::CapabilityLearned(_) => "execution.capability_learned",
+            Self::CapabilityCached(_) => "execution.capability_cached",
+            Self::HumanApprovalRequired(_) => "execution.human_approval_required",
+            Self::HumanApprovalResolved(_) => "execution.human_approval_resolved",
+            Self::ResolutionStageCompleted(_) => "execution.resolution_stage_completed",
+            Self::ResolutionComplete(_) => "execution.resolution_complete",
+            Self::ResolutionFailed(_) => "execution.resolution_failed",
         }
     }
 
@@ -482,6 +764,68 @@ impl ExecutionEvent {
                 m.insert("stage".into(), e.stage.clone());
             }
             Self::CoordinatorReady(_) => {}
+            Self::CapabilityDiscovering(e) => {
+                m.insert("capability_id".into(), e.capability_id.clone());
+                m.insert("stage".into(), e.stage.clone());
+            }
+            Self::CapabilityDiscovered(e) => {
+                m.insert("capability_id".into(), e.capability_id.clone());
+                m.insert("provider".into(), e.provider_name.clone());
+            }
+            Self::CapabilityDiscoveryFailed(e) => {
+                m.insert("capability_id".into(), e.capability_id.clone());
+                m.insert("stage".into(), e.stage.clone());
+            }
+            Self::AdapterGenerating(e) => {
+                m.insert("capability_id".into(), e.capability_id.clone());
+                m.insert("adapter_type".into(), e.adapter_type.clone());
+            }
+            Self::AdapterGenerated(e) => {
+                m.insert("capability_id".into(), e.capability_id.clone());
+                m.insert("adapter_type".into(), e.adapter_type.clone());
+            }
+            Self::AdapterGenerationFailed(e) => {
+                m.insert("capability_id".into(), e.capability_id.clone());
+            }
+            Self::CapabilityValidating(e) => {
+                m.insert("capability_id".into(), e.capability_id.clone());
+            }
+            Self::CapabilityValidated(e) => {
+                m.insert("capability_id".into(), e.capability_id.clone());
+                m.insert("valid".into(), e.valid.to_string());
+            }
+            Self::CapabilityValidationFailed(e) => {
+                m.insert("capability_id".into(), e.capability_id.clone());
+            }
+            Self::CapabilityLearned(e) => {
+                m.insert("capability_id".into(), e.capability_id.clone());
+                m.insert("trust_score".into(), e.trust_score.to_string());
+            }
+            Self::CapabilityCached(e) => {
+                m.insert("capability_id".into(), e.capability_id.clone());
+                m.insert("origin".into(), e.origin.clone());
+            }
+            Self::HumanApprovalRequired(e) => {
+                m.insert("capability_id".into(), e.capability_id.clone());
+                m.insert("provider".into(), e.provider_name.clone());
+            }
+            Self::HumanApprovalResolved(e) => {
+                m.insert("capability_id".into(), e.capability_id.clone());
+                m.insert("approved".into(), e.approved.to_string());
+            }
+            Self::ResolutionStageCompleted(e) => {
+                m.insert("capability_id".into(), e.capability_id.clone());
+                m.insert("stage".into(), e.stage.clone());
+                m.insert("success".into(), e.success.to_string());
+            }
+            Self::ResolutionComplete(e) => {
+                m.insert("capability_id".into(), e.capability_id.clone());
+                m.insert("origin".into(), e.origin.clone());
+                m.insert("provider".into(), e.provider_name.clone());
+            }
+            Self::ResolutionFailed(e) => {
+                m.insert("capability_id".into(), e.capability_id.clone());
+            }
         }
         m
     }

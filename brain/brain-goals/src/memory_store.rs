@@ -10,12 +10,14 @@ use std::sync::RwLock;
 #[derive(Debug)]
 pub struct InMemoryGoalStore {
     goals: RwLock<HashMap<GoalId, GoalRecord>>,
+    snapshots: RwLock<HashMap<String, Vec<GoalRecord>>>,
 }
 
 impl InMemoryGoalStore {
     pub fn new() -> Self {
         Self {
             goals: RwLock::new(HashMap::new()),
+            snapshots: RwLock::new(HashMap::new()),
         }
     }
 }
@@ -141,5 +143,84 @@ impl GoalStore for InMemoryGoalStore {
             .read()
             .map_err(|e| GoalsError::Internal(e.to_string()))?;
         Ok(goals.values().filter(|g| g.status == status).count())
+    }
+
+    async fn list_active(&self) -> GoalsResult<Vec<GoalRecord>> {
+        let goals = self
+            .goals
+            .read()
+            .map_err(|e| GoalsError::Internal(e.to_string()))?;
+        Ok(goals
+            .values()
+            .filter(|g| {
+                matches!(
+                    g.status,
+                    GoalStatus::Active
+                        | GoalStatus::Planning
+                        | GoalStatus::Executing
+                        | GoalStatus::Evaluating
+                )
+            })
+            .cloned()
+            .collect())
+    }
+
+    async fn search_by_tag(&self, tag: &str) -> GoalsResult<Vec<GoalRecord>> {
+        let goals = self
+            .goals
+            .read()
+            .map_err(|e| GoalsError::Internal(e.to_string()))?;
+        Ok(goals
+            .values()
+            .filter(|g| g.tags.iter().any(|t| t == tag))
+            .cloned()
+            .collect())
+    }
+
+    async fn list_since(&self, since: memory_core::Timestamp) -> GoalsResult<Vec<GoalRecord>> {
+        let goals = self
+            .goals
+            .read()
+            .map_err(|e| GoalsError::Internal(e.to_string()))?;
+        Ok(goals
+            .values()
+            .filter(|g| g.updated_at >= since)
+            .cloned()
+            .collect())
+    }
+
+    async fn save_snapshot(&self, label: &str) -> GoalsResult<()> {
+        let goals = self
+            .goals
+            .read()
+            .map_err(|e| GoalsError::Internal(e.to_string()))?;
+        let snapshot: Vec<GoalRecord> = goals.values().cloned().collect();
+        let key = format!("__snapshot_{}", label);
+        let mut store = self
+            .snapshots
+            .write()
+            .map_err(|e| GoalsError::Internal(e.to_string()))?;
+        store.insert(key, snapshot);
+        Ok(())
+    }
+
+    async fn restore_snapshot(&self, label: &str) -> GoalsResult<()> {
+        let key = format!("__snapshot_{}", label);
+        let store = self
+            .snapshots
+            .read()
+            .map_err(|e| GoalsError::Internal(e.to_string()))?;
+        let snapshot = store
+            .get(&key)
+            .ok_or_else(|| GoalsError::Internal(format!("snapshot '{}' not found", label)))?;
+        let mut goals = self
+            .goals
+            .write()
+            .map_err(|e| GoalsError::Internal(e.to_string()))?;
+        goals.clear();
+        for record in snapshot {
+            goals.insert(record.goal_id, record.clone());
+        }
+        Ok(())
     }
 }

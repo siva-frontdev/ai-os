@@ -7,5 +7,11 @@
 /// single entry point that runs the documented 9-stage pipeline.
 pub mod coordinator;
 pub mod error;
+pub mod reasoning;
+
+/// AI-driven World Understanding — replaces heuristic extraction.
+pub mod world_understanding;
 
 pub use coordinator::DefaultCoordinator;
+pub use reasoning::IntelligenceReasoningService;
+pub use world_understanding::{StructuredWorldUpdate, WorldUnderstandingService};

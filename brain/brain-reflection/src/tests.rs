@@ -34,20 +34,36 @@ mod tests {
     fn test_reflector_detects_mistakes() {
         let r = Reflector::new();
         let goal = make_goal_id(1);
+        // No overlapping words → correctness < 0.3 → triggers mistakes
         let reflection = r
-            .reflect(goal, "expected great outcome", "poor outcome")
+            .reflect(
+                goal,
+                "expected great outcome here today",
+                "poor result completely different",
+            )
             .unwrap();
         assert!(!reflection.mistakes.is_empty());
         assert!(!reflection.improvements.is_empty());
+        assert!(!reflection.root_causes.is_empty());
+        assert!(!reflection.actionable_insights.is_empty());
     }
 
     #[test]
-    fn test_reflection_creates_lessons() {
+    fn test_reflection_creates_lessons_and_insights() {
         let r = Reflector::new();
         let goal = make_goal_id(1);
-        let reflection = r.reflect(goal, "plan A works", "plan A failed").unwrap();
+        // "failed" vs "works" — low correctness AND completeness triggers lessons
+        let reflection = r
+            .reflect(
+                goal,
+                "complete project deployment properly",
+                "deployment failed entirely",
+            )
+            .unwrap();
         assert!(!reflection.lessons.is_empty());
+        assert!(!reflection.actionable_insights.is_empty());
         assert!(reflection.lessons[0].applied_count == 0);
+        assert!((reflection.dimensions.overall() - 0.0).abs() < 1.0);
     }
 
     #[test]
@@ -63,6 +79,7 @@ mod tests {
             confidence: brain_core::types::Confidence::new(0.8),
             created_at: memory_core::Timestamp::now(),
             applied_count: 0,
+            tags: vec![],
         };
         store.store(lesson.clone()).unwrap();
         let fetched = store.get(&lesson.lesson_id).unwrap();

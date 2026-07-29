@@ -7,15 +7,16 @@ mod facade;
 mod types;
 
 pub use error::{
-    DeviceError, FilesystemError, MonitorError, NetworkError, OsalError, OsalResult, ProcessError,
-    TerminalError, UserError,
+    DesktopError, DeviceError, FilesystemError, InputError, MonitorError, NetworkError, OsalError,
+    OsalResult, ProcessError, TerminalError, UserError, WindowError,
 };
 pub use events::OsalEvent;
 pub use facade::{
-    ChildHandle, DeviceHandle, DeviceInfo, DeviceManager, DirEntry, DiskInfo, FileKind,
-    FileMetadata, FileSystem, GroupInfo, InterfaceInfo, KernelFacade, MemoryInfo, NetworkConfig,
-    NetworkIO, NetworkManager, PlatformInfo, ProcessInfo, ProcessManager, PtyHandle, SystemMonitor,
-    Terminal, UserInfo, UserManager,
+    ChildHandle, ClipboardProvider, DesktopProvider, DeviceHandle, DeviceInfo, DeviceManager,
+    DirEntry, DiskInfo, FileKind, FileMetadata, FileSystem, GroupInfo, InputDevice, InterfaceInfo,
+    KernelFacade, MemoryInfo, NetworkConfig, NetworkIO, NetworkManager, PlatformInfo, ProcessInfo,
+    ProcessManager, PtyHandle, Rect, SystemMonitor, Terminal, UserInfo, UserManager, WindowInfo,
+    WindowManager,
 };
 pub use types::*;
 

@@ -1,6 +1,9 @@
 use osal_core::KernelFacade;
 use std::sync::Arc;
 
+use crate::desktop::{
+    LinuxClipboardProvider, LinuxDesktopProvider, LinuxInputDevice, LinuxWindowManager,
+};
 use crate::devices::LinuxDeviceManager;
 use crate::filesystem::LinuxFileSystem;
 use crate::monitoring::LinuxSystemMonitor;
@@ -29,6 +32,10 @@ impl LinuxKernelFacade {
             devices: Arc::new(LinuxDeviceManager::new()),
             users: Arc::new(LinuxUserManager::new()),
             platform: Arc::new(LinuxPlatformInfo::new()),
+            windows: Arc::new(LinuxWindowManager::new()),
+            input: Arc::new(LinuxInputDevice::new()),
+            clipboard: Arc::new(LinuxClipboardProvider::new()),
+            desktop: Arc::new(LinuxDesktopProvider::new()),
         }
     }
 }

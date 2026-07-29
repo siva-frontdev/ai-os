@@ -90,6 +90,7 @@ mod tests {
             confidence: Confidence::new(0.8),
             created_at: Timestamp::now(),
             applied_count: 0,
+            tags: vec![],
         };
         let report = engine.learn_from_lesson(&lesson).unwrap();
         assert!(report.pattern_count > 0);
@@ -117,6 +118,7 @@ mod tests {
                 },
                 confidence: Confidence::new(0.8),
                 created_at: Timestamp::now(),
+                tags: vec![],
                 applied_count: 0,
             };
             engine.learn_from_lesson(&lesson).unwrap();

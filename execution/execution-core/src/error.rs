@@ -106,6 +106,46 @@ pub enum ExecutionError {
     #[error("permission denied: {0}")]
     PermissionDenied(String),
 
+    // Discovery errors (Axxx)
+    #[error("local discovery failed for capability {capability}: {detail}")]
+    LocalDiscoveryFailed { capability: String, detail: String },
+    #[error("external discovery failed for capability {capability}: {detail}")]
+    ExternalDiscoveryFailed { capability: String, detail: String },
+    #[error("provider not found in local environment: {0}")]
+    ProviderNotFound(String),
+    #[error("runtime not available for adapter: {0}")]
+    RuntimeNotAvailable(String),
+
+    // Synthesis errors (Bxxx)
+    #[error("adapter generation failed for capability {capability}: {detail}")]
+    AdapterGenerationFailed { capability: String, detail: String },
+    #[error("unsupported adapter type: {0}")]
+    UnsupportedAdapterType(String),
+    #[error("synthesis request invalid: {0}")]
+    InvalidSynthesisRequest(String),
+
+    // Validation errors (Cxxx)
+    #[error("adapter validation failed: {detail}")]
+    AdapterValidationFailed { detail: String },
+    #[error("destructive operation requires approval: {0}")]
+    DestructiveOperationRequiresApproval(String),
+
+    // Learning errors (Dxxx)
+    #[error("learning engine error: {0}")]
+    LearningEngineError(String),
+    #[error("cache error: {0}")]
+    CacheError(String),
+
+    // Resolution errors (Exxx)
+    #[error("resolution pipeline exhausted all stages for capability {capability}")]
+    ResolutionExhausted { capability: String },
+    #[error("human approval required: {0}")]
+    HumanApprovalRequired(String),
+    #[error("human approval denied: {0}")]
+    HumanApprovalDenied(String),
+    #[error("unsafe provider requires explicit approval: {0}")]
+    UnsafeProvider(String),
+
     // Wrapped
     #[error("core error: {0}")]
     Core(#[from] ai_os_core::CoreError),

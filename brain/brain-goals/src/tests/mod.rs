@@ -223,7 +223,14 @@ mod tests {
             .await
             .unwrap();
         manager.activate_goal(&id).await.unwrap();
-        let completed = manager.complete_goal(&id, "success").await.unwrap();
+        let outcome = crate::types::GoalOutcome {
+            summary: "success".into(),
+            success: true,
+            confidence: 1.0,
+            artifacts: vec![],
+            errors: vec![],
+        };
+        let completed = manager.complete_goal(&id, outcome).await.unwrap();
         assert_eq!(completed.status, brain_core::types::GoalStatus::Completed);
     }
 
@@ -313,7 +320,14 @@ mod tests {
         let result = manager.activate_goal(&goal_id).await;
         assert!(result.is_err());
 
-        manager.complete_goal(&dep_id, "done").await.unwrap();
+        let dep_outcome = crate::types::GoalOutcome {
+            summary: "done".into(),
+            success: true,
+            confidence: 1.0,
+            artifacts: vec![],
+            errors: vec![],
+        };
+        manager.complete_goal(&dep_id, dep_outcome).await.unwrap();
         let activated = manager.activate_goal(&goal_id).await.unwrap();
         assert_eq!(activated.status, brain_core::types::GoalStatus::Active);
     }

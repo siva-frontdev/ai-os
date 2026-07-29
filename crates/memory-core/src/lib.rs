@@ -45,6 +45,9 @@ pub mod relationship;
 /// Validation and serialization traits for memory objects.
 pub mod traits;
 
+/// World Model — generic entity/relationship types for the continuous cognitive loop.
+pub mod wm;
+
 // Re-export all public types
 pub use types::{
     Checksum, MemoryId, MemoryImportance, MemoryPriority, MemorySource, MemoryTier, MemoryType,
@@ -66,3 +69,9 @@ pub use relationship::Relationship;
 
 // Re-export traits
 pub use traits::{Checksumable, ToJsonBytes, Validate};
+
+// Re-export World Model types
+pub use wm::{
+    Entity, EntityId, EntityLifecycle, EntityObservation, ExtractionResult,
+    Relationship as WmRelationship, RelationshipId, RelationshipObservation, Value,
+};

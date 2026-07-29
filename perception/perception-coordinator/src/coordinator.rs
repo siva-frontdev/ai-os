@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use memory_core::Timestamp;
 use perception_anomaly::AnomalyDetector;
 use perception_context::ContextEnricher;
+use perception_core::DesktopObservationProvider;
 use perception_core::*;
 use perception_detector::StateDetector;
 use perception_entities::EntityExtractor;
@@ -126,6 +127,13 @@ pub trait PipelineManager: Debug + Send + Sync {
 #[async_trait]
 pub trait PerceptionCoordinator: Debug + Send + Sync {
     async fn register_observer(&self, observer: Arc<dyn Observer>) -> CoordinatorResult<()>;
+
+    async fn register_desktop_observer(
+        &self,
+        observer: Arc<dyn DesktopObservationProvider>,
+    ) -> CoordinatorResult<()>;
+
+    async fn observe_desktop(&self) -> perception_core::PerceptionResult<DesktopState>;
 
     async fn register_normalizer(&self, normalizer: Arc<dyn Normalizer>) -> CoordinatorResult<()>;
 
@@ -281,6 +289,7 @@ pub struct DefaultPerceptionCoordinator {
     config: RwLock<CoordinatorConfig>,
     pipeline_manager: Arc<dyn PipelineManager>,
     observer: RwLock<Option<Arc<dyn Observer>>>,
+    desktop_observer: RwLock<Option<Arc<dyn DesktopObservationProvider>>>,
     normalizer: RwLock<Option<Arc<dyn Normalizer>>>,
     state_detector: RwLock<Option<Arc<dyn StateDetector>>>,
     entity_extractor: RwLock<Option<Arc<dyn EntityExtractor>>>,
@@ -345,6 +354,7 @@ impl DefaultPerceptionCoordinator {
             config: RwLock::new(config),
             pipeline_manager: manager,
             observer: RwLock::new(None),
+            desktop_observer: RwLock::new(None),
             normalizer: RwLock::new(None),
             state_detector: RwLock::new(None),
             entity_extractor: RwLock::new(None),
@@ -386,6 +396,34 @@ impl PerceptionCoordinator for DefaultPerceptionCoordinator {
             .map_err(|_| CoordinatorError::AssemblyFailed("lock poisoned".into()))?;
         *o = Some(observer);
         Ok(())
+    }
+
+    async fn register_desktop_observer(
+        &self,
+        observer: Arc<dyn DesktopObservationProvider>,
+    ) -> CoordinatorResult<()> {
+        let mut d = self
+            .desktop_observer
+            .write()
+            .map_err(|_| CoordinatorError::AssemblyFailed("lock poisoned".into()))?;
+        *d = Some(observer);
+        Ok(())
+    }
+
+    async fn observe_desktop(&self) -> perception_core::PerceptionResult<DesktopState> {
+        let observer = self
+            .desktop_observer
+            .read()
+            .map_err(|_| {
+                perception_core::PerceptionError::ConfigurationError("lock poisoned".into())
+            })?
+            .clone()
+            .ok_or_else(|| {
+                perception_core::PerceptionError::ConfigurationError(
+                    "no desktop observer registered".into(),
+                )
+            })?;
+        observer.observe().await
     }
 
     async fn register_normalizer(&self, normalizer: Arc<dyn Normalizer>) -> CoordinatorResult<()> {

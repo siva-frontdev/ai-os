@@ -1,6 +1,8 @@
 [workspace]
 resolver = "2"
 members = [
+    "apps/desktop-agent",
+    "apps/desktop-companion",
     "core",
     "runtime",
     "crates/osal-core",
@@ -14,6 +16,7 @@ members = [
     "crates/osal-users",
     "crates/osal-platform",
     "crates/osal-linux",
+    "crates/capabilities",
   "crates/memory-core",
   "crates/memory-storage",
   "crates/memory-index",
@@ -52,6 +55,10 @@ members = [
     "execution/execution-monitor",
     "execution/execution-results",
     "execution/execution-recovery",
+    "execution/execution-discovery",
+    "execution/execution-adapter",
+    "execution/execution-cache",
+    "execution/execution-resolution",
     "execution/execution-coordinator",
   "intelligence/intelligence-core",
   "intelligence/intelligence-providers",

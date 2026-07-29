@@ -10,27 +10,41 @@ This is not an operating system that runs AI workloads. It is an operating syste
 
 ### Intelligence as a Platform Primitive
 
-In a traditional OS, processes and files are universal primitives. Every program that runs on the system uses these primitives because they are built into the fabric of the operating system. AI-native OS extends this concept: memory, perception, reasoning, and execution become universal primitives available to every component.
+In a traditional OS, processes and files are universal primitives. Every program that runs on the system uses these primitives because they are built into the fabric of the operating system. AI-native OS extends this concept: the **World Model** becomes the universal primitive — a continuously evolving graph of entities and relationships that represents everything the system knows about the user's world.
 
-A scheduling decision in AI-native OS is not based solely on priority queues and time slices. It incorporates learned patterns of workload behavior, predicted resource availability, and security context. A security decision is not based solely on permission bits. It incorporates behavioral history, anomaly scores, and policy rules evaluated in real time. A configuration change is not applied by editing a file and restarting a service. It is evaluated by a policy engine, checked against learned patterns, and applied through the EventBus without service interruption.
+Memory, perception, reasoning, and execution are not separate domains. They are different operations on the same World Model:
+- **Memory** persists the World Model — entities, relationships, and their evolution over time.
+- **Perception** observes the world and extracts new entities and relationships to update the model.
+- **Reasoning** queries the World Model to detect changes, identify opportunities, evaluate risks, and decide what to do.
+- **Execution** carries out actions determined by reasoning, reporting outcomes back into the model.
 
-### Layered Intelligence
+A scheduling decision incorporates learned patterns of workload behavior, predicted resource availability, and security context — all entities in the World Model. A security decision uses behavioral history, anomaly scores, and policy rules — entities connected through the graph. The system never asks "what domain does this belong to?" It asks "what new understanding about the user's world did I just gain?"
 
-Intelligence in AI-native OS is not monolithic. It emerges from the interaction of specialized subsystems organized in clean architectural layers:
+### World Model, Not Modules
 
-- **Memory Platform** (Phase 5) stores and retrieves learned patterns. It is the system's long-term memory.
-- **Perception Platform** (Phase 7) processes sensor inputs and extracts meaning. It is the system's senses.
-- **Brain Platform** (Phase 6) reasons about state, makes decisions, and drives learning. It is the system's cognition.
-- **Execution Platform** (Phase 8) translates decisions into actions across the system. It is the system's agency.
+Intelligence in AI-native OS is not organized into functional domains (Health, Learning, Finance, Work, Projects, Tasks, Calendar). These are human labels that obscure the underlying unity of experience. Instead, intelligence emerges from one continuously evolving World Model:
 
-These subsystems are integrated by the Intelligence Integration layer (Phase 9) into a unified intelligence capability. But even before the intelligence layers are built, the foundation (Phases 1-4) establishes the architectural patterns, event-driven communication, and security model that make intelligence integration possible.
+- **Everything is an entity or a relationship.** People, projects, conversations, devices, habits, ideas, decisions, skills, events — all are entities in the same graph. Connections between them are relationships.
+- **One model, no categories.** Every observation, every interaction, every piece of information updates the same World Model. There are no separate stores for different types of information.
+- **Context is a dynamic subgraph.** Given the current situation, the system generates context by traversing the World Model outward from relevant entities. Context depth is bounded by relevance, not fixed windows.
+- **Notifications emerge from reasoning.** The system does not schedule notifications. It continuously evaluates the World Model for situations that warrant the user's attention.
+- **Planning is continuous reprioritization.** Every reasoning cycle evaluates current state, recent observations, and user behavior to determine what should happen next.
+
+The infrastructure that makes this possible builds on the layered architecture:
+
+- **Memory Platform** (Phase 5) provides the physical storage for the World Model graph.
+- **Perception Platform** (Phase 7) extracts entities and relationships from raw observations.
+- **Brain Platform** (Phase 6) runs the **Continuous Cognitive Loop** — a never-ending cycle of observation, interpretation, reflection, prediction, prioritisation, decision, communication, execution, and learning. The Brain does not wait for prompts. It continuously thinks.
+- **Execution Platform** (Phase 8) carries out actions without needing to know why.
+- **Intelligence Integration** (Phase 9) provides natural language understanding for entity extraction and reasoning over the graph.
 
 ### Key Distinctions from Traditional OS Design
 
 | Aspect | Traditional OS | AI-native OS |
-|---|---|---|
+|---|---|---|---|
 | Intelligence | Application-layer concern | First-class platform citizen |
-| State management | Files, databases, registers | Persistent memory stores with learned patterns |
+| Knowledge organization | Files, directories, databases | Unified World Model graph (entities + relationships) |
+| State management | Files, databases, registers | Persistently evolving entity graph with confidence and importance |
 | Scheduling | Time-slice and priority based | Context-aware, predictive, learned |
 | Inter-component communication | Signals, pipes, sockets, IPC | Event-driven bus with semantic routing |
 | Observability | Logs, metrics, traces | Self-monitoring with anomaly detection |
@@ -110,9 +124,9 @@ AI-native OS addresses all of these limitations by building intelligence into th
 
 ### Year 3-5: Intelligence Infrastructure
 
-- Deliver a full Memory Platform with persistent, queryable, learned memory stores (Phase 5). The system gains the ability to remember and recall patterns across restarts.
-- Deliver the Brain Platform: core reasoning, decision-making, state modeling, learning feedback loops (Phase 6). The system gains the ability to think about its own state and make decisions.
-- Deliver the Perception Platform: sensor integration, signal processing, event interpretation, pattern recognition (Phase 7). The system gains the ability to sense its environment and extract meaning from raw data.
+- Deliver a full World Model Store built on the Memory Platform: persistent entity/relationship graph with hybrid search, dynamic context generation, importance computation, and confidence tracking (Phase 5). The system gains the ability to remember and reason about the user's world holistically.
+- Deliver the World Model Reasoning engine built on the Brain Platform: graph-based change detection, state evaluation, opportunity/risk identification, notification emergence, and continuous reprioritization (Phase 6). The system gains the ability to think about the user's world rather than about predefined goals.
+- Deliver the Entity Extraction pipeline built on the Perception Platform: extract entities and relationships from any observation source, resolve against the World Model, detect conflicts, and update the graph (Phase 7). The system gains the ability to sense its environment and update its understanding.
 
 ### Year 5-7: Autonomous Operation
 
@@ -145,13 +159,15 @@ AI-native OS addresses all of these limitations by building intelligence into th
 
 ## Guiding Philosophy
 
-### Intelligence Is a Platform Primitive
+### The World Model Is the Universal Primitive
 
-Just as a traditional OS provides processes and files as universal primitives, AI-native OS provides memory, perception, reasoning, and execution as first-class abstractions. Every component in the system can access and contribute to the platform's intelligence.
+Just as a traditional OS provides processes and files as universal primitives, AI-native OS provides the **World Model** as the universal primitive — a continuously evolving graph of entities and relationships that represents everything the platform knows. Every component contributes to and queries the same World Model.
 
-This means that intelligence is not owned by a single service or module. It is a property of the platform as a whole. The EventBus carries intelligence events alongside operational events. The Logger records intelligence decisions alongside system events. The Permission Checker enforces policies on intelligence operations. Security contexts accompany intelligence operations.
+This means intelligence is not owned by a single service or module. It is a property of the platform as a whole. The EventBus carries World Model updates alongside operational events. The Logger records entity changes alongside system events. The Permission Checker enforces policies on entity access and relationship manipulation. Security contexts accompany every World Model operation.
 
-The implication for developers building on AI-native OS is that they do not need to build their own intelligence infrastructure. They use the platform's primitives, just as they use processes and files on a traditional OS.
+The system never organizes knowledge into rigid domains — no "Health module," "Finance module," or "Calendar module." All knowledge lives in one graph. A person, a project, a task, a conversation, a device, a habit, a skill, an idea — all are entities connected by relationships. The system learns how the user's world evolves, not how to manage predefined categories.
+
+The implication for developers building on AI-native OS is that they do not need to build domain-specific data models. Every concept is an entity. Every connection is a relationship. The platform provides the infrastructure to store, query, evolve, and reason over the graph.
 
 ### Clean Layering Enables Complexity
 
@@ -229,6 +245,8 @@ Open source also enables:
 
 The project succeeds if, ten years from now, a developer can sit down at an AI-native OS machine and ask the system a question in natural language about its state, and the system answers accurately, takes corrective action when needed, and does so securely and reliably. The operating system should fade into the background, not because it is simple, but because it is competent.
 
+More fundamentally, success is the system no longer thinking in terms of applications, categories, or features. It does not have a "calendar module," a "health module," or a "task manager." It has one continuously evolving understanding of the user's world. Every recommendation, reminder, action, and conversation emerges naturally from reasoning over that understanding — not from predefined domain logic.
+
 Success is a system that:
 - Does not require a human to tune its performance.
 - Does not surprise its operators with unanticipated failures.
@@ -236,6 +254,11 @@ Success is a system that:
 - Protects itself from attacks it has not seen before.
 - Explains its decisions when asked.
 - Integrates new capabilities without disruption.
+- Understands the user's world holistically — a change in a project, a conversation, a habit, and a device are all just updates to the same model.
+- Never asks "what category does this belong to?" — it asks "what new understanding did I just gain?"
+- Thinks continuously, not only when prompted — it is always observing, reflecting, and learning, even in silence.
+- Defaults to silence and deliberately chooses when to communicate, rather than responding to every trigger.
+- Feels less like a tool that awaits commands and more like an intelligent companion that shares the user's journey.
 
 ---
 
@@ -249,9 +272,11 @@ This gap is not a failing of existing operating systems. It is a consequence of 
 
 ### Specific Problems Solved
 
+- **Module-centric thinking**: Applications today organize knowledge into rigid categories — calendar, tasks, health, finance, projects — that do not reflect how human experience actually works. Boundaries between these categories are artificial. AI-native OS replaces all categories with one unified World Model where everything is an entity connected by relationships.
+
 - **Reactive administration**: Systems today wait for humans to notice and fix problems. AI-native OS predicts, prevents, and auto-heals. When a failure does occur, the system diagnoses it, contains it, and recovers automatically where possible.
 
-- **Siloed intelligence**: AI tools today operate in isolation (monitoring AI, security AI, scheduling AI). They cannot share context or coordinate decisions. AI-native OS provides a unified intelligence layer where all subsystems contribute to and benefit from shared intelligence.
+- **Siloed intelligence**: AI tools today operate in isolation (monitoring AI, security AI, scheduling AI). They cannot share context or coordinate decisions. AI-native OS provides a unified World Model where all subsystems contribute to and benefit from shared understanding.
 
 - **Manual tuning**: Kernel parameters, scheduler settings, memory policies — all tuned by human experts based on intuition and experience. AI-native OS learns optimal configurations from observed workload patterns and adapts them continuously.
 

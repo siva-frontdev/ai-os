@@ -126,6 +126,55 @@ pub enum UserError {
 
 #[derive(Debug, Error)]
 #[non_exhaustive]
+pub enum WindowError {
+    #[error("window not found: {0}")]
+    NotFound(String),
+    #[error("window manager not available: {0}")]
+    NotAvailable(String),
+    #[error("screen capture failed: {0}")]
+    CaptureFailed(String),
+    #[error("permission denied: {0}")]
+    PermissionDenied(String),
+    #[error("I/O error: {0}")]
+    Io(String),
+    #[error(transparent)]
+    Other(Box<dyn std::error::Error + Send + Sync>),
+}
+
+#[derive(Debug, Error)]
+#[non_exhaustive]
+pub enum InputError {
+    #[error("input device not available: {0}")]
+    NotAvailable(String),
+    #[error("no display server available")]
+    NoDisplayServer,
+    #[error("permission denied: {0}")]
+    PermissionDenied(String),
+    #[error("I/O error: {0}")]
+    Io(String),
+    #[error(transparent)]
+    Other(Box<dyn std::error::Error + Send + Sync>),
+}
+
+#[derive(Debug, Error)]
+#[non_exhaustive]
+pub enum DesktopError {
+    #[error("operation not available: {0}")]
+    NotAvailable(String),
+    #[error("no display server available")]
+    NoDisplayServer,
+    #[error("launch failed: {0}")]
+    LaunchFailed(String),
+    #[error("permission denied: {0}")]
+    PermissionDenied(String),
+    #[error("I/O error: {0}")]
+    Io(String),
+    #[error(transparent)]
+    Other(Box<dyn std::error::Error + Send + Sync>),
+}
+
+#[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum OsalError {
     #[error("filesystem error: {0}")]
     Filesystem(#[from] FilesystemError),
@@ -141,6 +190,12 @@ pub enum OsalError {
     Monitor(#[from] MonitorError),
     #[error("user error: {0}")]
     User(#[from] UserError),
+    #[error("window error: {0}")]
+    Window(#[from] WindowError),
+    #[error("input error: {0}")]
+    Input(#[from] InputError),
+    #[error("desktop error: {0}")]
+    Desktop(#[from] DesktopError),
     #[error("capability denied: {0}")]
     CapabilityDenied(Capability),
     #[error("operation timed out: {operation} after {duration:?}")]

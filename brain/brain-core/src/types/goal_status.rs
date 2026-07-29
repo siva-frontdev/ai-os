@@ -1,7 +1,7 @@
 //! `GoalStatus` and `GoalPriority` shared enums.
 use serde::{Deserialize, Serialize};
 
-/// Goal lifecycle state.
+/// Goal lifecycle state for the autonomous cognitive engine.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum GoalStatus {
     Pending,
@@ -14,6 +14,11 @@ pub enum GoalStatus {
     Failed,
     Cancelled,
     Paused,
+    Archived,
+    Blocked,
+    Deferred,
+    Merging,
+    Splitting,
 }
 
 impl GoalStatus {
@@ -29,6 +34,11 @@ impl GoalStatus {
             Self::Failed => "Failed",
             Self::Cancelled => "Cancelled",
             Self::Paused => "Paused",
+            Self::Archived => "Archived",
+            Self::Blocked => "Blocked",
+            Self::Deferred => "Deferred",
+            Self::Merging => "Merging",
+            Self::Splitting => "Splitting",
         }
     }
 }

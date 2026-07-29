@@ -18,10 +18,12 @@
 //! | Coordinator / lifecycle | [`coordinator`] |
 //! | Policy | [`policy`] |
 
+pub mod cognition;
 pub mod coordinator;
 pub mod decision;
 pub mod goal;
 pub mod learning;
+pub mod model;
 pub mod plan;
 pub mod policy;
 pub mod reasoning;

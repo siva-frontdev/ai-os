@@ -86,6 +86,27 @@ pub enum OsalEvent {
         /// When the event occurred.
         timestamp: DateTime<Utc>,
     },
+    /// A window was opened / created.
+    WindowOpened {
+        /// Window title.
+        title: String,
+        /// When the event occurred.
+        timestamp: DateTime<Utc>,
+    },
+    /// A window was closed.
+    WindowClosed {
+        /// Window title.
+        title: String,
+        /// When the event occurred.
+        timestamp: DateTime<Utc>,
+    },
+    /// A window gained focus.
+    WindowFocused {
+        /// Window title.
+        title: String,
+        /// When the event occurred.
+        timestamp: DateTime<Utc>,
+    },
     /// Clipboard content changed.
     ClipboardChanged {
         /// MIME type or format description of the clipboard content.

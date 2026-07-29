@@ -1,0 +1,26 @@
+[package]
+name = "desktop-agent"
+version.workspace = true
+edition.workspace = true
+description = "Desktop Agent — pure interface into the AI-OS platform"
+
+[dependencies]
+ai-os-core = { path = "../../core" }
+osal-core = { path = "../../crates/osal-core" }
+osal-capabilities = { path = "../../crates/osal-capabilities" }
+osal-linux = { path = "../../crates/osal-linux" }
+perception-core = { path = "../../perception/perception-core" }
+perception-observer = { path = "../../perception/perception-observer" }
+perception-coordinator = { path = "../../perception/perception-coordinator" }
+intelligence-core = { path = "../../intelligence/intelligence-core" }
+intelligence-coordinator = { path = "../../intelligence/intelligence-coordinator" }
+brain-core = { path = "../../brain/brain-core" }
+brain-goals = { path = "../../brain/brain-goals" }
+brain-policy = { path = "../../brain/brain-policy" }
+brain-coordinator = { path = "../../brain/brain-coordinator" }
+tokio = { version = "1", features = ["full"] }
+uuid = { version = "1", features = ["v4", "v7", "serde"] }
+async-trait = "0.1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
+anyhow = "1"

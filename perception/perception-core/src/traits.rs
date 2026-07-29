@@ -81,3 +81,10 @@ impl Default for AttentionConfig {
         }
     }
 }
+
+// ── DesktopObservationProvider ──────────────────────────
+
+#[async_trait]
+pub trait DesktopObservationProvider: Debug + Send + Sync {
+    async fn observe(&self) -> PerceptionResult<DesktopState>;
+}

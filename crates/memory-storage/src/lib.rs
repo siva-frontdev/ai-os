@@ -34,6 +34,9 @@ pub mod query;
 mod in_memory;
 mod mock;
 
+/// World Model store — generic entity/relationship graph store.
+pub mod wm_store;
+
 pub use backend::{DefaultStorageBackend, StorageBackend};
 pub use batch::{BatchOperation, DefaultBatchOperation};
 pub use in_memory::InMemoryStore;
@@ -41,3 +44,5 @@ pub use mock::MockStore;
 pub use query::{DefaultQuery, Query};
 pub use store::{DefaultMemoryStore, MemoryStore};
 pub use transaction::{DefaultTransaction, Transaction};
+
+pub use wm_store::{InMemoryWorldModelStore, WorldModelChange, WorldModelStore};

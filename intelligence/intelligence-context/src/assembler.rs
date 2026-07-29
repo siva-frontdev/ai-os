@@ -5,8 +5,7 @@ use intelligence_core::traits::{ContextAssembler, PromptRenderer};
 use intelligence_core::types::{
     ContextWindow, ConversationId, ModelInput, ModelRequest, TruncationStrategy,
 };
-use std::sync::Arc;
-use tokio::sync::RwLock;
+use std::sync::{Arc, RwLock};
 
 fn input_text(input: &ModelInput) -> String {
     match input {
@@ -74,7 +73,7 @@ impl ContextAssembler for DefaultContextBuilder {
     }
 
     fn set_truncation_strategy(&self, strategy: TruncationStrategy) {
-        let mut guard = self.truncation_strategy.blocking_write();
+        let mut guard = self.truncation_strategy.write().expect("rwlock poisoned");
         *guard = Some(strategy);
     }
 }

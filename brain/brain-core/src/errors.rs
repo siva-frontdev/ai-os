@@ -11,6 +11,9 @@ pub enum BrainError {
     #[error("goal {0} not found")]
     GoalNotFound(crate::ids::GoalId),
 
+    #[error("objective {0} not found")]
+    ObjectiveNotFound(crate::ids::ObjectiveId),
+
     #[error("plan {0} not found")]
     PlanNotFound(crate::ids::PlanId),
 
@@ -19,6 +22,12 @@ pub enum BrainError {
 
     #[error("workflow {0} not found")]
     WorkflowNotFound(crate::ids::WorkflowId),
+
+    #[error("strategy {0} not found")]
+    StrategyNotFound(crate::ids::StrategyId),
+
+    #[error("agent {0} not found")]
+    AgentNotFound(crate::ids::AgentId),
 
     // ── State errors ────────────────────────────────────────
     #[error("invalid brain state transition: {from:?} -> {to:?}")]
@@ -66,6 +75,40 @@ pub enum BrainError {
     // ── Memory errors ───────────────────────────────────────
     #[error("memory platform error: {0}")]
     MemoryError(String),
+
+    // ── Goal lifecycle errors ───────────────────────────────
+    #[error("cannot merge goals: {0}")]
+    MergeNotPossible(String),
+
+    #[error("cannot split goal: {0}")]
+    SplitNotPossible(String),
+
+    #[error("cannot reprioritize goal: {0}")]
+    ReprioritizeNotPossible(String),
+
+    #[error("goal {0} is in an invalid state for this operation")]
+    InvalidGoalState(crate::ids::GoalId),
+
+    // ── World model errors ──────────────────────────────────
+    #[error("world model error: {0}")]
+    WorldModelError(String),
+
+    #[error("resource unavailable: {0}")]
+    ResourceUnavailable(String),
+
+    // ── Strategy errors ─────────────────────────────────────
+    #[error("no strategy found for goal type: {0}")]
+    NoStrategyFound(String),
+
+    #[error("delegation failed: {0}")]
+    DelegationFailed(String),
+
+    // ── Persistence errors ──────────────────────────────────
+    #[error("persistence error: {0}")]
+    PersistenceError(String),
+
+    #[error("snapshot not found: {0}")]
+    SnapshotNotFound(String),
 
     // ── Validation ──────────────────────────────────────────
     #[error("invalid input: {0}")]

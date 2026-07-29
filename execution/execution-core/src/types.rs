@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
 use std::str::FromStr;
-use std::sync::Arc;
+
 use tokio::sync::{oneshot, watch};
 
 // ── ExecutionId ────────────────────────────────────────────
@@ -599,6 +599,355 @@ pub struct ExecutionCapability {
     pub input_schema: HashMap<String, String>,
     pub output_schema: HashMap<String, String>,
     pub required_permissions: Vec<String>,
+}
+
+// ── CapabilityOrigin ──────────────────────────────────────
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum CapabilityOrigin {
+    Native,
+    Learned,
+    DiscoveredLocal,
+    DiscoveredExternal,
+    Generated,
+    Deprecated,
+    Disabled,
+    Experimental,
+}
+
+impl CapabilityOrigin {
+    pub fn trust_weight(&self) -> f64 {
+        match self {
+            Self::Native => 1.0,
+            Self::Learned => 0.9,
+            Self::DiscoveredLocal => 0.7,
+            Self::DiscoveredExternal => 0.5,
+            Self::Generated => 0.4,
+            Self::Deprecated => 0.1,
+            Self::Disabled => 0.0,
+            Self::Experimental => 0.3,
+        }
+    }
+}
+
+impl fmt::Display for CapabilityOrigin {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Native => write!(f, "native"),
+            Self::Learned => write!(f, "learned"),
+            Self::DiscoveredLocal => write!(f, "discovered_local"),
+            Self::DiscoveredExternal => write!(f, "discovered_external"),
+            Self::Generated => write!(f, "generated"),
+            Self::Deprecated => write!(f, "deprecated"),
+            Self::Disabled => write!(f, "disabled"),
+            Self::Experimental => write!(f, "experimental"),
+        }
+    }
+}
+
+// ── VerificationStatus ────────────────────────────────────
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum VerificationStatus {
+    Unverified,
+    Verified,
+    Failed,
+    InProgress,
+}
+
+impl fmt::Display for VerificationStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Unverified => write!(f, "unverified"),
+            Self::Verified => write!(f, "verified"),
+            Self::Failed => write!(f, "failed"),
+            Self::InProgress => write!(f, "in_progress"),
+        }
+    }
+}
+
+// ── TrustScore ────────────────────────────────────────────
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TrustScore {
+    pub score: f64,
+    pub origin: CapabilityOrigin,
+    pub verification_status: VerificationStatus,
+    pub execution_count: u64,
+    pub success_rate: f64,
+    pub failure_modes: Vec<String>,
+    pub last_verified: Option<Timestamp>,
+}
+
+impl TrustScore {
+    pub fn new(origin: CapabilityOrigin) -> Self {
+        Self {
+            score: origin.trust_weight(),
+            origin,
+            verification_status: VerificationStatus::Unverified,
+            execution_count: 0,
+            success_rate: 1.0,
+            failure_modes: Vec::new(),
+            last_verified: None,
+        }
+    }
+
+    pub fn verified(origin: CapabilityOrigin, score: f64) -> Self {
+        Self {
+            score,
+            origin,
+            verification_status: VerificationStatus::Verified,
+            execution_count: 0,
+            success_rate: 1.0,
+            failure_modes: Vec::new(),
+            last_verified: Some(Timestamp::now()),
+        }
+    }
+}
+
+impl Default for TrustScore {
+    fn default() -> Self {
+        Self::new(CapabilityOrigin::Native)
+    }
+}
+
+// ── ProviderMetadata ─────────────────────────────────────
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ProviderMetadata {
+    pub name: String,
+    pub version: Option<String>,
+    pub provider_type: String,
+    pub source: String,
+    pub installed: bool,
+    pub available: bool,
+}
+
+impl ProviderMetadata {
+    pub fn new(
+        name: impl Into<String>,
+        provider_type: impl Into<String>,
+        source: impl Into<String>,
+    ) -> Self {
+        Self {
+            name: name.into(),
+            version: None,
+            provider_type: provider_type.into(),
+            source: source.into(),
+            installed: false,
+            available: true,
+        }
+    }
+}
+
+// ── AdapterType ──────────────────────────────────────────
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum AdapterType {
+    CliWrapper,
+    RestClient,
+    SdkWrapper,
+    PythonScript,
+    RustModule,
+    PowerShell,
+    BashScript,
+    AppleScript,
+    JavaScript,
+    Container,
+    Wasm,
+}
+
+impl AdapterType {
+    pub fn requires_runtime(&self) -> Option<&'static str> {
+        match self {
+            Self::PythonScript => Some("python3"),
+            Self::RustModule => Some("rustc"),
+            Self::PowerShell => Some("pwsh"),
+            Self::BashScript => Some("bash"),
+            Self::AppleScript => Some("osascript"),
+            Self::JavaScript => Some("node"),
+            Self::CliWrapper => None,
+            Self::RestClient => Some("curl"),
+            Self::SdkWrapper => None,
+            Self::Container => Some("docker"),
+            Self::Wasm => Some("wasmtime"),
+        }
+    }
+}
+
+impl fmt::Display for AdapterType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::CliWrapper => write!(f, "cli_wrapper"),
+            Self::RestClient => write!(f, "rest_client"),
+            Self::SdkWrapper => write!(f, "sdk_wrapper"),
+            Self::PythonScript => write!(f, "python_script"),
+            Self::RustModule => write!(f, "rust_module"),
+            Self::PowerShell => write!(f, "powershell"),
+            Self::BashScript => write!(f, "bash_script"),
+            Self::AppleScript => write!(f, "applescript"),
+            Self::JavaScript => write!(f, "javascript"),
+            Self::Container => write!(f, "container"),
+            Self::Wasm => write!(f, "wasm"),
+        }
+    }
+}
+
+// ── AdapterTemplate ──────────────────────────────────────
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AdapterTemplate {
+    pub adapter_type: AdapterType,
+    pub template: String,
+    pub parameters: HashMap<String, String>,
+    pub required_runtime: Option<String>,
+    pub sandbox_profile: String,
+}
+
+// ── DiscoveredCapability ─────────────────────────────────
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DiscoveredCapability {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub origin: CapabilityOrigin,
+    pub provider: ProviderMetadata,
+    pub trust: TrustScore,
+    pub input_schema: HashMap<String, String>,
+    pub output_schema: HashMap<String, String>,
+    pub required_permissions: Vec<String>,
+    pub supported_parameters: HashMap<String, String>,
+    pub adapter_template: Option<AdapterTemplate>,
+    pub compatible: bool,
+}
+
+// ── ResolutionStage ──────────────────────────────────────
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum ResolutionStage {
+    NativeRegistry,
+    LearnedCache,
+    LocalDiscovery,
+    ExternalDiscovery,
+    CapabilitySynthesis,
+    HumanApproval,
+    Validation,
+    Learning,
+}
+
+impl ResolutionStage {
+    pub fn priority(&self) -> u8 {
+        match self {
+            Self::NativeRegistry => 1,
+            Self::LearnedCache => 2,
+            Self::LocalDiscovery => 3,
+            Self::ExternalDiscovery => 4,
+            Self::CapabilitySynthesis => 5,
+            Self::HumanApproval => 6,
+            Self::Validation => 7,
+            Self::Learning => 8,
+        }
+    }
+}
+
+impl fmt::Display for ResolutionStage {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::NativeRegistry => write!(f, "native_registry"),
+            Self::LearnedCache => write!(f, "learned_cache"),
+            Self::LocalDiscovery => write!(f, "local_discovery"),
+            Self::ExternalDiscovery => write!(f, "external_discovery"),
+            Self::CapabilitySynthesis => write!(f, "capability_synthesis"),
+            Self::HumanApproval => write!(f, "human_approval"),
+            Self::Validation => write!(f, "validation"),
+            Self::Learning => write!(f, "learning"),
+        }
+    }
+}
+
+// ── ResolutionReport ─────────────────────────────────────
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ResolutionReport {
+    pub capability_id: String,
+    pub requirement_id: String,
+    pub stage: ResolutionStage,
+    pub success: bool,
+    pub origin: CapabilityOrigin,
+    pub provider: Option<ProviderMetadata>,
+    pub adapter: Option<AdapterTemplate>,
+    pub duration_ms: u64,
+    pub error: Option<String>,
+}
+
+// ── CapabilityCacheEntry ─────────────────────────────────
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CapabilityCacheEntry {
+    pub capability_id: String,
+    pub origin: CapabilityOrigin,
+    pub provider_metadata: ProviderMetadata,
+    pub trust: TrustScore,
+    pub supported_parameters: HashMap<String, String>,
+    pub required_permissions: Vec<String>,
+    pub adapter: Option<AdapterTemplate>,
+    pub created_at: Timestamp,
+    pub last_accessed: Timestamp,
+    pub access_count: u64,
+}
+
+// ── LearnedCapability ────────────────────────────────────
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct LearnedCapability {
+    pub capability_id: String,
+    pub capability_name: String,
+    pub origin: CapabilityOrigin,
+    pub provider_metadata: ProviderMetadata,
+    pub execution_count: u64,
+    pub success_count: u64,
+    pub failure_count: u64,
+    pub avg_duration_ms: u64,
+    pub trust_score: f64,
+    pub failure_modes: Vec<String>,
+    pub compatible: bool,
+    pub last_execution: Option<Timestamp>,
+    pub created_at: Timestamp,
+}
+
+// ── DiscoveryQuery ───────────────────────────────────────
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DiscoveryQuery {
+    pub capability_id: String,
+    pub capability_name: String,
+    pub keywords: Vec<String>,
+    pub categories: Vec<String>,
+}
+
+// ── CapabilitySynthesisRequest ───────────────────────────
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CapabilitySynthesisRequest {
+    pub capability_id: String,
+    pub capability_name: String,
+    pub description: String,
+    pub provider: ProviderMetadata,
+    pub input_schema: HashMap<String, String>,
+    pub output_schema: HashMap<String, String>,
+    pub preferred_adapter_type: Option<AdapterType>,
+}
+
+// ── StageBypassState ─────────────────────────────────────
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct StageBypassState {
+    pub stage: ResolutionStage,
+    pub engaged: bool,
+    pub failure_count: u32,
+    pub engaged_at: Option<Timestamp>,
+    pub reason: Option<String>,
 }
 
 // ── ExecutionPolicy ────────────────────────────────────────

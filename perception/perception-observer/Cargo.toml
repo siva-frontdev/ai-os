@@ -8,6 +8,8 @@ description = "Perception Platform — observation providers, collectors, OSAL e
 perception-core = { path = "../perception-core" }
 ai-os-core = { path = "../../core" }
 memory-core = { path = "../../crates/memory-core" }
+osal-core = { path = "../../crates/osal-core" }
+osal-capabilities = { path = "../../crates/osal-capabilities" }
 tokio = { version = "1", features = ["sync", "io-util"] }
 thiserror = "2"
 async-trait = "0.1"

@@ -7,6 +7,8 @@ description = "Perception Platform — shared foundation: types, events, errors,
 [dependencies]
 ai-os-core = { path = "../../core" }
 memory-core = { path = "../../crates/memory-core" }
+osal-core = { path = "../../crates/osal-core" }
+osal-capabilities = { path = "../../crates/osal-capabilities" }
 tokio = { version = "1", features = ["sync"] }
 thiserror = "2"
 async-trait = "0.1"

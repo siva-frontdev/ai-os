@@ -14,6 +14,9 @@ fn category_as_str(cat: &MistakeCategory) -> &'static str {
         MistakeCategory::Execution => "execution",
         MistakeCategory::Timing => "timing",
         MistakeCategory::Resource => "resource",
+        MistakeCategory::Knowledge => "knowledge",
+        MistakeCategory::Communication => "communication",
+        MistakeCategory::Safety => "safety",
         MistakeCategory::Unknown => "unknown",
     }
 }

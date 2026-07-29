@@ -125,3 +125,137 @@ impl Event for GoalDependencyViolation {
         "brain.goal.dependency.violation"
     }
 }
+
+/// Published when two goals are merged into one.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GoalMerged {
+    pub target_goal_id: GoalId,
+    pub source_goal_id: GoalId,
+    pub merged_at: Timestamp,
+}
+
+impl Event for GoalMerged {
+    fn event_type(&self) -> &'static str {
+        "brain.goal.merged"
+    }
+}
+
+/// Published when a goal is split into multiple sub-goals.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GoalSplit {
+    pub source_goal_id: GoalId,
+    pub new_goal_ids: Vec<GoalId>,
+    pub split_at: Timestamp,
+}
+
+impl Event for GoalSplit {
+    fn event_type(&self) -> &'static str {
+        "brain.goal.split"
+    }
+}
+
+/// Published when a goal's priority is changed.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GoalReprioritized {
+    pub goal_id: GoalId,
+    pub old_priority: GoalPriority,
+    pub new_priority: GoalPriority,
+    pub reason: String,
+    pub reprioritized_at: Timestamp,
+}
+
+impl Event for GoalReprioritized {
+    fn event_type(&self) -> &'static str {
+        "brain.goal.reprioritized"
+    }
+}
+
+/// Published when a goal is archived.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GoalArchived {
+    pub goal_id: GoalId,
+    pub reason: String,
+    pub archived_at: Timestamp,
+}
+
+impl Event for GoalArchived {
+    fn event_type(&self) -> &'static str {
+        "brain.goal.archived"
+    }
+}
+
+/// Published when a goal becomes blocked.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GoalBlocked {
+    pub goal_id: GoalId,
+    pub blocker: String,
+    pub blocked_at: Timestamp,
+}
+
+impl Event for GoalBlocked {
+    fn event_type(&self) -> &'static str {
+        "brain.goal.blocked"
+    }
+}
+
+/// Published when a goal is deferred.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GoalDeferred {
+    pub goal_id: GoalId,
+    pub defer_until: Option<Timestamp>,
+    pub reason: String,
+    pub deferred_at: Timestamp,
+}
+
+impl Event for GoalDeferred {
+    fn event_type(&self) -> &'static str {
+        "brain.goal.deferred"
+    }
+}
+
+/// Published when a goal is retried.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GoalRetried {
+    pub goal_id: GoalId,
+    pub attempt: u32,
+    pub reason: String,
+    pub retried_at: Timestamp,
+}
+
+impl Event for GoalRetried {
+    fn event_type(&self) -> &'static str {
+        "brain.goal.retried"
+    }
+}
+
+/// Published when a new objective is created as part of goal decomposition.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ObjectiveCreated {
+    pub objective_id: crate::ids::ObjectiveId,
+    pub goal_id: GoalId,
+    pub description: String,
+    pub order: u32,
+    pub created_at: Timestamp,
+}
+
+impl Event for ObjectiveCreated {
+    fn event_type(&self) -> &'static str {
+        "brain.goal.objective.created"
+    }
+}
+
+/// Published when a milestone within a goal is reached.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MilestoneReached {
+    pub milestone_id: crate::ids::MilestoneId,
+    pub objective_id: crate::ids::ObjectiveId,
+    pub goal_id: GoalId,
+    pub description: String,
+    pub reached_at: Timestamp,
+}
+
+impl Event for MilestoneReached {
+    fn event_type(&self) -> &'static str {
+        "brain.goal.milestone.reached"
+    }
+}

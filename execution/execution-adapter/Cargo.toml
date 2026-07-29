@@ -1,0 +1,24 @@
+[package]
+name = "execution-adapter"
+version.workspace = true
+edition.workspace = true
+description = "Execution Platform — capability synthesis and adapter generation"
+
+[dependencies]
+execution-core = { path = "../execution-core" }
+ai-os-core = { path = "../../core" }
+tokio = { version = "1", features = ["sync", "process"] }
+thiserror = "2"
+async-trait = "0.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+
+[dev-dependencies]
+criterion = { workspace = true }
+memory-core = { path = "../../crates/memory-core" }
+tokio = { version = "1", features = ["rt", "macros"] }
+
+[[bench]]
+name = "adapter_bench"
+harness = false

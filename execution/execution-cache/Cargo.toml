@@ -1,0 +1,27 @@
+[package]
+name = "execution-cache"
+version.workspace = true
+edition.workspace = true
+description = "Execution Platform — capability cache and learning engine"
+
+[dependencies]
+execution-core = { path = "../execution-core" }
+ai-os-core = { path = "../../core" }
+memory-core = { path = "../../crates/memory-core" }
+memory-cache = { path = "../../crates/memory-cache" }
+tokio = { version = "1", features = ["sync", "time"] }
+thiserror = "2"
+async-trait = "0.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+criterion = { workspace = true }
+memory-core = { path = "../../crates/memory-core" }
+tokio = { version = "1", features = ["rt", "macros"] }
+
+[[bench]]
+name = "cache_bench"
+harness = false

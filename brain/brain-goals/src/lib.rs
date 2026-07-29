@@ -13,7 +13,7 @@ pub use errors::{GoalsError, GoalsResult};
 pub use manager::GoalManager;
 pub use memory_store::InMemoryGoalStore;
 pub use store::GoalStore;
-pub use types::GoalRecord;
+pub use types::{GoalOutcome, GoalRecord, MilestoneRecord, ObjectiveRecord};
 pub use validator::GoalValidator;
 
 #[cfg(test)]

@@ -2,6 +2,16 @@
 
 An AI-native Operating Platform built on Arch Linux.
 
+## Status: Living Beta
+
+AI-OS is now in the Living Beta phase — evolution happens through real-world usage, not architectural redesign.
+
+**Start here:** See the [Quick Start Guide](docs/quickstart.md).
+**Daily use:** See the [Beta Guide](docs/beta-guide.md).
+**Developer tools:** See the [Developer Mode](docs/developer-mode.md).
+**Validation:** See the [Validation Checklist](docs/validation-checklist.md).
+**Reporting issues:** Use the [Behavior Issue Template](docs/behavior-issue-template.md).
+
 ## Project Structure
 
 ```

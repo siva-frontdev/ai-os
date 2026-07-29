@@ -63,3 +63,14 @@ pub struct CoordinationReport {
     pub summary: String,
     pub duration_ms: u64,
 }
+
+/// Outcome returned by [`BrainOrchestrator::process_user_input`].
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProcessResult {
+    pub summary: String,
+    pub reasoning_result: brain_core::types::ReasoningResult,
+    pub goal_id: GoalId,
+    pub plan_id: PlanId,
+    pub workflow_id: Option<WorkflowId>,
+    pub state: BrainState,
+}

@@ -14,6 +14,10 @@ execution-sandbox = { path = "../execution-sandbox" }
 execution-monitor = { path = "../execution-monitor" }
 execution-results = { path = "../execution-results" }
 execution-recovery = { path = "../execution-recovery" }
+execution-discovery = { path = "../execution-discovery" }
+execution-adapter = { path = "../execution-adapter" }
+execution-cache = { path = "../execution-cache" }
+execution-resolution = { path = "../execution-resolution" }
 ai-os-core = { path = "../../core" }
 brain-core = { path = "../../brain/brain-core" }
 memory-core = { path = "../../crates/memory-core" }

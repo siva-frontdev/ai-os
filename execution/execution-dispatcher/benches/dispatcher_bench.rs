@@ -1,8 +1,8 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use execution_core::{
-    ExecutionBudget, ExecutionContext, ExecutionId, ExecutionPermissions, ExecutionPlan,
-    ExecutionPriority, ExecutionRequest, ExecutionSession, ExecutionState, RetryPolicy,
-    SandboxProfile, ToolBinding,
+    Dispatcher, ExecutionBudget, ExecutionContext, ExecutionId, ExecutionPermissions,
+    ExecutionPlan, ExecutionPriority, ExecutionRequest, ExecutionSession, ExecutionState,
+    RetryPolicy, SandboxProfile, ToolBinding,
 };
 use execution_dispatcher::*;
 use execution_runner::DefaultRunnerFactory;

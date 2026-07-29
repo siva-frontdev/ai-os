@@ -5,6 +5,7 @@
 //! All unsafe code is documented with `// SAFETY:` comments.
 //! No other crate in the platform is allowed to contain unsafe code.
 
+pub mod desktop;
 pub mod devices;
 pub mod filesystem;
 pub mod monitoring;
