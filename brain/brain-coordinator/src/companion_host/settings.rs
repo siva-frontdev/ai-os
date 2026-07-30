@@ -27,6 +27,9 @@ pub struct CompanionSettings {
     /// Native notification preferences.
     pub notifications: NotificationSettings,
 
+    /// Telegram channel configuration.
+    pub telegram: TelegramSettings,
+
     /// Attention system sensitivity (0.0–1.0).
     pub attention_sensitivity: f64,
 
@@ -87,6 +90,17 @@ pub struct RetentionConfig {
     pub archive_threshold: f64,
 }
 
+/// Telegram integration settings.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TelegramSettings {
+    /// Whether the Telegram polling service starts automatically.
+    pub enabled: bool,
+    /// Telegram Bot API token (also overridable via AI_OS_TELEGRAM_BOT_TOKEN env var).
+    pub bot_token: String,
+    /// How many seconds between getUpdates polls.
+    pub poll_interval_secs: u64,
+}
+
 impl Default for RetentionConfig {
     fn default() -> Self {
         Self {
@@ -99,6 +113,16 @@ impl Default for RetentionConfig {
     }
 }
 
+impl Default for TelegramSettings {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            bot_token: String::new(),
+            poll_interval_secs: 2,
+        }
+    }
+}
+
 impl Default for CompanionSettings {
     fn default() -> Self {
         Self {
@@ -106,6 +130,7 @@ impl Default for CompanionSettings {
             nvapi_token: String::new(),
             observation: ObservationSettings::default(),
             notifications: NotificationSettings::default(),
+            telegram: TelegramSettings::default(),
             attention_sensitivity: 0.5,
             reflection_frequency_secs: 60,
             autostart: false,

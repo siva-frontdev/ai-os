@@ -5,12 +5,14 @@ pub mod settings;
 pub use settings::load_settings_manager;
 pub use settings::{
     CompanionSettings, DynSettingsManager, NotificationSettings, ObservationSettings,
-    RetentionConfig, SettingsManager,
+    RetentionConfig, SettingsManager, TelegramSettings,
 };
 
 pub mod observation_loop;
 pub mod sources;
 pub mod ui;
+
+pub mod telegram;
 
 pub mod permissions;
 pub use permissions::PermissionRegistry;
@@ -37,7 +39,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use brain_core::types::Decision;
 use intelligence_coordinator::DefaultCoordinator;
 use intelligence_coordinator::world_understanding::WorldUnderstandingService;
-use intelligence_core::types::ModelId;
 use memory_storage::wm_store::{InMemoryWorldModelStore, WorldModelStore};
 use tokio::sync::{Mutex, mpsc, watch};
 
@@ -47,6 +48,7 @@ use crate::cognitive_loop::CognitiveLoopService;
 use crate::errors::CoordinatorError;
 
 use self::sources::ObservationSource;
+use self::telegram::{TelegramAdapter, TelegramStats};
 
 /// Callback invoked when the companion makes a Communicate decision.
 pub type NotificationCallback = Arc<dyn Fn(&str, &str) + Send + Sync>;
@@ -70,6 +72,7 @@ pub struct CompanionHost {
     settings: DynSettingsManager,
     audit_log: Arc<StdMutex<AuditLog>>,
     privacy_mgr: PrivacyManager,
+    telegram: Arc<Mutex<Option<TelegramAdapter>>>,
 }
 
 impl CompanionHost {
@@ -84,10 +87,11 @@ impl CompanionHost {
 
         let store = Arc::new(Self::load_wm(&*persistence).await?);
         let coordinator = Arc::new(DefaultCoordinator::new());
-        let understanding = WorldUnderstandingService::new(coordinator);
+        let understanding = WorldUnderstandingService::new(coordinator.clone());
         let loop_svc = Arc::new(Mutex::new(CognitiveLoopService::new(
             store.clone(),
             understanding,
+            coordinator,
         )));
 
         // Load settings from default path
@@ -122,6 +126,7 @@ impl CompanionHost {
             settings: settings_manager,
             audit_log,
             privacy_mgr: PrivacyManager::new(privacy_config),
+            telegram: Arc::new(Mutex::new(None)),
         })
     }
 
@@ -211,6 +216,32 @@ impl CompanionHost {
         }
     }
 
+    /// Enable the Telegram channel.
+    ///
+    /// Creates a `TelegramAdapter` that polls the Telegram Bot API and
+    /// feeds messages through the same cognitive pipeline as the Web UI.
+    /// The Brain never knows the message originated from Telegram.
+    ///
+    /// Must be called before `start()`.
+    pub fn with_telegram(&mut self, token: String, poll_interval_secs: u64) {
+        let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
+        let identity_path = PathBuf::from(&home)
+            .join(".local")
+            .join("share")
+            .join("ai-os-companion")
+            .join("telegram_identities.json");
+        let adapter = TelegramAdapter::new(
+            self.loop_svc.clone(),
+            token,
+            poll_interval_secs,
+            identity_path,
+        );
+        if let Ok(mut guard) = self.telegram.try_lock() {
+            *guard = Some(adapter);
+        }
+        tracing::info!("Telegram channel configured (poll interval: {}s)", poll_interval_secs);
+    }
+
     async fn load_wm(
         persistence: &PersistenceManager,
     ) -> Result<InMemoryWorldModelStore, CoordinatorError> {
@@ -276,6 +307,7 @@ impl CompanionHost {
 
         let (stop_tx, loop_rx) = watch::channel(true);
         let save_stop_rx = loop_rx.clone();
+        let telegram_stop_rx = loop_rx.clone();
 
         if let Some(obsv_loop) = &self.obsv_loop {
             // Filter sources by permissions from settings
@@ -404,6 +436,14 @@ impl CompanionHost {
         });
         save_tasks.lock().await.push(save_handle);
 
+        // Start Telegram polling (if configured)
+        if let Ok(guard) = self.telegram.try_lock() {
+            if let Some(ref adapter) = *guard {
+                adapter.start(telegram_stop_rx).await;
+                tracing::info!("Telegram polling started");
+            }
+        }
+
         *self.stop_tx.lock().await = Some(stop_tx);
         tracing::info!("Companion Host started");
         Ok(())
@@ -420,6 +460,13 @@ impl CompanionHost {
         if let Ok(guard) = self.ui.try_lock() {
             if let Some(ui) = guard.as_ref() {
                 ui.signal_stop();
+            }
+        }
+
+        // Signal Telegram polling to stop
+        if let Ok(guard) = self.telegram.try_lock() {
+            if let Some(ref adapter) = *guard {
+                adapter.signal_stop();
             }
         }
 
@@ -470,5 +517,14 @@ impl CompanionHost {
     /// Return debug info about the observation loop.
     pub fn observation_debug(&self) -> Option<ObservationDebugInfo> {
         self.obsv_loop.as_ref().map(|l| l.debug_info())
+    }
+
+    /// Return Telegram adapter diagnostics, if enabled.
+    pub fn telegram_stats(&self) -> Option<TelegramStats> {
+        if let Ok(guard) = self.telegram.try_lock() {
+            guard.as_ref().map(|a| a.stats())
+        } else {
+            None
+        }
     }
 }

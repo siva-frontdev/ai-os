@@ -26,6 +26,19 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("World Model: {}", wm_path.display());
     tracing::info!("Web UI: http://localhost:{}", ui_port);
 
+    // ── Telegram configuration ──
+    let telegram_token = std::env::var("AI_OS_TELEGRAM_BOT_TOKEN")
+        .ok()
+        .filter(|t| !t.is_empty())
+        .or_else(|| {
+            let t = settings.telegram.bot_token.clone();
+            if t.is_empty() { None } else { Some(t) }
+        });
+    let telegram_enabled = settings.telegram.enabled && telegram_token.is_some();
+    if telegram_enabled {
+        tracing::info!("Telegram channel configured");
+    }
+
     // ── Configure LLM provider env vars ──
     // The DefaultModelProvider reads these env vars at construction time.
     // Set them before any intelligence components are initialized.
@@ -85,6 +98,13 @@ async fn main() -> anyhow::Result<()> {
 
     // Start the web UI
     host.with_ui(UiConfig { port: ui_port });
+
+    // Start the Telegram channel (if enabled)
+    if telegram_enabled {
+        if let Some(token) = telegram_token {
+            host.with_telegram(token, settings.telegram.poll_interval_secs);
+        }
+    }
 
     // ── Signal handling for graceful shutdown ──
     let (shutdown_tx, mut shutdown_rx) = tokio::sync::watch::channel(false);

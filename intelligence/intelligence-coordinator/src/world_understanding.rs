@@ -10,7 +10,7 @@ use intelligence_core::types::{CapabilityKind, ModelInput, ModelRequest, Request
 /// Produced by [`WorldUnderstandingService`] from a raw observation.
 /// Contains everything needed to update the World Model without
 /// heuristic extraction or rule-based parsing.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct StructuredWorldUpdate {
     /// Entities discovered or confirmed in the observation.
     pub entities: Vec<WorldEntity>,

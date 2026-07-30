@@ -1,10 +1,12 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 
 use crate::attention::{AttentionDecision, AttentionEvaluator, AttentionOutcome};
 use crate::evolution::EvolutionEngine;
 use brain_core::types::Decision;
 use intelligence_coordinator::world_understanding::WorldUnderstandingService;
+use intelligence_core::traits::IntelligenceCoordinator;
+use intelligence_core::types::{CapabilityKind, ModelInput, ModelRequest, RequestId};
 use memory_core::Timestamp;
 use memory_core::wm::{Entity, EntityLifecycle};
 use memory_storage::wm_store::WorldModelStore;
@@ -16,6 +18,14 @@ pub struct ReflectionLogEntry {
     pub outcome: &'static str,
     pub summary: String,
     pub timestamp: Timestamp,
+}
+
+/// A single turn in recent conversation history.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct ConversationTurn {
+    pub message: String,
+    pub timestamp: Timestamp,
+    pub is_from_user: bool,
 }
 
 /// The heart of the Continuous Cognitive Loop (ADR-0007).
@@ -42,27 +52,32 @@ pub struct CognitiveLoopService {
     store: Arc<dyn WorldModelStore>,
     evolution: EvolutionEngine,
     understanding: WorldUnderstandingService,
+    coordinator: Arc<dyn IntelligenceCoordinator>,
     attention: AttentionEvaluator,
     cycle_count: u64,
     reflection_log: VecDeque<ReflectionLogEntry>,
     last_communicated_at: Option<Timestamp>,
     consecutive_silent_ticks: u32,
+    recent_messages: VecDeque<ConversationTurn>,
 }
 
 impl CognitiveLoopService {
     pub fn new(
         world_model: Arc<dyn WorldModelStore>,
         understanding: WorldUnderstandingService,
+        coordinator: Arc<dyn IntelligenceCoordinator>,
     ) -> Self {
         Self {
             store: world_model.clone(),
             evolution: EvolutionEngine::new(world_model),
             understanding,
+            coordinator,
             attention: AttentionEvaluator::new(),
             cycle_count: 0,
             reflection_log: VecDeque::new(),
             last_communicated_at: None,
             consecutive_silent_ticks: 0,
+            recent_messages: VecDeque::new(),
         }
     }
 
@@ -78,17 +93,27 @@ impl CognitiveLoopService {
     pub async fn cycle(&mut self, observation: &str) -> Decision {
         self.cycle_count += 1;
 
+        // Record user message in conversation history
+        self.recent_messages.push_back(ConversationTurn {
+            message: observation.to_string(),
+            timestamp: Timestamp::now(),
+            is_from_user: true,
+        });
+        if self.recent_messages.len() > 10 {
+            self.recent_messages.pop_front();
+        }
+
         // 1. Build continuity context — what was happening before this input?
         let context = self.build_context().await;
-        let context_summary = Self::format_context_summary(&context);
+        let context_summary = Self::format_context_summary(&context, &self.recent_messages);
 
         // 2. Observe (input already received)
         // 3. Interpret — AI-driven world understanding
         let understanding = match self.understanding.understand(observation).await {
             Ok(u) => u,
             Err(e) => {
-                tracing::warn!("World understanding failed: {e}");
-                return Decision::Wait;
+                tracing::warn!("World understanding failed (continuing without it): {e}");
+                intelligence_coordinator::world_understanding::StructuredWorldUpdate::default()
             }
         };
 
@@ -98,40 +123,30 @@ impl CognitiveLoopService {
         // 5. Evaluate Attention — does this deserve reflection?
         let attention = self.attention.evaluate(&understanding, &report);
 
-        let decision = match attention.outcome {
-            // Silence — not worth reflecting
-            AttentionOutcome::Ignore
-            | AttentionOutcome::ObserveLater { .. }
-            | AttentionOutcome::ReflectSoon { .. } => Decision::Wait,
+        let mut decision = self
+            .generate_llm_decision(observation, &context, &context_summary, &understanding)
+            .await;
 
-            // Immediate attention — proceed to reflect and decide
-            AttentionOutcome::ReflectNow => {
-                // 6. Decide with continuity context
-                self.decide(&understanding, &context, &context_summary)
-            }
-
-            // Specific actions — map directly to decisions
-            AttentionOutcome::AskUser { question } => Decision::Communicate {
+        // Honor AskUser from attention — AI genuinely needs input
+        if let AttentionOutcome::AskUser { ref question } = attention.outcome {
+            decision = Decision::Communicate {
                 recipient: "user".into(),
-                message: question,
+                message: question.clone(),
                 reason: "AI needs user input to proceed".into(),
-            },
-            AttentionOutcome::Suggest { message } => Decision::Communicate {
-                recipient: "user".into(),
-                message,
-                reason: "Attention-based proactive suggestion".into(),
-            },
-            AttentionOutcome::Notify { message } => Decision::Communicate {
-                recipient: "user".into(),
-                message,
-                reason: "Attention-based notification".into(),
-            },
-            AttentionOutcome::Escalate { reason } => Decision::Communicate {
-                recipient: "user".into(),
-                message: reason,
-                reason: "Attention escalation".into(),
-            },
-        };
+            };
+        }
+
+        // Record companion response in conversation history
+        if let Decision::Communicate { ref message, .. } = decision {
+            self.recent_messages.push_back(ConversationTurn {
+                message: message.clone(),
+                timestamp: Timestamp::now(),
+                is_from_user: false,
+            });
+            if self.recent_messages.len() > 10 {
+                self.recent_messages.pop_front();
+            }
+        }
 
         decision
     }
@@ -166,13 +181,53 @@ impl CognitiveLoopService {
         scored.into_iter().take(5).map(|(_, e)| e).collect()
     }
 
-    /// Format a human-readable summary from context entities.
-    fn format_context_summary(entities: &[Entity]) -> String {
+    /// Format a natural-language summary from context entities.
+    /// Never exposes entity names, types, or counts.
+    fn format_context_summary(entities: &[Entity], _recent: &VecDeque<ConversationTurn>) -> String {
         if entities.is_empty() {
-            return "Starting fresh.".into();
+            return String::new();
         }
-        let parts: Vec<String> = entities.iter().map(|e| e.name.clone()).collect();
-        format!("Thinking about {}", parts.join(", "))
+        let has_project = entities.iter().any(|e| e.entity_type == "project" || e.entity_type == "task");
+        let has_skill = entities.iter().any(|e| e.entity_type == "skill");
+        let has_plan = entities.iter().any(|e| e.entity_type == "plan");
+
+        let mut topics = Vec::new();
+        if has_project {
+            let names: Vec<&str> = entities.iter()
+                .filter(|e| e.entity_type == "project" || e.entity_type == "task")
+                .map(|e| e.name.as_str())
+                .collect();
+            if names.len() == 1 {
+                topics.push(format!("your work on {}", names[0]));
+            } else {
+                let last = names.last().unwrap();
+                let rest = &names[..names.len()-1];
+                topics.push(format!("your work on {} and {}", rest.join(", "), last));
+            }
+        }
+        if has_skill {
+            let names: Vec<&str> = entities.iter()
+                .filter(|e| e.entity_type == "skill")
+                .map(|e| e.name.as_str())
+                .collect();
+            if names.len() == 1 {
+                topics.push(format!("your interest in {}", names[0]));
+            } else {
+                let last = names.last().unwrap();
+                let rest = &names[..names.len()-1];
+                topics.push(format!("your interest in {} and {}", rest.join(", "), last));
+            }
+        }
+        if has_plan {
+            topics.push("a plan you're working on".to_string());
+        }
+
+        if topics.is_empty() {
+            return String::new();
+        }
+
+        let joined = topics.join(", ");
+        format!("I remember {}", joined)
     }
 
     /// Run a self-initiated reflection cycle (no user input).
@@ -188,7 +243,7 @@ impl CognitiveLoopService {
     pub async fn tick(&mut self) -> Decision {
         self.cycle_count += 1;
         let context = self.build_context().await;
-        let context_summary = Self::format_context_summary(&context);
+        let context_summary = Self::format_context_summary(&context, &self.recent_messages);
         let attention = self.attention.evaluate_context(&context);
 
         let decision = match attention.outcome {
@@ -246,7 +301,7 @@ impl CognitiveLoopService {
     fn decide_on_context(
         &self,
         context_entities: &[Entity],
-        context_summary: &str,
+        _context_summary: &str,
         attention: &AttentionDecision,
     ) -> Decision {
         if context_entities.is_empty() {
@@ -279,7 +334,7 @@ impl CognitiveLoopService {
                 return Decision::Communicate {
                     recipient: "user".into(),
                     message,
-                    reason: format!("stagnation: {} stale for days", entity.name),
+                    reason: "checking in on prior conversation".into(),
                 };
             }
         }
@@ -298,10 +353,7 @@ impl CognitiveLoopService {
             return Decision::Communicate {
                 recipient: "user".into(),
                 message,
-                reason: format!(
-                    "high-importance {} after {} silent ticks",
-                    entity.name, self.consecutive_silent_ticks
-                ),
+                reason: "follow-up after quiet period".into(),
             };
         }
 
@@ -386,6 +438,131 @@ impl CognitiveLoopService {
         &self.reflection_log
     }
 
+    /// Use the LLM to generate a natural response to the user's message.
+    ///
+    /// This is the method that actually answers user questions.
+    /// The prompt includes the user's message, relevant world model context,
+    /// and recent conversation history for continuity.
+    async fn generate_llm_decision(
+        &self,
+        user_message: &str,
+        context_entities: &[Entity],
+        context_summary: &str,
+        understanding: &intelligence_coordinator::world_understanding::StructuredWorldUpdate,
+    ) -> Decision {
+        tracing::info!("Generating LLM response for: {user_message}");
+        match self
+            .generate_llm_response(user_message, context_entities, context_summary, understanding)
+            .await
+        {
+            Ok(message) => {
+                tracing::info!("LLM response generated ({} chars)", message.len());
+                Decision::Communicate {
+                    recipient: "user".into(),
+                    message,
+                    reason: "response to user message".into(),
+                }
+            }
+            Err(e) => {
+                tracing::warn!("LLM response generation failed, using template: {e}");
+                self.decide(understanding, context_entities, context_summary)
+            }
+        }
+    }
+
+    async fn generate_llm_response(
+        &self,
+        user_message: &str,
+        context_entities: &[Entity],
+        context_summary: &str,
+        understanding: &intelligence_coordinator::world_understanding::StructuredWorldUpdate,
+    ) -> Result<String, String> {
+        let recent_history: Vec<String> = self
+            .recent_messages
+            .iter()
+            .rev()
+            .take(4)
+            .map(|t| {
+                let who = if t.is_from_user { "User" } else { "You" };
+                format!("{who}: {}", t.message)
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+            .collect();
+
+        let history_block = if recent_history.is_empty() {
+            String::new()
+        } else {
+            format!("\nRecent conversation:\n{}\n", recent_history.join("\n"))
+        };
+
+        let context_block = if context_summary.is_empty() {
+            String::new()
+        } else {
+            format!("\nContext from memory: {}\n", context_summary)
+        };
+
+        let entities_block = if understanding.entities.is_empty() {
+            String::new()
+        } else {
+            let names: Vec<&str> = understanding
+                .entities
+                .iter()
+                .map(|e| e.name.as_str())
+                .collect();
+            format!("\nDetected entities: {}\n", names.join(", "))
+        };
+
+        let observations_block = if understanding.new_observations.is_empty() {
+            String::new()
+        } else {
+            format!(
+                "\nObservations: {}\n",
+                understanding.new_observations.join(", ")
+            )
+        };
+
+        let prompt = format!(
+            r#"You are a helpful companion. Respond naturally and conversationally.
+
+The user's message is below. Answer their question, acknowledge their statement, or continue the conversation naturally. Be warm, concise, and helpful. Do NOT list entities or internal state.{history_block}{context_block}{entities_block}{observations_block}
+User message: {user_message}"#,
+            history_block = history_block,
+            context_block = context_block,
+            entities_block = entities_block,
+            observations_block = observations_block,
+            user_message = user_message,
+        );
+
+        let request = ModelRequest {
+            request_id: RequestId::new(),
+            capability: CapabilityKind::Chat,
+            model_id: None,
+            input: ModelInput::Text(prompt),
+            parameters: HashMap::new(),
+            temperature: Some(0.7),
+            top_p: None,
+            max_tokens: Some(512),
+            stream: false,
+        };
+
+        tracing::info!("Sending LLM response request");
+        let response = self
+            .coordinator
+            .request(request)
+            .await
+            .map_err(|e| format!("LLM response request failed: {e}"))?;
+
+        let content = response.content.trim().to_string();
+        if content.is_empty() {
+            return Err("LLM returned empty response".into());
+        }
+
+        tracing::info!("LLM response received ({} chars)", content.len());
+        Ok(content)
+    }
+
     fn decide(
         &self,
         understanding: &intelligence_coordinator::world_understanding::StructuredWorldUpdate,
@@ -393,67 +570,61 @@ impl CognitiveLoopService {
         context_summary: &str,
     ) -> Decision {
         let has_continuity = !context_entities.is_empty();
+        let greeting = Self::time_of_day_greeting();
 
         if let Some(entity) = understanding.entities.first() {
-            let reason = format!("Detected {}: {}", entity.entity_type, entity.name);
-            if matches!(entity.entity_type.as_str(), "person" | "user") {
-                let message = if has_continuity {
-                    format!(
-                        "Hello {}! I was thinking about you. {}",
-                        entity.name, context_summary
-                    )
-                } else {
-                    "I don't need to understand your whole life today — we'll build that together over time. What's on your mind right now?".into()
-                };
-                return Decision::Communicate {
-                    recipient: entity.name.clone(),
-                    message,
-                    reason,
-                };
-            } else {
-                let message = if has_continuity {
-                    format!(
-                        "I noticed you're still working on {}. {}",
-                        entity.name, context_summary
-                    )
-                } else {
-                    format!(
-                        "I noticed you're working on {}. What's the latest?",
-                        entity.name
-                    )
-                };
-                return Decision::Communicate {
-                    recipient: "user".into(),
-                    message,
-                    reason,
-                };
-            }
-        }
+            let is_person = matches!(entity.entity_type.as_str(), "person" | "user");
+            let name = if entity.name.to_lowercase() == "user" { "".to_string() } else { entity.name.clone() };
 
-        if !understanding.relationships.is_empty() {
-            let rel = &understanding.relationships[0];
-            let reason = format!(
-                "Relationship: {} → {} → {}",
-                rel.source, rel.relationship_type, rel.target
-            );
-            return Decision::UpdateMemory {
-                entity_name: rel.target.clone(),
-                entity_type: "entity".into(),
-                properties: vec![("related".into(), rel.relationship_type.clone())],
-                reason,
+            let message = if is_person {
+                if has_continuity {
+                    if context_summary.is_empty() {
+                        format!("{}! Good to see you again.", greeting)
+                    } else {
+                        format!("{}! Good to see you. {}", greeting, context_summary)
+                    }
+                } else {
+                    format!(
+                        "{}. I don't know much about you yet, but I'm here to learn. What's on your mind?",
+                        greeting
+                    )
+                }
+            } else {
+                if has_continuity {
+                    if context_summary.is_empty() {
+                        format!("{}! That's interesting — tell me more.", greeting)
+                    } else {
+                        format!("{}! {}. How is it going?", greeting, context_summary)
+                    }
+                } else {
+                    format!(
+                        "{}! I see you're working on something. What's the latest?",
+                        greeting
+                    )
+                }
+            };
+            return Decision::Communicate {
+                recipient: if name.is_empty() { "user".into() } else { name },
+                message,
+                reason: format!("responded to: {}", entity.name),
             };
         }
 
         if !understanding.new_observations.is_empty() {
-            let message = if has_continuity {
-                "I'm following along.".into()
-            } else {
-                "I'll remember that.".into()
-            };
             return Decision::Communicate {
                 recipient: "user".into(),
-                message,
-                reason: "New observation recorded — continuing prior context".into(),
+                message: "I'll keep that in mind.".into(),
+                reason: "new observation".into(),
+            };
+        }
+
+        if !understanding.relationships.is_empty() {
+            let rel = &understanding.relationships[0];
+            return Decision::UpdateMemory {
+                entity_name: rel.target.clone(),
+                entity_type: "entity".into(),
+                properties: vec![("related".into(), rel.relationship_type.clone())],
+                reason: format!("relation: {} -> {}", rel.source, rel.target),
             };
         }
 
@@ -463,14 +634,23 @@ impl CognitiveLoopService {
                 entity_name: sc.entity_name.clone(),
                 entity_type: "state".into(),
                 properties: vec![(sc.attribute.clone(), sc.new_value.clone())],
-                reason: format!(
-                    "State change: {} {} → {}",
-                    sc.entity_name, sc.attribute, sc.new_value
-                ),
+                reason: format!("state: {} = {}", sc.entity_name, sc.new_value),
             };
         }
 
         Decision::Wait
+    }
+
+    /// Returns a natural time-of-day greeting.
+    fn time_of_day_greeting() -> &'static str {
+        let hour = Self::current_hour();
+        match hour {
+            0..=4 => "Hey",
+            5..=11 => "Good morning",
+            12..=16 => "Good afternoon",
+            17..=21 => "Good evening",
+            _ => "Hey",
+        }
     }
 }
 
