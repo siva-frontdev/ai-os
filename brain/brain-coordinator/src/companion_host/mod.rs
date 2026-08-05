@@ -239,7 +239,10 @@ impl CompanionHost {
         if let Ok(mut guard) = self.telegram.try_lock() {
             *guard = Some(adapter);
         }
-        tracing::info!("Telegram channel configured (poll interval: {}s)", poll_interval_secs);
+        tracing::info!(
+            "Telegram channel configured (poll interval: {}s)",
+            poll_interval_secs
+        );
     }
 
     async fn load_wm(
@@ -324,7 +327,10 @@ impl CompanionHost {
                 .into_iter()
                 .filter(|src| {
                     let cat = PermissionRegistry::category_for_source(src.name());
-                    let granted = permission_check.is_granted(cat);
+                    let granted = permission_check.is_granted(cat)
+                        // Custom sources not in the registry are allowed
+                        // by default — the user explicitly registered them.
+                        || !permission_check.permissions.contains_key(cat);
                     if !granted {
                         tracing::info!("Observation source '{}' denied by permission", src.name());
                     }

@@ -138,7 +138,7 @@ impl Default for CompanionSettings {
             debug_logging: false,
             wm_storage_path: PathBuf::from("~/.local/share/ai-os-companion/world_model.json"),
             ui_port: 9876,
-            permissions: PermissionRegistry::new(),
+            permissions: PermissionRegistry::all_granted(),
             privacy: PrivacyConfig::default(),
             retention: RetentionConfig::default(),
         }

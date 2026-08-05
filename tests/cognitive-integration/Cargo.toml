@@ -1,0 +1,38 @@
+[package]
+name = "cognitive-integration"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Phase 5: Cognitive Layer integration — bridges the runtime manager to the brain's cognitive loop"
+
+[dependencies]
+ai-os-core = { path = "../../core" }
+ai-os-runtime-api = { path = "../../runtime/ai-os-runtime-api" }
+ai-os-runtime-manager = { path = "../../runtime/runtime-manager" }
+ai-os-runtime-bootstrap = { path = "../../runtime/runtime-bootstrap" }
+ai-os-openclaw-runtime = { path = "../../runtime/openclaw-runtime" }
+ai-os-capability-policy = { path = "../../crates/capability-policy" }
+
+brain-coordinator = { path = "../../brain/brain-coordinator" }
+brain-goals = { path = "../../brain/brain-goals" }
+brain-reflection = { path = "../../brain/brain-reflection" }
+brain-core = { path = "../../brain/brain-core" }
+
+memory-core = { path = "../../crates/memory-core" }
+memory-storage = { path = "../../crates/memory-storage" }
+
+intelligence-core = { path = "../../intelligence/intelligence-core" }
+intelligence-coordinator = { path = "../../intelligence/intelligence-coordinator" }
+
+async-trait = "0.1"
+tokio = { version = "1", features = ["rt", "macros", "sync", "time", "process", "rt-multi-thread"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+uuid = { version = "1", features = ["v4"] }
+tracing = "0.1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros", "sync", "time", "rt-multi-thread"] }
+tempfile = "3"
+uuid = { version = "1", features = ["v4"] }
