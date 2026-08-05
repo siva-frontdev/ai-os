@@ -1,0 +1,22 @@
+[package]
+name = "runtime-validation-tests"
+version.workspace = true
+edition.workspace = true
+description = "Phase 3 runtime validation: real MCP subprocess bootstrap, capability discovery/dispatch, observation ingestion, failure recovery, and the observation → Cognitive Loop → World Model E2E flow"
+publish = false
+
+[dependencies]
+ai-os-runtime-api = { path = "../../runtime/ai-os-runtime-api" }
+ai-os-runtime-manager = { path = "../../runtime/runtime-manager" }
+ai-os-openclaw-runtime = { path = "../../runtime/openclaw-runtime", features = ["testkit"] }
+ai-os-runtime-bootstrap = { path = "../../runtime/runtime-bootstrap" }
+brain-coordinator = { path = "../../brain/brain-coordinator" }
+intelligence-core = { path = "../../intelligence/intelligence-core" }
+intelligence-coordinator = { path = "../../intelligence/intelligence-coordinator" }
+memory-core = { path = "../../crates/memory-core" }
+memory-storage = { path = "../../crates/memory-storage" }
+tokio = { version = "1", features = ["full"] }
+serde_json = "1"
+uuid = { version = "1", features = ["v4"] }
+async-trait = "0.1"
+futures = "0.3"

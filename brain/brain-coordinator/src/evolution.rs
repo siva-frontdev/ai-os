@@ -8,7 +8,7 @@ use memory_core::wm::{Entity, EntityId, Relationship, RelationshipId, Value};
 use memory_storage::wm_store::WorldModelStore;
 
 /// Describes what the Evolution Engine changed during one cycle.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct EvolutionReport {
     pub entities_created: Vec<EntitySnap>,
     pub entities_updated: Vec<EntityUpdate>,

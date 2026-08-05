@@ -18,6 +18,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "ai-os-capability-policy"
+version = "0.1.0"
+dependencies = [
+ "ai-os-runtime-api",
+ "chrono",
+ "serde",
+ "thiserror 2.0.19",
+ "tokio",
+]
+
+[[package]]
 name = "ai-os-core"
 version = "0.1.0"
 dependencies = [
@@ -34,6 +45,50 @@ dependencies = [
 ]
 
 [[package]]
+name = "ai-os-mcp-server"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "ai-os-openclaw-runtime"
+version = "0.1.0"
+dependencies = [
+ "ai-os-openclaw-runtime",
+ "ai-os-runtime-api",
+ "async-trait",
+ "chrono",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "ai-os-plugins"
+version = "0.1.0"
+dependencies = [
+ "ai-os-mcp-server",
+ "async-trait",
+ "chrono",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
 name = "ai-os-runtime"
 version = "0.1.0"
 dependencies = [
@@ -41,6 +96,47 @@ dependencies = [
  "async-trait",
  "chrono",
  "criterion",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "ai-os-runtime-api"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "ai-os-runtime-bootstrap"
+version = "0.1.0"
+dependencies = [
+ "ai-os-openclaw-runtime",
+ "ai-os-runtime-api",
+ "ai-os-runtime-manager",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "ai-os-runtime-manager"
+version = "0.1.0"
+dependencies = [
+ "ai-os-runtime-api",
+ "async-trait",
  "serde",
  "serde_json",
  "thiserror 2.0.19",
@@ -507,6 +603,34 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c8d4a3bb8b1e0c1050499d1815f5ab16d04f0959b233085fb31653fbfc9d98f9"
 
 [[package]]
+name = "cognitive-integration"
+version = "0.1.0"
+dependencies = [
+ "ai-os-capability-policy",
+ "ai-os-core",
+ "ai-os-openclaw-runtime",
+ "ai-os-runtime-api",
+ "ai-os-runtime-bootstrap",
+ "ai-os-runtime-manager",
+ "async-trait",
+ "brain-coordinator",
+ "brain-core",
+ "brain-goals",
+ "brain-reflection",
+ "intelligence-coordinator",
+ "intelligence-core",
+ "memory-core",
+ "memory-storage",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.19",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "compression-codecs"
 version = "0.4.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -712,6 +836,7 @@ dependencies = [
 name = "desktop-companion"
 version = "0.1.0"
 dependencies = [
+ "ai-os-capability-policy",
  "anyhow",
  "brain-coordinator",
  "serde",
@@ -2963,6 +3088,42 @@ dependencies = [
  "libc",
  "untrusted",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "runtime-integration-tests"
+version = "0.1.0"
+dependencies = [
+ "ai-os-openclaw-runtime",
+ "ai-os-runtime-api",
+ "ai-os-runtime-manager",
+ "async-trait",
+ "brain-coordinator",
+ "futures",
+ "intelligence-core",
+ "serde_json",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "runtime-validation-tests"
+version = "0.1.0"
+dependencies = [
+ "ai-os-openclaw-runtime",
+ "ai-os-runtime-api",
+ "ai-os-runtime-bootstrap",
+ "ai-os-runtime-manager",
+ "async-trait",
+ "brain-coordinator",
+ "futures",
+ "intelligence-coordinator",
+ "intelligence-core",
+ "memory-core",
+ "memory-storage",
+ "serde_json",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]

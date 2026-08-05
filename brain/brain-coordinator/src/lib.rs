@@ -19,6 +19,7 @@ pub mod event_replay;
 pub mod goal_scheduler;
 pub mod notifications;
 pub mod orchestrator;
+pub mod planner;
 pub mod recovery;
 pub mod runtime;
 pub mod strategy_engine;
@@ -44,6 +45,10 @@ pub use notifications::{
     Notification, NotificationCategory, NotificationLevel, NotificationService,
 };
 pub use orchestrator::BrainOrchestrator;
+pub use planner::Planner;
+pub use planner::capabilities::{Capability, CapabilityRegistry};
+pub use planner::executor::ActionExecutor;
+pub use planner::memory_evaluator::MemoryEvaluator;
 pub use recovery::RecoveryManager;
 pub use runtime::{AutonomousRuntime, BackgroundWorker, RuntimeStatus};
 pub use types::{BrainSession, BrainState, CognitiveLoad, CoordinationReport, ProcessResult};

@@ -9,8 +9,8 @@ use intelligence_coordinator::world_understanding::{
 };
 use intelligence_core::traits::IntelligenceCoordinator;
 use intelligence_core::types::{
-    ConversationId, Embedding, IntelligenceStats, ModelId, ModelRequest, ModelResponse, RequestId,
-    StreamChunk, TokenUsage,
+    ConversationId, Embedding, IntelligenceStats, ModelId, ModelInput, ModelRequest, ModelResponse,
+    RequestId, StreamChunk, TokenUsage,
 };
 use memory_core::Timestamp;
 use memory_core::wm::{Entity, EntityLifecycle};
@@ -65,13 +65,18 @@ impl SimulationEngine {
             store.insert_entity(entity).await;
         }
 
-        let responses = Arc::new(Mutex::new(VecDeque::from(day_responses)));
-        let coordinator = Arc::new(ScriptedCoordinator {
-            responses: responses.clone(),
+        // Coordinator for understanding (returns StructuredWorldUpdate JSON)
+        let understanding_responses = Arc::new(Mutex::new(VecDeque::from(day_responses)));
+        let understanding_coordinator = Arc::new(ScriptedCoordinator {
+            responses: understanding_responses.clone(),
             counter: Arc::new(AtomicUsize::new(0)),
         });
-        let understanding = WorldUnderstandingService::new(coordinator);
-        let loop_svc = CognitiveLoopService::new(store.clone(), understanding);
+        let understanding = WorldUnderstandingService::new(understanding_coordinator);
+
+        // Coordinator for planner pipeline (returns default "respond" actions and memory evaluations)
+        let planner_coordinator = Arc::new(DefaultPlannerCoordinator);
+
+        let loop_svc = CognitiveLoopService::new(store.clone(), understanding, planner_coordinator);
 
         Self {
             store,
@@ -213,6 +218,75 @@ impl IntelligenceCoordinator for ScriptedCoordinator {
             request_id: RequestId::new(),
             model_id: ModelId::new(),
             content: json,
+            usage: TokenUsage {
+                prompt_tokens: 0,
+                completion_tokens: 0,
+                total_tokens: 0,
+            },
+            finished: true,
+            finish_reason: Some("stop".into()),
+        })
+    }
+
+    async fn request_stream(
+        &self,
+        _request: ModelRequest,
+    ) -> Result<Box<dyn Stream<Item = StreamChunk> + Send>, intelligence_core::ModelError> {
+        unimplemented!("stream not used in simulation")
+    }
+
+    async fn embed(
+        &self,
+        _texts: &[String],
+    ) -> Result<Vec<Embedding>, intelligence_core::ModelError> {
+        unimplemented!("embed not used in simulation")
+    }
+
+    async fn health(&self) -> Result<(), intelligence_core::ModelError> {
+        Ok(())
+    }
+
+    async fn pipeline_stats(&self) -> Result<IntelligenceStats, intelligence_core::ModelError> {
+        unimplemented!("stats not used in simulation")
+    }
+
+    async fn conversation(
+        &self,
+        _id: &ConversationId,
+    ) -> Result<Vec<ModelResponse>, intelligence_core::ModelError> {
+        unimplemented!("conversation not used in simulation")
+    }
+}
+
+/// A coordinator for the planner pipeline that returns default responses.
+/// Returns "respond" as the plan action and default memory evaluations.
+#[derive(Debug)]
+struct DefaultPlannerCoordinator;
+
+#[async_trait::async_trait]
+impl IntelligenceCoordinator for DefaultPlannerCoordinator {
+    async fn request(
+        &self,
+        request: ModelRequest,
+    ) -> Result<ModelResponse, intelligence_core::ModelError> {
+        let input_text = match &request.input {
+            ModelInput::Text(t) => t.as_str(),
+            _ => "",
+        };
+        let content = if input_text.contains("planning engine") {
+            // Planner prompt: return plan JSON
+            r#"{"actions":[{"type":"respond","reason":"default simulation response"}]}"#
+        } else if input_text.contains("memory evaluator") {
+            // Memory evaluator prompt: return storage decisions
+            r#"[{"store":false,"importance":0.0,"confidence":0.0,"reason":"default simulation","summary":""}]"#
+        } else {
+            // Respond prompt: return a natural response
+            "Hello! Everything is going well here."
+        };
+        Ok(ModelResponse {
+            request_id: RequestId::new(),
+            model_id: ModelId::new(),
+            content: content.into(),
             usage: TokenUsage {
                 prompt_tokens: 0,
                 completion_tokens: 0,

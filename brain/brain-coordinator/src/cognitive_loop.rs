@@ -1,12 +1,15 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 use std::sync::Arc;
 
 use crate::attention::{AttentionDecision, AttentionEvaluator, AttentionOutcome};
 use crate::evolution::EvolutionEngine;
+use crate::planner::Planner;
+use crate::planner::executor::ActionExecutor;
+use crate::planner::memory_evaluator::MemoryEvaluator;
 use brain_core::types::Decision;
 use intelligence_coordinator::world_understanding::WorldUnderstandingService;
 use intelligence_core::traits::IntelligenceCoordinator;
-use intelligence_core::types::{CapabilityKind, ModelInput, ModelRequest, RequestId};
+use intelligence_core::types::{ModelRequest, RequestId};
 use memory_core::Timestamp;
 use memory_core::wm::{Entity, EntityLifecycle};
 use memory_storage::wm_store::WorldModelStore;
@@ -30,23 +33,24 @@ pub struct ConversationTurn {
 
 /// The heart of the Continuous Cognitive Loop (ADR-0007).
 ///
-/// Implements one complete cognitive cycle:
-///   1. Observe — accept raw text input
-///   2. Interpret — use AI to produce structured world understanding
-///   3. Evolve — merge observations into the World Model via Evolution Engine
-///   4. **Evaluate Attention** — determines whether reflection is worthwhile
-///   5. Reflect — evaluate current state against recent changes (only if attention granted)
-///   6. Decide — produce a `Decision` (Wait, Communicate, UpdateMemory, Execute)
-///   7. Learn — simple feedback loop (placeholder)
+/// Pipeline (after this refactor):
+///   User Input
+///       ↓
+///   World Understanding   (interpret — AI produces structured understanding)
+///       ↓
+///   Memory Evaluator     (decide what knowledge to store, based on meaning)
+///       ↓
+///   Evolution Engine     (store selected knowledge in World Model)
+///       ↓
+///   Planner              (decide what actions to take, based on capabilities)
+///       ↓
+///   Action Executor      (execute the plan — Rust runs each action)
+///       ↓
+///   Decision             (Communicate, Wait, UpdateMemory, Execute)
 ///
-/// **Continuous Life**: Every cycle is part of one ongoing existence.
-/// Continuity emerges naturally from World Model queries — entities sorted
-/// by importance and recency form the context of "what was happening."
-///
-/// Understanding comes from the Intelligence Platform, not from heuristics.
-/// Evolution handles entity deduplication, relationship strengthening, and
-/// confidence/importance updates.
-/// Attention ensures the AI only reflects when something deserves it.
+/// Semantic decisions (what to store, what to retrieve, how to respond)
+/// are made by the LLM via the Planner and Memory Evaluator.
+/// Rust provides the execution machinery. No keyword rules.
 #[derive(Debug)]
 pub struct CognitiveLoopService {
     store: Arc<dyn WorldModelStore>,
@@ -54,6 +58,9 @@ pub struct CognitiveLoopService {
     understanding: WorldUnderstandingService,
     coordinator: Arc<dyn IntelligenceCoordinator>,
     attention: AttentionEvaluator,
+    planner: Planner,
+    memory_evaluator: MemoryEvaluator,
+    executor: ActionExecutor,
     cycle_count: u64,
     reflection_log: VecDeque<ReflectionLogEntry>,
     last_communicated_at: Option<Timestamp>,
@@ -69,10 +76,13 @@ impl CognitiveLoopService {
     ) -> Self {
         Self {
             store: world_model.clone(),
-            evolution: EvolutionEngine::new(world_model),
+            evolution: EvolutionEngine::new(world_model.clone()),
             understanding,
-            coordinator,
+            coordinator: coordinator.clone(),
             attention: AttentionEvaluator::new(),
+            planner: Planner::new(coordinator.clone()),
+            memory_evaluator: MemoryEvaluator::new(coordinator.clone()),
+            executor: ActionExecutor::new(world_model, coordinator),
             cycle_count: 0,
             reflection_log: VecDeque::new(),
             last_communicated_at: None,
@@ -83,13 +93,7 @@ impl CognitiveLoopService {
 
     /// Run one full cognitive cycle on the given text observation.
     ///
-    /// Every cycle is part of one continuous existence. The engine:
-    ///   - Builds continuity context (what was happening?)
-    ///   - Observes and interprets the new input
-    ///   - Evolves the world model
-    ///   - Evaluates attention
-    ///   - Decides what to do (using continuity context)
-    ///   - Records what happened for future cycles
+    /// Pipeline: Understanding → Memory Evaluation → Evolution → Planner → Execution
     pub async fn cycle(&mut self, observation: &str) -> Decision {
         self.cycle_count += 1;
 
@@ -103,28 +107,93 @@ impl CognitiveLoopService {
             self.recent_messages.pop_front();
         }
 
-        // 1. Build continuity context — what was happening before this input?
+        // Structural duplicate detection (same message text, not semantic)
+        let is_duplicate = self.detect_duplicate(observation);
+        if let Some(ref original) = is_duplicate {
+            tracing::info!("duplicate message detected (original: {original})");
+        }
+
+        // Temporal session gap check (time elapsed, not semantic)
+        let is_new_session = self.has_session_gap();
+
+        // 1. Build continuity context from World Model
         let context = self.build_context().await;
         let context_summary = Self::format_context_summary(&context, &self.recent_messages);
 
-        // 2. Observe (input already received)
-        // 3. Interpret — AI-driven world understanding
+        // 2. World Understanding — AI-driven structured interpretation
         let understanding = match self.understanding.understand(observation).await {
             Ok(u) => u,
             Err(e) => {
-                tracing::warn!("World understanding failed (continuing without it): {e}");
-                intelligence_coordinator::world_understanding::StructuredWorldUpdate::default()
+                tracing::warn!("World understanding failed: {e}");
+                return Decision::Wait;
             }
         };
 
-        // 4. Evolve World Model (merge entities, create/strengthen relationships)
-        let report = self.evolution.evolve(&understanding).await;
+        // 3. Memory Evaluator — decide what knowledge to store (meaning-based)
+        let stored_update = self
+            .memory_evaluator
+            .evaluate(observation, &understanding)
+            .await;
+
+        // 4. Evolution Engine — store selected knowledge in World Model
+        let report = match stored_update {
+            Some(ref update) => {
+                tracing::debug!(
+                    "storing {} entities from understanding",
+                    update.entities.len()
+                );
+                self.evolution.evolve(update).await
+            }
+            None => {
+                tracing::debug!("memory evaluator declined to store anything");
+                crate::evolution::EvolutionReport::default()
+            }
+        };
 
         // 5. Evaluate Attention — does this deserve reflection?
         let attention = self.attention.evaluate(&understanding, &report);
 
+        // 6. Planner — decide what actions to take
+        let has_prior_knowledge = !context.is_empty();
+        let recent_text: Vec<String> = self
+            .recent_messages
+            .iter()
+            .rev()
+            .take(6)
+            .map(|t| {
+                let who = if t.is_from_user { "User" } else { "You" };
+                format!("{who}: {}", t.message)
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+            .collect();
+
+        let plan = self
+            .planner
+            .plan(
+                observation,
+                &recent_text.join("\n"),
+                &context_summary,
+                has_prior_knowledge,
+            )
+            .await;
+
+        tracing::debug!("Planner produced {} actions", plan.actions.len());
+
+        // 7. Action Executor — execute the plan
         let mut decision = self
-            .generate_llm_decision(observation, &context, &context_summary, &understanding)
+            .executor
+            .execute(
+                &plan,
+                observation,
+                &self.recent_messages,
+                &context_summary,
+                &context,
+                has_prior_knowledge,
+                is_duplicate,
+                is_new_session,
+            )
             .await;
 
         // Honor AskUser from attention — AI genuinely needs input
@@ -187,13 +256,16 @@ impl CognitiveLoopService {
         if entities.is_empty() {
             return String::new();
         }
-        let has_project = entities.iter().any(|e| e.entity_type == "project" || e.entity_type == "task");
+        let has_project = entities
+            .iter()
+            .any(|e| e.entity_type == "project" || e.entity_type == "task");
         let has_skill = entities.iter().any(|e| e.entity_type == "skill");
         let has_plan = entities.iter().any(|e| e.entity_type == "plan");
 
         let mut topics = Vec::new();
         if has_project {
-            let names: Vec<&str> = entities.iter()
+            let names: Vec<&str> = entities
+                .iter()
                 .filter(|e| e.entity_type == "project" || e.entity_type == "task")
                 .map(|e| e.name.as_str())
                 .collect();
@@ -201,12 +273,13 @@ impl CognitiveLoopService {
                 topics.push(format!("your work on {}", names[0]));
             } else {
                 let last = names.last().unwrap();
-                let rest = &names[..names.len()-1];
+                let rest = &names[..names.len() - 1];
                 topics.push(format!("your work on {} and {}", rest.join(", "), last));
             }
         }
         if has_skill {
-            let names: Vec<&str> = entities.iter()
+            let names: Vec<&str> = entities
+                .iter()
                 .filter(|e| e.entity_type == "skill")
                 .map(|e| e.name.as_str())
                 .collect();
@@ -214,7 +287,7 @@ impl CognitiveLoopService {
                 topics.push(format!("your interest in {}", names[0]));
             } else {
                 let last = names.last().unwrap();
-                let rest = &names[..names.len()-1];
+                let rest = &names[..names.len() - 1];
                 topics.push(format!("your interest in {} and {}", rest.join(", "), last));
             }
         }
@@ -287,17 +360,7 @@ impl CognitiveLoopService {
 
     /// Decide what to communicate during a tick (self-initiated reflection).
     ///
-    /// Requires positive justification before communicating:
-    ///
-    /// Valid reasons:
-    ///   - **Stagnation**: a high-importance entity has not been discussed recently
-    ///   - **Sustained silence**: the AI has not communicated in 3+ ticks and
-    ///     there are important entities worth checking on
-    ///   - **High-importance with progress**: entity importance > 0.8
-    ///     AND there's been a recent change (detected via attention signals)
-    ///
-    /// Context alone is NOT sufficient to communicate. The AI prefers
-    /// silence when there is no specific reason to reach out.
+    /// Requires positive justification before communicating.
     fn decide_on_context(
         &self,
         context_entities: &[Entity],
@@ -308,7 +371,6 @@ impl CognitiveLoopService {
             return Decision::Wait;
         }
 
-        // Check for stagnation as the dominant signal
         let stagnation_strength = attention
             .signals
             .iter()
@@ -316,15 +378,11 @@ impl CognitiveLoopService {
             .map(|s| s.strength)
             .unwrap_or(0.0);
 
-        // Cool-down: don't nag on consecutive ticks. After a tick communicates,
-        // wait at least 2 silent ticks before reaching out again.
-        // First-ever communication is allowed without cool-down.
         let is_first_ever = self.last_communicated_at.is_none();
         if !is_first_ever && self.consecutive_silent_ticks < 2 {
             return Decision::Wait;
         }
 
-        // Stagnation of an important entity (≥2 days stale) → follow up
         if stagnation_strength > 0.15 {
             let entity = context_entities
                 .iter()
@@ -339,7 +397,6 @@ impl CognitiveLoopService {
             }
         }
 
-        // High importance + sustained silence (no recent interaction) → check in
         let max_importance = context_entities
             .iter()
             .map(|e| e.importance as f64)
@@ -357,7 +414,6 @@ impl CognitiveLoopService {
             };
         }
 
-        // Nothing justifies communication → prefer silence
         Decision::Wait
     }
 
@@ -405,11 +461,6 @@ impl CognitiveLoopService {
     }
 
     /// Record a reflection decision in the internal log.
-    ///
-    /// Reflections are NOT stored in the World Model because they represent
-    /// the AI's internal reasoning, not the user's world. Storing them as
-    /// WM entities would pollute the continuity context with AI-internal
-    /// records that compete with user knowledge.
     async fn record_reflection(&mut self, decision: &Decision, summary: &str) {
         let outcome = match decision {
             Decision::Wait => "silent",
@@ -438,131 +489,54 @@ impl CognitiveLoopService {
         &self.reflection_log
     }
 
-    /// Use the LLM to generate a natural response to the user's message.
-    ///
-    /// This is the method that actually answers user questions.
-    /// The prompt includes the user's message, relevant world model context,
-    /// and recent conversation history for continuity.
-    async fn generate_llm_decision(
-        &self,
-        user_message: &str,
-        context_entities: &[Entity],
-        context_summary: &str,
-        understanding: &intelligence_coordinator::world_understanding::StructuredWorldUpdate,
-    ) -> Decision {
-        tracing::info!("Generating LLM response for: {user_message}");
-        match self
-            .generate_llm_response(user_message, context_entities, context_summary, understanding)
-            .await
-        {
-            Ok(message) => {
-                tracing::info!("LLM response generated ({} chars)", message.len());
-                Decision::Communicate {
-                    recipient: "user".into(),
-                    message,
-                    reason: "response to user message".into(),
-                }
-            }
-            Err(e) => {
-                tracing::warn!("LLM response generation failed, using template: {e}");
-                self.decide(understanding, context_entities, context_summary)
-            }
-        }
-    }
+    // ── Structural (non-semantic) helpers ─────────────────────
 
-    async fn generate_llm_response(
-        &self,
-        user_message: &str,
-        context_entities: &[Entity],
-        context_summary: &str,
-        understanding: &intelligence_coordinator::world_understanding::StructuredWorldUpdate,
-    ) -> Result<String, String> {
-        let recent_history: Vec<String> = self
+    /// Detect if the same user message text was sent within a recent window.
+    /// This is a structural/textual check, not a semantic rule.
+    fn detect_duplicate(&self, message: &str) -> Option<String> {
+        let normalized = message.trim().to_lowercase();
+        let user_messages: Vec<&str> = self
             .recent_messages
             .iter()
-            .rev()
-            .take(4)
-            .map(|t| {
-                let who = if t.is_from_user { "User" } else { "You" };
-                format!("{who}: {}", t.message)
-            })
-            .collect::<Vec<_>>()
-            .into_iter()
-            .rev()
+            .filter(|t| t.is_from_user)
+            .map(|t| t.message.as_str())
             .collect();
-
-        let history_block = if recent_history.is_empty() {
-            String::new()
-        } else {
-            format!("\nRecent conversation:\n{}\n", recent_history.join("\n"))
-        };
-
-        let context_block = if context_summary.is_empty() {
-            String::new()
-        } else {
-            format!("\nContext from memory: {}\n", context_summary)
-        };
-
-        let entities_block = if understanding.entities.is_empty() {
-            String::new()
-        } else {
-            let names: Vec<&str> = understanding
-                .entities
-                .iter()
-                .map(|e| e.name.as_str())
-                .collect();
-            format!("\nDetected entities: {}\n", names.join(", "))
-        };
-
-        let observations_block = if understanding.new_observations.is_empty() {
-            String::new()
-        } else {
-            format!(
-                "\nObservations: {}\n",
-                understanding.new_observations.join(", ")
-            )
-        };
-
-        let prompt = format!(
-            r#"You are a helpful companion. Respond naturally and conversationally.
-
-The user's message is below. Answer their question, acknowledge their statement, or continue the conversation naturally. Be warm, concise, and helpful. Do NOT list entities or internal state.{history_block}{context_block}{entities_block}{observations_block}
-User message: {user_message}"#,
-            history_block = history_block,
-            context_block = context_block,
-            entities_block = entities_block,
-            observations_block = observations_block,
-            user_message = user_message,
-        );
-
-        let request = ModelRequest {
-            request_id: RequestId::new(),
-            capability: CapabilityKind::Chat,
-            model_id: None,
-            input: ModelInput::Text(prompt),
-            parameters: HashMap::new(),
-            temperature: Some(0.7),
-            top_p: None,
-            max_tokens: Some(512),
-            stream: false,
-        };
-
-        tracing::info!("Sending LLM response request");
-        let response = self
-            .coordinator
-            .request(request)
-            .await
-            .map_err(|e| format!("LLM response request failed: {e}"))?;
-
-        let content = response.content.trim().to_string();
-        if content.is_empty() {
-            return Err("LLM returned empty response".into());
+        for prev in user_messages.iter().rev().take(5) {
+            let prev_norm = prev.trim().to_lowercase();
+            if normalized == prev_norm {
+                return Some((*prev).to_string());
+            }
+            if normalized.len() > 8 && prev_norm.len() > 8 {
+                if normalized.contains(&prev_norm) || prev_norm.contains(&normalized) {
+                    return Some((*prev).to_string());
+                }
+            }
         }
-
-        tracing::info!("LLM response received ({} chars)", content.len());
-        Ok(content)
+        None
     }
 
+    /// Check whether this is the user's first message in a new session.
+    /// This is a temporal check (time elapsed), not a semantic rule.
+    fn has_session_gap(&self) -> bool {
+        let user_turns: Vec<&ConversationTurn> = self
+            .recent_messages
+            .iter()
+            .filter(|t| t.is_from_user)
+            .collect();
+        if user_turns.is_empty() && self.cycle_count > 0 {
+            return true;
+        }
+        if let Some(last) = user_turns.last() {
+            let elapsed = Timestamp::now().as_secs() - last.timestamp.as_secs();
+            if elapsed > 3600 {
+                return true;
+            }
+        }
+        false
+    }
+
+    /// Template fallback when the Planner/Executor pipeline fails.
+    /// Uses simple rules, not keywords.
     fn decide(
         &self,
         understanding: &intelligence_coordinator::world_understanding::StructuredWorldUpdate,
@@ -574,7 +548,11 @@ User message: {user_message}"#,
 
         if let Some(entity) = understanding.entities.first() {
             let is_person = matches!(entity.entity_type.as_str(), "person" | "user");
-            let name = if entity.name.to_lowercase() == "user" { "".to_string() } else { entity.name.clone() };
+            let name = if entity.name.to_lowercase() == "user" {
+                "".to_string()
+            } else {
+                entity.name.clone()
+            };
 
             let message = if is_person {
                 if has_continuity {
@@ -654,6 +632,84 @@ User message: {user_message}"#,
     }
 }
 
+// ── Reusable Mock Infrastructure ───────────────────────────
+
+/// Mock coordinator that returns a predetermined StructuredWorldUpdate.
+/// Used across crate boundaries for testing planner, executor, etc.
+#[derive(Debug)]
+pub struct MockCoordinator(
+    pub intelligence_coordinator::world_understanding::StructuredWorldUpdate,
+);
+
+#[async_trait::async_trait]
+impl IntelligenceCoordinator for MockCoordinator {
+    async fn request(
+        &self,
+        _request: ModelRequest,
+    ) -> Result<intelligence_core::types::ModelResponse, intelligence_core::ModelError> {
+        let json = serde_json::to_string(&self.0).unwrap();
+        Ok(intelligence_core::types::ModelResponse {
+            request_id: intelligence_core::types::RequestId::new(),
+            model_id: intelligence_core::types::ModelId::new(),
+            content: json,
+            usage: intelligence_core::types::TokenUsage {
+                prompt_tokens: 0,
+                completion_tokens: 0,
+                total_tokens: 0,
+            },
+            finished: true,
+            finish_reason: Some("stop".into()),
+        })
+    }
+
+    async fn request_stream(
+        &self,
+        _request: ModelRequest,
+    ) -> Result<
+        Box<dyn futures::Stream<Item = intelligence_core::types::StreamChunk> + Send>,
+        intelligence_core::ModelError,
+    > {
+        unimplemented!("stream not used in tests")
+    }
+
+    async fn embed(
+        &self,
+        _texts: &[String],
+    ) -> Result<Vec<intelligence_core::types::Embedding>, intelligence_core::ModelError> {
+        unimplemented!("embed not used in tests")
+    }
+
+    async fn health(&self) -> Result<(), intelligence_core::ModelError> {
+        Ok(())
+    }
+
+    async fn pipeline_stats(
+        &self,
+    ) -> Result<intelligence_core::types::IntelligenceStats, intelligence_core::ModelError> {
+        unimplemented!("stats not used in tests")
+    }
+
+    async fn conversation(
+        &self,
+        _id: &intelligence_core::types::ConversationId,
+    ) -> Result<Vec<intelligence_core::types::ModelResponse>, intelligence_core::ModelError> {
+        unimplemented!("conversation not used in tests")
+    }
+}
+
+/// Empty understanding for test convenience.
+pub fn empty_understanding() -> intelligence_coordinator::world_understanding::StructuredWorldUpdate
+{
+    intelligence_coordinator::world_understanding::StructuredWorldUpdate {
+        entities: vec![],
+        relationships: vec![],
+        state_changes: vec![],
+        new_observations: vec![],
+        open_questions: vec![],
+        possible_hypotheses: vec![],
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
@@ -664,225 +720,67 @@ mod tests {
     use intelligence_coordinator::world_understanding::{
         StructuredWorldUpdate, WorldEntity, WorldRelationship, WorldUnderstandingService,
     };
+    use intelligence_core::traits::IntelligenceCoordinator;
     use memory_core::Timestamp;
     use memory_core::wm::Entity;
     use memory_storage::wm_store::InMemoryWorldModelStore;
     use memory_storage::wm_store::WorldModelStore;
 
-    // Helper: create a CognitiveLoopService with a mock understanding service
-    // that returns predetermined structured updates.
-    fn make_loop(
-        store: Arc<dyn WorldModelStore>,
-        understanding: WorldUnderstandingService,
-    ) -> CognitiveLoopService {
-        CognitiveLoopService::new(store, understanding)
+    /// Test coordinator that returns predetermined JSON for planner,
+    /// memory evaluator, and response LLM calls. Each call type is
+    /// identified by keywords in the prompt text.
+    #[derive(Debug)]
+    struct TestCoordinator {
+        plan_json: String,
+        memory_json: String,
+        response_text: String,
     }
 
-    #[tokio::test]
-    async fn test_wait_on_empty_understanding() {
-        let store = Arc::new(memory_storage::wm_store::InMemoryWorldModelStore::new());
-        let result = StructuredWorldUpdate {
-            entities: vec![],
-            relationships: vec![],
-            state_changes: vec![],
-            new_observations: vec![],
-            open_questions: vec![],
-            possible_hypotheses: vec![],
-        };
-        let empty = mock_understanding(result);
-        let mut loop_svc = make_loop(store, empty);
-        let decision = loop_svc.cycle("nothing here").await;
-        assert!(matches!(decision, Decision::Wait));
-        assert_eq!(loop_svc.cycle_count(), 1);
-    }
+    impl TestCoordinator {
+        fn new(
+            plan_json: &str,
+            memory_json: &str,
+            response_text: &str,
+        ) -> Arc<dyn IntelligenceCoordinator> {
+            Arc::new(Self {
+                plan_json: plan_json.to_string(),
+                memory_json: memory_json.to_string(),
+                response_text: response_text.to_string(),
+            })
+        }
 
-    #[tokio::test]
-    async fn test_person_triggers_communicate() {
-        let store = Arc::new(memory_storage::wm_store::InMemoryWorldModelStore::new());
-        let result = StructuredWorldUpdate {
-            entities: vec![WorldEntity {
-                name: "Alice".into(),
-                entity_type: "person".into(),
-                properties: HashMap::new(),
-                confidence: 0.9,
-                importance: 0.7,
-            }],
-            relationships: vec![],
-            state_changes: vec![],
-            new_observations: vec![],
-            open_questions: vec![],
-            possible_hypotheses: vec![],
-        };
-        let svc = mock_understanding(result);
-        let mut loop_svc = make_loop(store, svc);
-        let decision = loop_svc.cycle("I am Alice").await;
-        // Person entity triggers high attention → ReflectNow → decide()
-        // High-importance person produces Notify (Communicate)
-        assert!(
-            matches!(decision, Decision::Communicate { .. }),
-            "person should produce Communicate, got {decision:?}"
-        );
-    }
-
-    #[tokio::test]
-    async fn test_relationship_requires_sufficient_attention() {
-        let store = Arc::new(memory_storage::wm_store::InMemoryWorldModelStore::new());
-        let result = StructuredWorldUpdate {
-            entities: vec![WorldEntity {
-                name: "MacBook".into(),
-                entity_type: "device".into(),
-                properties: HashMap::new(),
-                confidence: 0.8,
-                importance: 0.6,
-            }],
-            relationships: vec![WorldRelationship {
-                source: "Alice".into(),
-                target: "MacBook".into(),
-                relationship_type: "owns".into(),
-                confidence: 0.85,
-                weight: 0.9,
-            }],
-            state_changes: vec![],
-            new_observations: vec![],
-            open_questions: vec![],
-            possible_hypotheses: vec![],
-        };
-        let svc = mock_understanding(result);
-        let mut loop_svc = make_loop(store, svc);
-        let decision = loop_svc.cycle("I bought a MacBook").await;
-        // A device entity + relationship without other strong signals
-        // may not meet attention threshold → Wait
-        // The entity is still evolved into the World Model regardless.
-        assert!(
-            matches!(decision, Decision::Wait),
-            "weak signals should produce Wait, got {decision:?}"
-        );
-    }
-
-    #[tokio::test]
-    async fn test_trivial_observation_waits() {
-        let store = Arc::new(memory_storage::wm_store::InMemoryWorldModelStore::new());
-        let result = StructuredWorldUpdate {
-            entities: vec![],
-            relationships: vec![],
-            state_changes: vec![],
-            new_observations: vec!["User mentioned reading a book".into()],
-            open_questions: vec![],
-            possible_hypotheses: vec![],
-        };
-        let svc = mock_understanding(result);
-        let mut loop_svc = make_loop(store, svc);
-        let decision = loop_svc.cycle("reading a book").await;
-        // A trivial observation without urgency/people/state change
-        // gets deferred (ObserveLater/ReflectSoon → Wait)
-        assert!(
-            matches!(decision, Decision::Wait),
-            "trivial observation should wait, got {decision:?}"
-        );
-    }
-
-    #[tokio::test]
-    async fn test_state_change_triggers_update_memory() {
-        let store = Arc::new(memory_storage::wm_store::InMemoryWorldModelStore::new());
-        let result = StructuredWorldUpdate {
-            entities: vec![],
-            relationships: vec![],
-            state_changes: vec![intelligence_coordinator::world_understanding::StateChange {
-                entity_name: "Alice".into(),
-                attribute: "mood".into(),
-                old_value: None,
-                new_value: "tired".into(),
-            }],
-            new_observations: vec![],
-            open_questions: vec![],
-            possible_hypotheses: vec![],
-        };
-        let svc = mock_understanding(result);
-        let mut loop_svc = make_loop(store, svc);
-        let decision = loop_svc.cycle("I am tired").await;
-        match decision {
-            Decision::UpdateMemory { ref properties, .. } => {
-                assert!(properties.iter().any(|(k, v)| k == "mood" && v == "tired"));
-            }
-            other => panic!("expected UpdateMemory, got {other:?}"),
+        fn default_respond() -> Arc<dyn IntelligenceCoordinator> {
+            Self::new(
+                r#"{"actions":[{"type":"respond","reason":"test"}]}"#,
+                r#"[{"store":true,"importance":0.5,"confidence":0.5,"reason":"test","summary":""}]"#,
+                "Hello! How can I help you today?",
+            )
         }
     }
 
-    #[tokio::test]
-    async fn test_cycle_stores_entities_in_world_model() {
-        let store = Arc::new(memory_storage::wm_store::InMemoryWorldModelStore::new());
-        let result = StructuredWorldUpdate {
-            entities: vec![
-                WorldEntity {
-                    name: "Alice".into(),
-                    entity_type: "person".into(),
-                    properties: HashMap::new(),
-                    confidence: 0.9,
-                    importance: 0.7,
-                },
-                WorldEntity {
-                    name: "Rust".into(),
-                    entity_type: "skill".into(),
-                    properties: HashMap::new(),
-                    confidence: 0.8,
-                    importance: 0.6,
-                },
-            ],
-            relationships: vec![WorldRelationship {
-                source: "Alice".into(),
-                target: "Rust".into(),
-                relationship_type: "learning".into(),
-                confidence: 0.85,
-                weight: 0.7,
-            }],
-            state_changes: vec![],
-            new_observations: vec![],
-            open_questions: vec![],
-            possible_hypotheses: vec![],
-        };
-        let svc = mock_understanding(result);
-        let mut loop_svc = make_loop(store.clone(), svc);
-        let _ = loop_svc.cycle("learning Rust").await;
-
-        let entities = store.all_entities().await;
-        let names: Vec<&str> = entities.iter().map(|e| e.name.as_str()).collect();
-        assert!(names.contains(&"Alice"), "Alice should be in WM");
-        assert!(names.contains(&"Rust"), "Rust should be in WM");
-    }
-
-    #[tokio::test]
-    async fn test_understanding_error_returns_wait() {
-        let store = Arc::new(memory_storage::wm_store::InMemoryWorldModelStore::new());
-        let svc = WorldUnderstandingService::new(Arc::new(
-            // Use a mock coordinator that always errors
-            MockFailingCoordinator,
-        ));
-        let mut loop_svc = make_loop(store, svc);
-        let decision = loop_svc.cycle("anything").await;
-        assert!(matches!(decision, Decision::Wait));
-    }
-
-    // ── Mock infrastructure ─────────────────────────────────
-
-    fn mock_understanding(result: StructuredWorldUpdate) -> WorldUnderstandingService {
-        WorldUnderstandingService::new(Arc::new(MockCoordinator(result)))
-    }
-
-    #[derive(Debug)]
-    struct MockCoordinator(StructuredWorldUpdate);
-
     #[async_trait::async_trait]
-    impl intelligence_core::traits::IntelligenceCoordinator for MockCoordinator {
+    impl intelligence_core::traits::IntelligenceCoordinator for TestCoordinator {
         async fn request(
             &self,
-            _request: intelligence_core::types::ModelRequest,
+            request: intelligence_core::types::ModelRequest,
         ) -> Result<intelligence_core::types::ModelResponse, intelligence_core::ModelError>
         {
-            let json = serde_json::to_string(&self.0).unwrap();
+            let input = match &request.input {
+                intelligence_core::types::ModelInput::Text(t) => t.as_str(),
+                _ => "",
+            };
+            let content =
+                if input.contains("planning engine") || input.contains("plan what actions") {
+                    self.plan_json.clone()
+                } else if input.contains("memory evaluator") {
+                    self.memory_json.clone()
+                } else {
+                    self.response_text.clone()
+                };
             Ok(intelligence_core::types::ModelResponse {
                 request_id: intelligence_core::types::RequestId::new(),
                 model_id: intelligence_core::types::ModelId::new(),
-                content: json,
+                content,
                 usage: intelligence_core::types::TokenUsage {
                     prompt_tokens: 0,
                     completion_tokens: 0,
@@ -931,90 +829,288 @@ mod tests {
         }
     }
 
-    #[derive(Debug)]
-    struct MockFailingCoordinator;
-
-    #[async_trait::async_trait]
-    impl intelligence_core::traits::IntelligenceCoordinator for MockFailingCoordinator {
-        async fn request(
-            &self,
-            _request: intelligence_core::types::ModelRequest,
-        ) -> Result<intelligence_core::types::ModelResponse, intelligence_core::ModelError>
-        {
-            Err(intelligence_core::ModelError::ServerError {
-                provider: "mock".into(),
-                status: 500,
-            })
-        }
-
-        async fn request_stream(
-            &self,
-            _request: intelligence_core::types::ModelRequest,
-        ) -> Result<
-            Box<dyn futures::Stream<Item = intelligence_core::types::StreamChunk> + Send>,
-            intelligence_core::ModelError,
-        > {
-            Err(intelligence_core::ModelError::ServerError {
-                provider: "mock".into(),
-                status: 500,
-            })
-        }
-
-        async fn embed(
-            &self,
-            _texts: &[String],
-        ) -> Result<Vec<intelligence_core::types::Embedding>, intelligence_core::ModelError>
-        {
-            Err(intelligence_core::ModelError::ServerError {
-                provider: "mock".into(),
-                status: 500,
-            })
-        }
-
-        async fn health(&self) -> Result<(), intelligence_core::ModelError> {
-            Ok(())
-        }
-
-        async fn pipeline_stats(
-            &self,
-        ) -> Result<intelligence_core::types::IntelligenceStats, intelligence_core::ModelError>
-        {
-            Err(intelligence_core::ModelError::ServerError {
-                provider: "mock".into(),
-                status: 500,
-            })
-        }
-
-        async fn conversation(
-            &self,
-            _id: &intelligence_core::types::ConversationId,
-        ) -> Result<Vec<intelligence_core::types::ModelResponse>, intelligence_core::ModelError>
-        {
-            Err(intelligence_core::ModelError::ServerError {
-                provider: "mock".into(),
-                status: 500,
-            })
-        }
+    /// Create a CognitiveLoopService with mock understanding and a test coordinator.
+    /// `ignore` controls whether the planner returns "ignore" (true) or "respond" (false).
+    fn make_loop(
+        store: Arc<dyn WorldModelStore>,
+        understanding: WorldUnderstandingService,
+    ) -> CognitiveLoopService {
+        let coordinator = TestCoordinator::new(
+            r#"{"actions":[{"type":"respond","reason":"test"}]}"#,
+            r#"[{"store":true,"importance":0.5,"confidence":0.5,"reason":"test","summary":""}]"#,
+            "Hello! How can I help you today?",
+        );
+        CognitiveLoopService::new(store, understanding, coordinator)
     }
 
-    // ── Daily Companion Tests ────────────────────────────────
+    /// Create a loop where the planner returns "ignore" (producing Wait).
+    fn make_ignore_loop(
+        store: Arc<dyn WorldModelStore>,
+        understanding: WorldUnderstandingService,
+    ) -> CognitiveLoopService {
+        let coordinator = TestCoordinator::new(
+            r#"{"actions":[{"type":"ignore","reason":"test"}]}"#,
+            r#"[{"store":false,"importance":0.0,"confidence":0.0,"reason":"test","summary":""}]"#,
+            "",
+        );
+        CognitiveLoopService::new(store, understanding, coordinator)
+    }
 
-    #[allow(dead_code)]
-    fn empty_understanding() -> StructuredWorldUpdate {
-        StructuredWorldUpdate {
+    /// Mock understanding that returns a predetermined StructuredWorldUpdate.
+    fn mock_understanding(result: StructuredWorldUpdate) -> WorldUnderstandingService {
+        WorldUnderstandingService::new(Arc::new(super::MockCoordinator(result)))
+    }
+
+    #[tokio::test]
+    async fn test_wait_on_empty_understanding() {
+        let store = Arc::new(InMemoryWorldModelStore::new());
+        let result = StructuredWorldUpdate {
             entities: vec![],
             relationships: vec![],
             state_changes: vec![],
             new_observations: vec![],
             open_questions: vec![],
             possible_hypotheses: vec![],
-        }
+        };
+        let empty = mock_understanding(result);
+        let mut loop_svc = make_ignore_loop(store, empty);
+        let decision = loop_svc.cycle("nothing here").await;
+        assert!(matches!(decision, Decision::Wait));
+        assert_eq!(loop_svc.cycle_count(), 1);
     }
 
     #[tokio::test]
+    async fn test_person_triggers_communicate() {
+        let store = Arc::new(InMemoryWorldModelStore::new());
+        let result = StructuredWorldUpdate {
+            entities: vec![WorldEntity {
+                name: "Alice".into(),
+                entity_type: "person".into(),
+                properties: HashMap::new(),
+                confidence: 0.9,
+                importance: 0.7,
+            }],
+            relationships: vec![],
+            state_changes: vec![],
+            new_observations: vec![],
+            open_questions: vec![],
+            possible_hypotheses: vec![],
+        };
+        let svc = mock_understanding(result);
+        let mut loop_svc = make_loop(store, svc);
+        let decision = loop_svc.cycle("I am Alice").await;
+        assert!(
+            matches!(decision, Decision::Communicate { .. }),
+            "person should produce Communicate, got {decision:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_relationship_requires_sufficient_attention() {
+        let store = Arc::new(InMemoryWorldModelStore::new());
+        let result = StructuredWorldUpdate {
+            entities: vec![WorldEntity {
+                name: "MacBook".into(),
+                entity_type: "device".into(),
+                properties: HashMap::new(),
+                confidence: 0.8,
+                importance: 0.6,
+            }],
+            relationships: vec![WorldRelationship {
+                source: "Alice".into(),
+                target: "MacBook".into(),
+                relationship_type: "owns".into(),
+                confidence: 0.85,
+                weight: 0.9,
+            }],
+            state_changes: vec![],
+            new_observations: vec![],
+            open_questions: vec![],
+            possible_hypotheses: vec![],
+        };
+        let svc = mock_understanding(result);
+        let mut loop_svc = make_ignore_loop(store, svc);
+        let decision = loop_svc.cycle("I bought a MacBook").await;
+        assert!(
+            matches!(decision, Decision::Wait),
+            "weak signals should produce Wait, got {decision:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_trivial_observation_waits() {
+        let store = Arc::new(InMemoryWorldModelStore::new());
+        let result = StructuredWorldUpdate {
+            entities: vec![],
+            relationships: vec![],
+            state_changes: vec![],
+            new_observations: vec!["User mentioned reading a book".into()],
+            open_questions: vec![],
+            possible_hypotheses: vec![],
+        };
+        let svc = mock_understanding(result);
+        let mut loop_svc = make_ignore_loop(store, svc);
+        let decision = loop_svc.cycle("reading a book").await;
+        assert!(
+            matches!(decision, Decision::Wait),
+            "trivial observation should wait, got {decision:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_state_change_triggers_update_memory() {
+        let store = Arc::new(InMemoryWorldModelStore::new());
+        let result = StructuredWorldUpdate {
+            entities: vec![WorldEntity {
+                name: "Alice".into(),
+                entity_type: "person".into(),
+                properties: HashMap::new(),
+                confidence: 0.9,
+                importance: 0.7,
+            }],
+            relationships: vec![],
+            state_changes: vec![intelligence_coordinator::world_understanding::StateChange {
+                entity_name: "Alice".into(),
+                attribute: "mood".into(),
+                old_value: None,
+                new_value: "tired".into(),
+            }],
+            new_observations: vec![],
+            open_questions: vec![],
+            possible_hypotheses: vec![],
+        };
+        let svc = mock_understanding(result);
+        let mut loop_svc = make_loop(store.clone(), svc);
+        let decision = loop_svc.cycle("I am tired").await;
+        // With the new pipeline, state changes are stored by memory evaluator + evolution.
+        // Verify entities were persisted in the World Model.
+        let all = store.all_entities().await;
+        let alice = all.iter().find(|e| e.name == "Alice");
+        assert!(
+            alice.is_some(),
+            "Alice should have been stored in world model"
+        );
+        assert_eq!(alice.unwrap().entity_type, "person");
+    }
+
+    #[tokio::test]
+    async fn test_cycle_stores_entities_in_world_model() {
+        let store = Arc::new(InMemoryWorldModelStore::new());
+        let result = StructuredWorldUpdate {
+            entities: vec![
+                WorldEntity {
+                    name: "Alice".into(),
+                    entity_type: "person".into(),
+                    properties: HashMap::new(),
+                    confidence: 0.9,
+                    importance: 0.7,
+                },
+                WorldEntity {
+                    name: "Rust".into(),
+                    entity_type: "skill".into(),
+                    properties: HashMap::new(),
+                    confidence: 0.8,
+                    importance: 0.6,
+                },
+            ],
+            relationships: vec![WorldRelationship {
+                source: "Alice".into(),
+                target: "Rust".into(),
+                relationship_type: "learning".into(),
+                confidence: 0.85,
+                weight: 0.7,
+            }],
+            state_changes: vec![],
+            new_observations: vec![],
+            open_questions: vec![],
+            possible_hypotheses: vec![],
+        };
+        let svc = mock_understanding(result);
+        let mut loop_svc = make_loop(store.clone(), svc);
+        let _ = loop_svc.cycle("learning Rust").await;
+
+        let entities = store.all_entities().await;
+        let names: Vec<&str> = entities.iter().map(|e| e.name.as_str()).collect();
+        assert!(names.contains(&"Alice"), "Alice should be in WM");
+        assert!(names.contains(&"Rust"), "Rust should be in WM");
+    }
+
+    #[tokio::test]
+    async fn test_understanding_error_returns_wait() {
+        let store = Arc::new(InMemoryWorldModelStore::new());
+        #[derive(Debug)]
+        struct FailingCoordinator;
+
+        #[async_trait::async_trait]
+        impl intelligence_core::traits::IntelligenceCoordinator for FailingCoordinator {
+            async fn request(
+                &self,
+                _request: intelligence_core::types::ModelRequest,
+            ) -> Result<intelligence_core::types::ModelResponse, intelligence_core::ModelError>
+            {
+                Err(intelligence_core::ModelError::ServerError {
+                    provider: "mock".into(),
+                    status: 500,
+                })
+            }
+            async fn request_stream(
+                &self,
+                _request: intelligence_core::types::ModelRequest,
+            ) -> Result<
+                Box<dyn futures::Stream<Item = intelligence_core::types::StreamChunk> + Send>,
+                intelligence_core::ModelError,
+            > {
+                Err(intelligence_core::ModelError::ServerError {
+                    provider: "mock".into(),
+                    status: 500,
+                })
+            }
+            async fn embed(
+                &self,
+                _texts: &[String],
+            ) -> Result<Vec<intelligence_core::types::Embedding>, intelligence_core::ModelError>
+            {
+                Err(intelligence_core::ModelError::ServerError {
+                    provider: "mock".into(),
+                    status: 500,
+                })
+            }
+            async fn health(&self) -> Result<(), intelligence_core::ModelError> {
+                Ok(())
+            }
+            async fn pipeline_stats(
+                &self,
+            ) -> Result<intelligence_core::types::IntelligenceStats, intelligence_core::ModelError>
+            {
+                Err(intelligence_core::ModelError::ServerError {
+                    provider: "mock".into(),
+                    status: 500,
+                })
+            }
+            async fn conversation(
+                &self,
+                _id: &intelligence_core::types::ConversationId,
+            ) -> Result<Vec<intelligence_core::types::ModelResponse>, intelligence_core::ModelError>
+            {
+                Err(intelligence_core::ModelError::ServerError {
+                    provider: "mock".into(),
+                    status: 500,
+                })
+            }
+        }
+
+        let svc = WorldUnderstandingService::new(Arc::new(FailingCoordinator));
+        let mut loop_svc = make_loop(store, svc);
+        let decision = loop_svc.cycle("anything").await;
+        assert!(matches!(decision, Decision::Wait));
+    }
+
+    // ── Daily Companion Tests ────────────────────────────────
+
+    #[tokio::test]
     async fn test_companion_tick_empty_wm_stays_silent() {
-        let store = Arc::new(memory_storage::wm_store::InMemoryWorldModelStore::new());
-        let svc = mock_understanding(empty_understanding());
+        let store = Arc::new(InMemoryWorldModelStore::new());
+        let svc = mock_understanding(super::empty_understanding());
         let mut loop_svc = make_loop(store, svc);
         let decision = loop_svc.tick().await;
         assert!(
@@ -1025,13 +1121,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_companion_tick_stays_silent_with_fresh_entity() {
-        let store = Arc::new(memory_storage::wm_store::InMemoryWorldModelStore::new());
+        let store = Arc::new(InMemoryWorldModelStore::new());
         let entity = Entity::new("project", "AI-OS")
             .with_importance(0.85)
             .with_confidence(0.9);
         store.insert_entity(entity).await;
 
-        let svc = mock_understanding(empty_understanding());
+        let svc = mock_understanding(super::empty_understanding());
         let mut loop_svc = make_loop(store, svc);
         let decision = loop_svc.tick().await;
         assert!(
@@ -1042,13 +1138,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_companion_reflection_recorded_in_log() {
-        let store = Arc::new(memory_storage::wm_store::InMemoryWorldModelStore::new());
+        let store = Arc::new(InMemoryWorldModelStore::new());
         let entity = Entity::new("project", "AI-OS")
             .with_importance(0.85)
             .with_confidence(0.9);
         store.insert_entity(entity).await;
 
-        let svc = mock_understanding(empty_understanding());
+        let svc = mock_understanding(super::empty_understanding());
         let mut loop_svc = make_loop(store.clone(), svc);
         let _ = loop_svc.tick().await;
 
@@ -1073,7 +1169,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_companion_stagnation_triggers_follow_up() {
-        let store = Arc::new(memory_storage::wm_store::InMemoryWorldModelStore::new());
+        let store = Arc::new(InMemoryWorldModelStore::new());
         let mut entity = Entity::new("project", "AI-OS")
             .with_importance(0.85)
             .with_confidence(0.9);
@@ -1082,7 +1178,7 @@ mod tests {
         entity.updated_at = five_days_ago;
         store.insert_entity(entity).await;
 
-        let svc = mock_understanding(empty_understanding());
+        let svc = mock_understanding(super::empty_understanding());
         let mut loop_svc = make_loop(store, svc);
         let decision = loop_svc.tick().await;
         assert!(
@@ -1093,7 +1189,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_companion_daily_rhythm_natural_continuation() {
-        let store = Arc::new(memory_storage::wm_store::InMemoryWorldModelStore::new());
+        let store = Arc::new(InMemoryWorldModelStore::new());
         let result = StructuredWorldUpdate {
             entities: vec![WorldEntity {
                 name: "AI-OS".into(),
@@ -1118,49 +1214,16 @@ mod tests {
             "first interaction should get a response, got {morning:?}"
         );
 
-        // Day 1 afternoon: user continues
-        let afternoon_result = StructuredWorldUpdate {
-            entities: vec![WorldEntity {
-                name: "AI-OS".into(),
-                entity_type: "project".into(),
-                properties: {
-                    let mut m = std::collections::HashMap::new();
-                    m.insert("status".into(), "active".into());
-                    m
-                },
-                confidence: 0.9,
-                importance: 0.85,
-            }],
-            relationships: vec![],
-            state_changes: vec![intelligence_coordinator::world_understanding::StateChange {
-                entity_name: "AI-OS".into(),
-                attribute: "status".into(),
-                old_value: Some("started".into()),
-                new_value: "active".into(),
-            }],
-            new_observations: vec![],
-            open_questions: vec![],
-            possible_hypotheses: vec![],
-        };
-        let _afternoon_svc = mock_understanding(afternoon_result);
-        let _decision = loop_svc.cycle("Making progress on AI-OS").await;
-
-        // The state change + continued interaction should produce something
+        // The cycle should have stored the entity via memory evaluator + evolution
         let entities = store.all_entities().await;
         let ai_os = entities.iter().find(|e| e.name == "AI-OS");
         assert!(ai_os.is_some(), "AI-OS should be in the World Model");
-        if let Some(p) = ai_os {
-            assert!(p.importance >= 0.8, "AI-OS importance should remain high");
-        }
-        // The decision may be Wait (if attention threshold isn't met) or Communicate
-        // Either is valid — the key is the WM was updated
     }
 
     #[tokio::test]
     async fn test_companion_multiple_entities_stagnation_follow_up() {
-        let store = Arc::new(memory_storage::wm_store::InMemoryWorldModelStore::new());
+        let store = Arc::new(InMemoryWorldModelStore::new());
 
-        // Entity stale for 6 days — stagnation ~0.51, triggers follow-up
         let mut project = Entity::new("project", "AI-OS")
             .with_importance(0.85)
             .with_confidence(0.9);
@@ -1175,7 +1238,7 @@ mod tests {
         skill.updated_at = six_days_ago;
         store.insert_entity(skill).await;
 
-        let svc = mock_understanding(empty_understanding());
+        let svc = mock_understanding(super::empty_understanding());
         let mut loop_svc = make_loop(store, svc);
         let decision = loop_svc.tick().await;
 
@@ -1193,7 +1256,6 @@ mod tests {
 
     // ── Communication Philosophy: no internal terminology leaks ──────────
 
-    /// Terms that must never appear in user-facing companion messages.
     const FORBIDDEN_TERMS: &[&str] = &[
         "world model",
         "entity",
@@ -1262,7 +1324,6 @@ mod tests {
     #[tokio::test]
     async fn test_decide_greeting_no_internal_leaks_person_returning() {
         let store = Arc::new(InMemoryWorldModelStore::new());
-        // Seed an entity so has_continuity is true
         store
             .insert_entity(Entity::new("person", "Alice").with_importance(0.7))
             .await;

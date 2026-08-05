@@ -1,0 +1,19 @@
+[package]
+name = "ai-os-runtime-bootstrap"
+version.workspace = true
+edition.workspace = true
+description = "AI-OS Runtime Bootstrap — builds a RuntimeManager with runtimes from configuration and starts them at platform startup"
+
+[dependencies]
+ai-os-runtime-api = { path = "../ai-os-runtime-api" }
+ai-os-runtime-manager = { path = "../runtime-manager" }
+ai-os-openclaw-runtime = { path = "../openclaw-runtime" }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tracing = "0.1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+ai-os-openclaw-runtime = { path = "../openclaw-runtime", features = ["testkit"] }

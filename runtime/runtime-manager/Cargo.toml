@@ -1,0 +1,18 @@
+[package]
+name = "ai-os-runtime-manager"
+version.workspace = true
+edition.workspace = true
+description = "AI-OS Runtime Manager — discover, initialize, merge, select, dispatch, and observe runtimes"
+
+[dependencies]
+ai-os-runtime-api = { path = "../ai-os-runtime-api" }
+tokio = { version = "1", features = ["sync"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+async-trait = "0.1"
+uuid = { version = "1", features = ["v4"] }
+tracing = "0.1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }

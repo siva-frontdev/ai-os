@@ -1,0 +1,17 @@
+[package]
+name = "ai-os-runtime-api"
+version.workspace = true
+edition.workspace = true
+description = "AI-OS Runtime API — vendor-neutral Runtime trait, capabilities, actions, observations, and errors"
+
+[dependencies]
+tokio = { version = "1", features = ["sync"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+async-trait = "0.1"
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }

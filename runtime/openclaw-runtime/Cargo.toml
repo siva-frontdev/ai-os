@@ -1,0 +1,26 @@
+[package]
+name = "ai-os-openclaw-runtime"
+version.workspace = true
+edition.workspace = true
+description = "AI-OS OpenClaw Runtime — implements the vendor-neutral Runtime trait over the Model Context Protocol (MCP)"
+
+[dependencies]
+ai-os-runtime-api = { path = "../ai-os-runtime-api" }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+async-trait = "0.1"
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+tracing = "0.1"
+
+[features]
+default = []
+# Enables the MockMCP server and test helpers used by integration tests.
+testkit = []
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+# Enable the testkit (mock MCP server) for this crate's own test builds.
+ai-os-openclaw-runtime = { path = ".", features = ["testkit"] }

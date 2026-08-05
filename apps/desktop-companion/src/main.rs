@@ -5,6 +5,7 @@ use brain_coordinator::companion_host::settings::load_settings_manager;
 use brain_coordinator::companion_host::{CompanionHost, UiConfig};
 
 mod autostart;
+mod capability_policy;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -32,7 +33,11 @@ async fn main() -> anyhow::Result<()> {
         .filter(|t| !t.is_empty())
         .or_else(|| {
             let t = settings.telegram.bot_token.clone();
-            if t.is_empty() { None } else { Some(t) }
+            if t.is_empty() {
+                None
+            } else {
+                Some(t)
+            }
         });
     let telegram_enabled = settings.telegram.enabled && telegram_token.is_some();
     if telegram_enabled {
@@ -120,9 +125,8 @@ async fn main() -> anyhow::Result<()> {
     // Handle SIGTERM (systemd/service manager stop)
     let shutdown_tx_for_sigterm = shutdown_tx.clone();
     tokio::spawn(async move {
-        let mut sigterm = tokio::signal::unix::signal(
-            tokio::signal::unix::SignalKind::terminate(),
-        ).expect("Failed to create SIGTERM handler");
+        let mut sigterm = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+            .expect("Failed to create SIGTERM handler");
         sigterm.recv().await;
         tracing::info!("Received SIGTERM, shutting down...");
         let _ = shutdown_tx_for_sigterm.send(true);
@@ -131,6 +135,50 @@ async fn main() -> anyhow::Result<()> {
     // ── Start the host ──
     host.start().await?;
     tracing::info!("Companion is running. Press Ctrl+C to stop.");
+
+    // ── Phase 4: capability policy gate ──
+    //
+    // LIFE evaluates every capability before it is dispatched to a runtime.
+    // The gate is constructed at startup (it is cheap — a static policy
+    // table + an in-memory audit log) so the runtime dispatch path, when it
+    // is wired in, can consult it in one place. The audit log is drained
+    // into the same structured journal the rest of the companion writes.
+    let gate = capability_policy::CapabilityGate::new();
+    tracing::info!("Capability policy gate initialized ({} static policies)", 8);
+
+    // Demonstrate the gate: evaluate the default plugin capabilities so the
+    // audit log starts populated with the policy surface the companion
+    // intends to use. The real dispatch path will call `gate.evaluate`
+    // per-action.
+    for cap in [
+        "email.send",
+        "telegram.inject_inbound",
+        "filesystem.write_root",
+        "calendar.create_event",
+    ] {
+        let result = gate
+            .evaluate(&ai_os_capability_policy::CapabilityId::new(cap), "openclaw")
+            .await;
+        tracing::info!(
+            capability = %result.decision.capability,
+            risk = %result.decision.risk,
+            requires_confirmation = result.decision.requires_confirmation,
+            allowed = result.decision.allowed,
+            "capability policy evaluation"
+        );
+    }
+
+    if std::env::var("AI_OS_AUDIT_CAPABILITIES").as_deref() == Ok("1") {
+        let entries = gate.audit.entries().await;
+        for entry in &entries {
+            tracing::info!(
+                capability = %entry.capability,
+                kind = ?entry.kind,
+                reason = %entry.reason,
+                "capability policy audit entry"
+            );
+        }
+    }
 
     // ── Wait for shutdown signal ──
     let _ = shutdown_rx.changed().await;

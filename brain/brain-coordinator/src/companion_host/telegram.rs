@@ -164,7 +164,10 @@ impl TelegramAdapter {
             }
         }
 
-        tracing::info!("Telegram polling started (interval: {}s)", poll_interval.as_secs());
+        tracing::info!(
+            "Telegram polling started (interval: {}s)",
+            poll_interval.as_secs()
+        );
         tokio::spawn(async move {
             let mut timer = interval(poll_interval);
             loop {
@@ -262,9 +265,7 @@ impl TelegramAdapter {
                 offset.store(update.update_id + 1, Ordering::Release);
 
                 if let Some(ref from) = msg.from {
-                    Self::record_identity(
-                        identities, identity_path, from, &msg.chat,
-                    );
+                    Self::record_identity(identities, identity_path, from, &msg.chat);
                 }
 
                 let now = chrono::Utc::now().to_rfc3339();
@@ -293,7 +294,11 @@ impl TelegramAdapter {
                     Decision::UpdateMemory { .. } => "UpdateMemory",
                     Decision::Execute { .. } => "Execute",
                 };
-                tracing::info!(decision_type, latency_ms = latency, "Telegram cognitive result");
+                tracing::info!(
+                    decision_type,
+                    latency_ms = latency,
+                    "Telegram cognitive result"
+                );
 
                 if let Ok(mut acc) = latency_accum.lock() {
                     acc.0 += latency;
@@ -311,7 +316,11 @@ impl TelegramAdapter {
 
         let elapsed = poll_start.elapsed();
         if elapsed > Duration::from_secs(15) {
-            tracing::warn!("Telegram poll took {:.1}s ({} updates)", elapsed.as_secs_f64(), count);
+            tracing::warn!(
+                "Telegram poll took {:.1}s ({} updates)",
+                elapsed.as_secs_f64(),
+                count
+            );
         }
     }
 
@@ -366,7 +375,10 @@ impl TelegramAdapter {
         }
     }
 
-    async fn verify_token(http: &reqwest::Client, api_base: &str) -> Result<String, CoordinatorError> {
+    async fn verify_token(
+        http: &reqwest::Client,
+        api_base: &str,
+    ) -> Result<String, CoordinatorError> {
         #[derive(Deserialize)]
         struct User {
             username: Option<String>,
@@ -386,7 +398,9 @@ impl TelegramAdapter {
             .await
             .map_err(|e| CoordinatorError::Internal(format!("Telegram getMe parse: {e}")))?;
         if !body.ok {
-            return Err(CoordinatorError::Internal("Telegram getMe returned ok=false".into()));
+            return Err(CoordinatorError::Internal(
+                "Telegram getMe returned ok=false".into(),
+            ));
         }
         Ok(body.result.and_then(|u| u.username).unwrap_or_default())
     }
@@ -436,7 +450,8 @@ impl TelegramAdapter {
 
     fn escape_markdown(text: &str) -> String {
         let special = [
-            '_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!',
+            '_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.',
+            '!',
         ];
         let mut out = String::with_capacity(text.len() + 16);
         for ch in text.chars() {
@@ -449,7 +464,10 @@ impl TelegramAdapter {
     }
 
     pub fn stats(&self) -> TelegramStats {
-        self.stats.lock().map(|s| s.clone()).unwrap_or_else(|e| e.into_inner().clone())
+        self.stats
+            .lock()
+            .map(|s| s.clone())
+            .unwrap_or_else(|e| e.into_inner().clone())
     }
 
     pub fn is_running(&self) -> bool {

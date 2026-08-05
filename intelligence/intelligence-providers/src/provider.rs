@@ -292,8 +292,8 @@ impl intelligence_core::traits::ModelProvider for DefaultModelProvider {
 #[cfg(test)]
 mod nvapi_tests {
     use super::*;
-    use std::sync::Arc;
     use intelligence_core::types::ProviderId;
+    use std::sync::Arc;
 
     #[tokio::test]
     async fn test_nvapi_provider_config() {
