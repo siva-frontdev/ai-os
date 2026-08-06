@@ -172,7 +172,15 @@ impl GoalManager {
 
     pub async fn recover_goal(&self, goal_id: &GoalId) -> GoalsResult<GoalRecord> {
         let mut record = self.store.get(goal_id).await?;
-        if record.status != GoalStatus::Failed && record.status != GoalStatus::Recovering {
+        if !matches!(
+            record.status,
+            GoalStatus::Active
+                | GoalStatus::Planning
+                | GoalStatus::Executing
+                | GoalStatus::Evaluating
+                | GoalStatus::Failed
+                | GoalStatus::Recovering
+        ) {
             return Err(GoalsError::ValidationError(format!(
                 "goal {:?} cannot be recovered from status {:?}",
                 goal_id, record.status

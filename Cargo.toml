@@ -14,6 +14,7 @@ members = [
     "tests/runtime-integration",
     "tests/runtime-validation",
     "tests/cognitive-integration",
+    "tests/phase6-autonomous",
     "crates/osal-core",
     "crates/osal-capabilities",
     "crates/osal-filesystem",
