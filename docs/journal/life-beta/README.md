@@ -1,53 +1,77 @@
-# Behavior Journal: LIFE Beta
+# Experience Journal: LIFE Beta
 
-This journal captures Phase 4 — validating LIFE as a daily companion through
-real-world use. Entries follow the real-time improvement loop: observe, trace
-root cause, fix minimally, verify.
+This journal records LIFE Beta — living with LIFE as a daily companion.
+Architecture is frozen. No new cognitive engines, planners, memory systems,
+or runtime abstractions. Every improvement must come from **real-world
+usage**, not imagined features.
 
-The metrics evaluated are cognitive, not executional:
+The metric is not code. The metric is:
 
-- **Memory continuity** — does the companion remember context across sessions?
-- **Long-term understanding** — does the companion build a durable model of the user?
-- **Attention quality** — does the companion focus on what matters, not noise?
-- **Decision quality** — are the chosen actions appropriate to the situation?
-- **Capability selection** — does the companion pick the right tool for the job?
-- **Communication quality** — is every message natural, never system-speak?
-- **User trust** — does interaction feel reliable and safe?
-- **Recovery after mistakes** — how does the companion handle errors?
+- times LIFE genuinely helped
+- times LIFE prevented mistakes
+- times LIFE remembered correctly
+- times LIFE interrupted appropriately
+- times LIFE stayed silent appropriately
+- trust over time
+
+## Rules
+
+1. **Real interactions only.** Use LIFE naturally (Telegram today, other
+   embodiments later). Do not manufacture conversations. Let real life
+   generate the requirements.
+2. **No speculative features.** A change belongs in the journal only because
+   LIFE failed to help in a real situation — never because it sounds useful.
+3. **Do not extend the Runtime** because technology exists. Extend it because
+   LIFE genuinely needed a new capability during real use.
+4. **Do not add observation sources** because they are interesting. Add them
+   because they improve LIFE's understanding.
+5. **Before adding a capability ask:** will I personally use this? Does it
+   improve daily life? Does it strengthen trust? Does it reduce cognitive
+   load? If not, postpone it.
 
 ## Entry Template
 
-Copy this into a new numbered file (`NNN-<short-title>.md`) for each session.
+Copy this into a new numbered file (`NNN-<short-title>.md`) for each day.
+One file per day, appended when real interactions happened.
 
 ```markdown
-# Behavior Journal: LIFE Beta
+# Experience Journal: LIFE Beta
 
 ---
 
-## Entry NNN — <short title>
+## Day NNN — <short title>
 
 **Date**: <YYYY-MM-DD>
-**Session start**: <UTC time>
-**Capabilities available**: <comma-separated list>
-**Policy gate**: <initialized / not initialized>
 
-### Situation
+### What happened
 
-<what the user expected or tried to do in this session>
+<real interactions only: learning, coding, meetings, planning, research,
+personal tasks; how LIFE was used, what was asked, what was expected>
 
-### Observation
+### What LIFE did well
 
-<what LIFE actually did, verbatim quotes where relevant>
+<remembered context; chose the correct capability; stayed silent; asked
+permission; connected ideas; any genuine help>
 
-### Understanding
+### What LIFE should have done
 
-<root-cause trace: which cognitive component is responsible, file:line>
+<reminded me; noticed I was stuck; summarized something; warned me;
+remembered something; stayed silent instead; any missed moment>
 
-### Decision
+### Root cause
 
-<the fix LIFE applied or should apply>
+Classify into one (or more) of:
 
-### Outcome
+- **Observation** — LIFE lacked the input to notice
+- **Understanding** — LIFE misread what it saw
+- **Memory** — LIFE forgot or never stored
+- **Planner** — LIFE chose the wrong action
+- **Attention** — LIFE focused on the wrong thing
+- **Capability** — LIFE lacked a real capability it needed
+- **Communication** — LIFE expressed itself poorly
+- **Judgment** — LIFE made a poor decision
 
-<whether the situation was resolved, and how; or "open — see next entry">
+### Proposed improvement
+
+Describe the behavioral improvement only. Avoid architectural changes.
 ```
