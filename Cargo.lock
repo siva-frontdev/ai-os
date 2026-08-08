@@ -78,9 +78,12 @@ version = "0.1.0"
 dependencies = [
  "ai-os-mcp-server",
  "async-trait",
+ "base64 0.22.1",
  "chrono",
+ "reqwest 0.12.28",
  "serde",
  "serde_json",
+ "sha2",
  "thiserror 2.0.19",
  "tokio",
  "tracing",
@@ -274,6 +277,8 @@ dependencies = [
 name = "brain-coordinator"
 version = "0.1.0"
 dependencies = [
+ "ai-os-runtime-api",
+ "ai-os-runtime-manager",
  "async-trait",
  "brain-core",
  "brain-decision",
@@ -837,6 +842,8 @@ name = "desktop-companion"
 version = "0.1.0"
 dependencies = [
  "ai-os-capability-policy",
+ "ai-os-runtime-bootstrap",
+ "ai-os-runtime-manager",
  "anyhow",
  "brain-coordinator",
  "serde",
@@ -2023,6 +2030,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66"
 
 [[package]]
+name = "life"
+version = "0.1.0"
+dependencies = [
+ "ai-os-plugins",
+ "async-trait",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
 name = "linux-raw-sys"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3137,6 +3160,7 @@ dependencies = [
  "ai-os-runtime-manager",
  "async-trait",
  "brain-coordinator",
+ "chrono",
  "futures",
  "intelligence-coordinator",
  "intelligence-core",

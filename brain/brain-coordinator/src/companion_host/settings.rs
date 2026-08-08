@@ -36,6 +36,9 @@ pub struct CompanionSettings {
     /// How often the companion reflects on its own (seconds).
     pub reflection_frequency_secs: u64,
 
+    /// Autonomous communication policy (quiet hours, priority gating).
+    pub communication: CommunicationSettings,
+
     /// Start the companion at user login.
     pub autostart: bool,
 
@@ -101,6 +104,57 @@ pub struct TelegramSettings {
     pub poll_interval_secs: u64,
 }
 
+/// Notification priority levels for autonomous communication.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum NotificationPriority {
+    /// Below the attention threshold — stored, not communicated.
+    Low,
+    /// Worth telling the user now (unless quiet hours).
+    Normal,
+    /// Urgent enough to communicate now.
+    High,
+    /// Critical — interrupts even during quiet hours.
+    Critical,
+}
+
+/// Autonomous communication policy configuration.
+///
+/// Governs when the companion may proactively reach out. Proactive
+/// messages are evaluated against quiet hours and a minimum priority.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct CommunicationSettings {
+    /// Defer non-critical proactive messages during quiet hours.
+    pub quiet_hours_enabled: bool,
+    /// Local hour (0-23) when quiet hours begin (inclusive).
+    pub quiet_start_hour: u8,
+    /// Local hour (0-23) when quiet hours end (exclusive).
+    pub quiet_end_hour: u8,
+    /// Minimum priority allowed to interrupt during quiet hours.
+    pub quiet_min_priority: NotificationPriority,
+    /// Whether proactive morning/evening rhythms are enabled.
+    pub daily_rhythm_enabled: bool,
+}
+
+impl Default for CommunicationSettings {
+    fn default() -> Self {
+        Self {
+            quiet_hours_enabled: true,
+            quiet_start_hour: 22,
+            quiet_end_hour: 8,
+            quiet_min_priority: NotificationPriority::High,
+            daily_rhythm_enabled: true,
+        }
+    }
+}
+
+impl Default for NotificationPriority {
+    fn default() -> Self {
+        Self::Normal
+    }
+}
+
 impl Default for RetentionConfig {
     fn default() -> Self {
         Self {
@@ -133,6 +187,7 @@ impl Default for CompanionSettings {
             telegram: TelegramSettings::default(),
             attention_sensitivity: 0.5,
             reflection_frequency_secs: 60,
+            communication: CommunicationSettings::default(),
             autostart: false,
             developer_mode: false,
             debug_logging: false,

@@ -81,8 +81,8 @@ async fn runtime_capabilities_merge_into_brain_registry() {
     let merged = manager
         .merge_capabilities(|capability| {
             brain_registry.register(brain_coordinator::planner::Capability {
-                name: Box::leak(capability.id.as_str().to_owned().into_boxed_str()),
-                description: Box::leak(capability.description.clone().into_boxed_str()),
+                name: capability.id.as_str().to_string(),
+                description: capability.description.clone(),
             });
         })
         .await;

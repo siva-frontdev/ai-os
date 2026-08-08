@@ -123,7 +123,7 @@ async fn inbound_telegram_observation_reaches_world_model() {
 }
 
 #[tokio::test]
-async fn inbound_telegram_message_plans_and_sends_email() {
+async fn inbound_telegram_message_plans_and_dispatches_email() {
     let root = temp_root("emailflow");
     let manager = manager_with_real_subprocess(&root).await;
 
@@ -158,30 +158,36 @@ async fn inbound_telegram_message_plans_and_sends_email() {
     let plan = planner.plan(&text, "", "", false).await;
     assert_eq!(plan.actions[0].action_type, "email.send");
 
-    // 3. The plan dispatches through the real MCP subprocess.
+    // 3. The plan dispatches through the real MCP subprocess. Without Gmail
+    //    credentials the provider must fail honestly with a structured
+    //    error — never claim delivery.
     let results = dispatch_plan(&manager, &plan).await;
     assert_eq!(results.len(), 1);
     let email_result = results[0]
         .as_ref()
         .expect("dispatch did not fail transport");
     assert!(
-        email_result.is_success(),
-        "email.send failed: {email_result:#?}"
+        !email_result.is_success(),
+        "email.send must not report success without credentials: {email_result:#?}"
     );
-    let text = email_result.output.as_ref().expect("output present")["content"][0]
-        .as_str()
-        .unwrap();
-    let payload: serde_json::Value = serde_json::from_str(text).unwrap();
-    assert_eq!(payload["status"], "sent");
-    assert_eq!(payload["to"], "admin@example.com");
-
-    // 4. The email plugin observed its own action (status_changed).
-    let observations = wait_for_observations(&manager, std::time::Duration::from_secs(2)).await;
+    let message = email_result
+        .error
+        .as_ref()
+        .expect("error present")
+        .message
+        .clone();
     assert!(
-        observations.iter().any(|o| {
+        message.contains("ConfigurationMissing"),
+        "expected a ConfigurationMissing error, got: {message}"
+    );
+
+    // 4. No status_changed observation is produced: the email was not sent.
+    let observations = manager.observe().await;
+    assert!(
+        !observations.iter().any(|o| {
             o.source == CapabilityId::new("email.send") && o.kind == ObservationKind::StatusChanged
         }),
-        "expected a status_changed observation from email.send: {observations:#?}"
+        "email.send must not emit a status_changed observation when delivery was not confirmed"
     );
 
     let _ = std::fs::remove_dir_all(&root);

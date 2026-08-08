@@ -1,24 +1,26 @@
 [package]
-name = "ai-os-plugins"
+name = "life"
 version.workspace = true
 edition.workspace = true
-description = "AI-OS Real MCP Plugins — production tool plugins for the AI-OS MCP server"
+license = "MIT"
+description = "AI-OS LIFE command-line interface — guided provider setup"
+
+[[bin]]
+name = "life"
+path = "src/main.rs"
+
+[lib]
+name = "life"
+path = "src/lib.rs"
 
 [dependencies]
-ai-os-mcp-server = { path = "../mcp-server" }
+ai-os-plugins = { path = "../../runtime/plugins" }
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
 async-trait = "0.1"
-uuid = { version = "1", features = ["v4"] }
-chrono = { version = "0.4", features = ["serde"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
-base64 = "0.22"
-sha2 = "0.10"
-
-[[bin]]
-name = "ai-os-mcp-server"
-path = "src/main.rs"
+uuid = { version = "1", features = ["v4"] }

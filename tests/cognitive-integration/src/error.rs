@@ -1,5 +1,3 @@
-use std::fmt;
-
 use serde::{Deserialize, Serialize};
 
 /// Errors from the cognitive-runtime integration layer.

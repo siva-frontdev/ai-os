@@ -14,6 +14,10 @@ AI-OS owns cognition. The runtime owns execution. OpenClaw is one runtime implem
 | [mapping.md](mapping.md) | 3 | OpenClaw module → AI-OS layer → decision mapping |
 | [openclaw-adapter.md](openclaw-adapter.md) | 4 | Adapter design for `runtime/ai-os-runtime-api` + `runtime/runtime-manager` + `runtime/openclaw-runtime` |
 | [email-send-integration.md](email-send-integration.md) | 5 | First end-to-end integration: Telegram → AI-OS → email.send → reply |
+| [runtime-capability-audit.md](runtime-capability-audit.md) | — | Production readiness of every runtime capability |
+| [gmail-provider.md](gmail-provider.md) | — | Gmail API provider: setup, env vars, validation, troubleshooting |
+| [gmail-setup.md](gmail-setup.md) | — | `life setup gmail` wizard: OAuth2 browser flow, persistence, live validation |
+| [whatsapp-provider.md](whatsapp-provider.md) | — | WhatsApp Cloud API + webhook provider: setup, env vars, validation, troubleshooting |
 
 ## Boundary Summary
 

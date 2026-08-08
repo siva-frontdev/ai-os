@@ -6,6 +6,7 @@ use crate::evolution::EvolutionEngine;
 use crate::planner::Planner;
 use crate::planner::executor::ActionExecutor;
 use crate::planner::memory_evaluator::MemoryEvaluator;
+use crate::planner::runtime_executor::{RuntimeAwareExecutor, format_runtime_results};
 use brain_core::types::Decision;
 use intelligence_coordinator::world_understanding::WorldUnderstandingService;
 use intelligence_core::traits::IntelligenceCoordinator;
@@ -61,6 +62,7 @@ pub struct CognitiveLoopService {
     planner: Planner,
     memory_evaluator: MemoryEvaluator,
     executor: ActionExecutor,
+    runtime: Option<Arc<RuntimeAwareExecutor>>,
     cycle_count: u64,
     reflection_log: VecDeque<ReflectionLogEntry>,
     last_communicated_at: Option<Timestamp>,
@@ -83,12 +85,39 @@ impl CognitiveLoopService {
             planner: Planner::new(coordinator.clone()),
             memory_evaluator: MemoryEvaluator::new(coordinator.clone()),
             executor: ActionExecutor::new(world_model, coordinator),
+            runtime: None,
             cycle_count: 0,
             reflection_log: VecDeque::new(),
             last_communicated_at: None,
             consecutive_silent_ticks: 0,
             recent_messages: VecDeque::new(),
         }
+    }
+
+    /// Attach a runtime-aware executor so plan actions that target runtime
+    /// capabilities (`email.send`, `telegram.inject_inbound`, ...) are
+    /// dispatched through the real runtime, and their results ground the
+    /// final response.
+    ///
+    /// Also registers the runtime capabilities into the planner so it can
+    /// propose them. Call before [`CognitiveLoopService::cycle`].
+    pub async fn set_runtime(&mut self, runtime: Arc<RuntimeAwareExecutor>) {
+        self.runtime = Some(runtime);
+    }
+
+    /// Register a single runtime capability into the planner's registry so
+    /// the Planner can propose actions for it.
+    pub fn register_runtime_capability(
+        &mut self,
+        name: impl Into<String>,
+        description: impl Into<String>,
+    ) {
+        self.planner
+            .capabilities_mut()
+            .register(crate::planner::Capability {
+                name: name.into(),
+                description: description.into(),
+            });
     }
 
     /// Run one full cognitive cycle on the given text observation.
@@ -181,6 +210,13 @@ impl CognitiveLoopService {
 
         tracing::debug!("Planner produced {} actions", plan.actions.len());
 
+        // 6b. Dispatch runtime-capability actions through the runtime (if any).
+        //     In-memory actions are skipped here; the executor handles those.
+        let runtime_context = match &self.runtime {
+            Some(executor) => format_runtime_results(&executor.execute_plan(&plan).await),
+            None => String::new(),
+        };
+
         // 7. Action Executor — execute the plan
         let mut decision = self
             .executor
@@ -193,6 +229,7 @@ impl CognitiveLoopService {
                 has_prior_knowledge,
                 is_duplicate,
                 is_new_session,
+                &runtime_context,
             )
             .await;
 
@@ -1388,5 +1425,253 @@ mod tests {
         if let Decision::Communicate { message, .. } = &decision {
             assert_no_internal_terms(message, "observation-only");
         }
+    }
+
+    // ── Runtime grounding: never claim success without a confirmed result ──
+
+    /// Coordinator that records the respond prompt so tests can assert the
+    /// runtime grounding block reached the model.
+    #[derive(Debug)]
+    struct RecordingCoordinator {
+        plan_json: &'static str,
+        memory_json: &'static str,
+        reply: &'static str,
+        captured_prompt: Arc<std::sync::Mutex<Option<String>>>,
+    }
+
+    impl RecordingCoordinator {
+        fn new(
+            plan_json: &'static str,
+            memory_json: &'static str,
+            reply: &'static str,
+        ) -> Arc<Self> {
+            Arc::new(Self {
+                plan_json,
+                memory_json,
+                reply,
+                captured_prompt: Arc::new(std::sync::Mutex::new(None)),
+            })
+        }
+
+        fn captured(&self) -> String {
+            self.captured_prompt
+                .lock()
+                .unwrap()
+                .clone()
+                .expect("respond prompt should have been captured")
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl intelligence_core::traits::IntelligenceCoordinator for RecordingCoordinator {
+        async fn request(
+            &self,
+            request: intelligence_core::types::ModelRequest,
+        ) -> Result<intelligence_core::types::ModelResponse, intelligence_core::ModelError>
+        {
+            let input = match &request.input {
+                intelligence_core::types::ModelInput::Text(t) => t.as_str(),
+                _ => "",
+            };
+            let content = if input.contains("planning engine") {
+                self.plan_json
+            } else if input.contains("memory evaluator") {
+                self.memory_json
+            } else {
+                // respond prompt — capture for assertion
+                if let Ok(mut guard) = self.captured_prompt.lock() {
+                    *guard = Some(input.to_string());
+                }
+                self.reply
+            };
+            Ok(intelligence_core::types::ModelResponse {
+                request_id: intelligence_core::types::RequestId::new(),
+                model_id: intelligence_core::types::ModelId::new(),
+                content: content.into(),
+                usage: intelligence_core::types::TokenUsage {
+                    prompt_tokens: 0,
+                    completion_tokens: 0,
+                    total_tokens: 0,
+                },
+                finished: true,
+                finish_reason: Some("stop".into()),
+            })
+        }
+
+        async fn request_stream(
+            &self,
+            _request: intelligence_core::types::ModelRequest,
+        ) -> Result<
+            Box<dyn futures::Stream<Item = intelligence_core::types::StreamChunk> + Send>,
+            intelligence_core::ModelError,
+        > {
+            unimplemented!("stream not used in tests")
+        }
+
+        async fn embed(
+            &self,
+            _texts: &[String],
+        ) -> Result<Vec<intelligence_core::types::Embedding>, intelligence_core::ModelError>
+        {
+            unimplemented!("embed not used in tests")
+        }
+
+        async fn health(&self) -> Result<(), intelligence_core::ModelError> {
+            Ok(())
+        }
+
+        async fn pipeline_stats(
+            &self,
+        ) -> Result<intelligence_core::types::IntelligenceStats, intelligence_core::ModelError>
+        {
+            unimplemented!("stats not used in tests")
+        }
+
+        async fn conversation(
+            &self,
+            _id: &intelligence_core::types::ConversationId,
+        ) -> Result<Vec<intelligence_core::types::ModelResponse>, intelligence_core::ModelError>
+        {
+            unimplemented!("conversation not used in tests")
+        }
+    }
+
+    #[tokio::test]
+    async fn test_email_send_failure_is_grounded_in_respond_prompt() {
+        use crate::planner::runtime_executor::RuntimeAwareExecutor;
+        use ai_os_runtime_manager::RuntimeManager;
+
+        let store = Arc::new(InMemoryWorldModelStore::new());
+
+        // Runtime manager with NO registered runtime: email.send dispatch
+        // must fail with capability_not_found — never report success.
+        let manager = Arc::new(RuntimeManager::new());
+        let executor = RuntimeAwareExecutor::new(manager);
+
+        let coordinator = RecordingCoordinator::new(
+            r#"{"actions":[{"type":"email.send","topics":["admin@example.com","Hi","Body"],"reason":"user requested"},{"type":"respond","topics":[],"reason":"reply"}]}"#,
+            r#"[{"store":false}]"#,
+            "reply",
+        );
+        let mut loop_svc = CognitiveLoopService::new(
+            store,
+            mock_understanding(super::empty_understanding()),
+            coordinator.clone() as Arc<dyn IntelligenceCoordinator>,
+        );
+        loop_svc.set_runtime(Arc::new(executor)).await;
+        loop_svc.register_runtime_capability("email.send", "Send an email");
+
+        let _decision = loop_svc.cycle("send an email to admin@example.com").await;
+
+        let captured = coordinator.captured();
+        // The respond prompt must carry the failed dispatch result and the
+        // honesty rule — so the model cannot claim "email sent successfully".
+        assert!(
+            captured.contains("email.send: FAILED"),
+            "respond prompt must contain the FAILED dispatch result, got: {captured}"
+        );
+        assert!(
+            captured.contains("could not be completed"),
+            "respond prompt must carry the honesty instruction, got: {captured}"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_email_send_success_is_grounded_in_respond_prompt() {
+        use crate::planner::runtime_executor::RuntimeAwareExecutor;
+        use ai_os_runtime_manager::RuntimeManager;
+
+        let store = Arc::new(InMemoryWorldModelStore::new());
+
+        // Runtime manager with a runtime that claims email.send and returns
+        // a successful result.
+        let manager = Arc::new(RuntimeManager::new());
+        #[derive(Debug)]
+        struct OkRuntime;
+        #[async_trait::async_trait]
+        impl ai_os_runtime_api::Runtime for OkRuntime {
+            fn id(&self) -> ai_os_runtime_api::RuntimeId {
+                ai_os_runtime_api::RuntimeId("ok".into())
+            }
+            async fn initialize(&self) -> Result<(), ai_os_runtime_api::RuntimeError> {
+                Ok(())
+            }
+            async fn capabilities(&self) -> Vec<ai_os_runtime_api::Capability> {
+                vec![ai_os_runtime_api::Capability {
+                    id: ai_os_runtime_api::CapabilityId::new("email.send"),
+                    name: "send email".into(),
+                    description: "Send an email".into(),
+                    input_schema: serde_json::json!({"type": "object"}),
+                    output_schema: None,
+                    side_effects: vec![],
+                    metadata: Default::default(),
+                }]
+            }
+            async fn capability(
+                &self,
+                id: &ai_os_runtime_api::CapabilityId,
+            ) -> Option<ai_os_runtime_api::Capability> {
+                (id.as_str() == "email.send").then(|| ai_os_runtime_api::Capability {
+                    id: ai_os_runtime_api::CapabilityId::new("email.send"),
+                    name: "send email".into(),
+                    description: "Send an email".into(),
+                    input_schema: serde_json::json!({"type": "object"}),
+                    output_schema: None,
+                    side_effects: vec![],
+                    metadata: Default::default(),
+                })
+            }
+            async fn execute(
+                &self,
+                action: ai_os_runtime_api::Action,
+            ) -> Result<ai_os_runtime_api::ActionResult, ai_os_runtime_api::RuntimeError>
+            {
+                Ok(ai_os_runtime_api::ActionResult::succeeded(
+                    action.action_id,
+                    serde_json::json!({"status": "queued"}),
+                ))
+            }
+            async fn observe(&self) -> Vec<ai_os_runtime_api::Observation> {
+                Vec::new()
+            }
+            async fn subscribe(
+                &self,
+            ) -> Result<
+                tokio::sync::mpsc::Receiver<ai_os_runtime_api::RuntimeEvent>,
+                ai_os_runtime_api::RuntimeError,
+            > {
+                Err(ai_os_runtime_api::RuntimeError::SubscriptionUnsupported)
+            }
+            async fn health(&self) -> ai_os_runtime_api::RuntimeHealth {
+                ai_os_runtime_api::RuntimeHealth::Ready
+            }
+        }
+        manager
+            .register(std::sync::Arc::new(OkRuntime))
+            .await
+            .unwrap();
+        manager.initialize().await.unwrap();
+        let executor = RuntimeAwareExecutor::new(manager);
+
+        let coordinator = RecordingCoordinator::new(
+            r#"{"actions":[{"type":"email.send","topics":["admin@example.com","Hi","Body"],"reason":"user requested"},{"type":"respond","topics":[],"reason":"reply"}]}"#,
+            r#"[{"store":false}]"#,
+            "reply",
+        );
+        let mut loop_svc = CognitiveLoopService::new(
+            store,
+            mock_understanding(super::empty_understanding()),
+            coordinator.clone() as Arc<dyn IntelligenceCoordinator>,
+        );
+        loop_svc.set_runtime(Arc::new(executor)).await;
+        loop_svc.register_runtime_capability("email.send", "Send an email");
+
+        let _decision = loop_svc.cycle("send an email to admin@example.com").await;
+
+        let captured = coordinator.captured();
+        assert!(
+            captured.contains("email.send: SUCCEEDED"),
+            "respond prompt must contain the SUCCEEDED result, got: {captured}"
+        );
     }
 }

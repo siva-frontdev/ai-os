@@ -19,6 +19,8 @@ memory-core = { path = "../../crates/memory-core" }
 memory-storage = { path = "../../crates/memory-storage" }
 intelligence-core = { path = "../../intelligence/intelligence-core" }
 intelligence-coordinator = { path = "../../intelligence/intelligence-coordinator" }
+ai-os-runtime-api = { path = "../../runtime/ai-os-runtime-api" }
+ai-os-runtime-manager = { path = "../../runtime/runtime-manager" }
 thiserror = "2"
 async-trait = "0.1"
 uuid = { version = "1", features = ["v4", "serde"] }

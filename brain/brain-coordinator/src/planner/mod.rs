@@ -1,6 +1,7 @@
 pub mod capabilities;
 pub mod executor;
 pub mod memory_evaluator;
+pub mod runtime_executor;
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -8,6 +9,9 @@ use std::sync::Arc;
 pub use capabilities::{Capability, CapabilityRegistry};
 pub use executor::ActionExecutor;
 pub use memory_evaluator::MemoryEvaluator;
+pub use runtime_executor::{
+    IN_MEMORY_ACTIONS, RuntimeAwareExecutor, is_in_memory_action, planned_to_runtime_action,
+};
 
 use intelligence_core::traits::IntelligenceCoordinator;
 use intelligence_core::types::{CapabilityKind, ModelInput, ModelRequest, RequestId};

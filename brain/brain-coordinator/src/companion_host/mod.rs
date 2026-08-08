@@ -4,8 +4,8 @@ pub use persistence::PersistenceManager;
 pub mod settings;
 pub use settings::load_settings_manager;
 pub use settings::{
-    CompanionSettings, DynSettingsManager, NotificationSettings, ObservationSettings,
-    RetentionConfig, SettingsManager, TelegramSettings,
+    CommunicationSettings, CompanionSettings, DynSettingsManager, NotificationPriority,
+    NotificationSettings, ObservationSettings, RetentionConfig, SettingsManager, TelegramSettings,
 };
 
 pub mod observation_loop;
@@ -13,6 +13,9 @@ pub mod sources;
 pub mod ui;
 
 pub mod telegram;
+
+pub mod communication_policy;
+pub use communication_policy::{CommunicationPolicy, MessageOrigin, PolicyVerdict};
 
 pub mod permissions;
 pub use permissions::PermissionRegistry;
@@ -46,6 +49,7 @@ use std::sync::Mutex as StdMutex;
 
 use crate::cognitive_loop::CognitiveLoopService;
 use crate::errors::CoordinatorError;
+use crate::planner::runtime_executor::RuntimeAwareExecutor;
 
 use self::sources::ObservationSource;
 use self::telegram::{TelegramAdapter, TelegramStats};
@@ -73,6 +77,7 @@ pub struct CompanionHost {
     audit_log: Arc<StdMutex<AuditLog>>,
     privacy_mgr: PrivacyManager,
     telegram: Arc<Mutex<Option<TelegramAdapter>>>,
+    runtime_completion_rx: Arc<Mutex<Option<mpsc::UnboundedReceiver<String>>>>,
 }
 
 impl CompanionHost {
@@ -127,6 +132,7 @@ impl CompanionHost {
             audit_log,
             privacy_mgr: PrivacyManager::new(privacy_config),
             telegram: Arc::new(Mutex::new(None)),
+            runtime_completion_rx: Arc::new(Mutex::new(None)),
         })
     }
 
@@ -245,6 +251,46 @@ impl CompanionHost {
         );
     }
 
+    /// Enable the Runtime layer for capability dispatch.
+    ///
+    /// Wires the given runtime manager into the cognitive loop so plan
+    /// actions that target runtime capabilities (`email.send`,
+    /// `telegram.inject_inbound`, ...) are dispatched through the real
+    /// runtime, and their confirmed results ground the final response.
+    ///
+    /// Must be called before `start()`.
+    pub async fn with_runtime(
+        &mut self,
+        manager: std::sync::Arc<ai_os_runtime_manager::RuntimeManager>,
+    ) {
+        // Completion channel: runtime dispatch results flow back as
+        // observations so the cognitive loop proactively reports them.
+        let (completion_tx, completion_rx) = mpsc::unbounded_channel::<String>();
+        let executor =
+            RuntimeAwareExecutor::new(manager.clone()).with_completion_sink(completion_tx);
+        if let Ok(mut slot) = self.runtime_completion_rx.try_lock() {
+            *slot = Some(completion_rx);
+        }
+
+        // Register runtime capabilities into the planner so it can propose them.
+        let capabilities = manager.capabilities().await;
+        {
+            let mut loop_svc = self.loop_svc.lock().await;
+            loop_svc.set_runtime(std::sync::Arc::new(executor)).await;
+            for capability in &capabilities {
+                loop_svc.register_runtime_capability(
+                    capability.id.as_str().to_string(),
+                    capability.description.clone(),
+                );
+            }
+        }
+        tracing::info!(
+            runtime_capabilities = capabilities.len(),
+            "Runtime layer configured ({} capabilities registered)",
+            capabilities.len()
+        );
+    }
+
     async fn load_wm(
         persistence: &PersistenceManager,
     ) -> Result<InMemoryWorldModelStore, CoordinatorError> {
@@ -340,7 +386,7 @@ impl CompanionHost {
             let (cognitive_tx, mut cognitive_rx) = mpsc::unbounded_channel::<String>();
 
             // Spawn observation loop
-            let loop_task = obsv_loop.spawn(sources, cognitive_tx, loop_rx);
+            let loop_task = obsv_loop.spawn(sources, cognitive_tx, loop_rx.clone());
             self.tasks.lock().await.push(loop_task);
 
             // Spawn cognitive worker
@@ -450,6 +496,152 @@ impl CompanionHost {
             }
         }
 
+        // Autonomous behavior: a scheduled reflection pulse plus feedback
+        // from finished runtime actions. Both are self-initiated, so every
+        // resulting communication passes through the communication policy.
+        let pulse_settings = {
+            let guard = self.settings.lock().unwrap();
+            let s = guard.get().clone();
+            (s.reflection_frequency_secs, s.communication.clone())
+        };
+        let (pulse_interval_secs, comm_settings) = pulse_settings;
+        let policy = Arc::new(CommunicationPolicy::from_settings(&comm_settings));
+        let deferred: Arc<StdMutex<Vec<String>>> = Arc::new(StdMutex::new(Vec::new()));
+
+        // 1. Scheduled pulse: self-initiated reflection on a schedule.
+        let pulse_loop_svc = self.loop_svc.clone();
+        let pulse_ui = self.ui.clone();
+        let pulse_notif = self.notification_cb.clone();
+        let pulse_audit = self.audit_log.clone();
+        let pulse_telegram = self.telegram.clone();
+        let pulse_policy = policy.clone();
+        let pulse_deferred = deferred.clone();
+        let mut pulse_stop_rx = loop_rx.clone();
+        let pulse_task = tokio::spawn(async move {
+            let mut interval =
+                tokio::time::interval(tokio::time::Duration::from_secs(pulse_interval_secs.max(5)));
+            // The first tick fires immediately; consume it so the first real
+            // pulse happens after a full interval.
+            let _ = interval.tick().await;
+            let mut last_was_morning = false;
+            loop {
+                tokio::select! {
+                    _ = interval.tick() => {                        let hour = CommunicationPolicy::now_hour();
+                        let is_morning = (5..=8).contains(&hour);
+                        // Flush messages deferred during quiet hours as a
+                        // single morning bundle.
+                        if is_morning && !last_was_morning {
+                            let bundle = {
+                                let mut g = pulse_deferred.lock().unwrap();
+                                if g.is_empty() {
+                                    None
+                                } else {
+                                    let joined = format!(
+                                        "Good morning. While you were away: {}",
+                                        g.join(" ")
+                                    );
+                                    g.clear();
+                                    Some(joined)
+                                }
+                            };
+                            if let Some(bundle_text) = bundle {
+                                let decision = Decision::Communicate {
+                                    recipient: "user".into(),
+                                    message: bundle_text,
+                                    reason: "morning bundle of deferred updates".into(),
+                                };
+                                dispatch_proactive_decision(
+                                    &decision,
+                                    MessageOrigin::Proactive,
+                                    &pulse_ui,
+                                    &pulse_notif,
+                                    &pulse_audit,
+                                    &pulse_telegram,
+                                    &pulse_policy,
+                                )
+                                .await;
+                            }
+                        }
+                        last_was_morning = is_morning;
+
+                        // Self-initiated reflection tick.
+                        let decision = pulse_loop_svc.lock().await.tick().await;
+                        let verdict = dispatch_proactive_decision(
+                            &decision,
+                            MessageOrigin::Proactive,
+                            &pulse_ui,
+                            &pulse_notif,
+                            &pulse_audit,
+                            &pulse_telegram,
+                            &pulse_policy,
+                        )
+                        .await;
+                        if verdict == PolicyVerdict::Defer {
+                            if let Decision::Communicate { message, .. } = &decision {
+                                if let Ok(mut g) = pulse_deferred.lock() {
+                                    g.push(message.clone());
+                                }
+                            }
+                        }
+                    }
+                    _ = pulse_stop_rx.changed() => {
+                        if !*pulse_stop_rx.borrow() {
+                            tracing::info!("autonomous pulse stopping");
+                            return;
+                        }
+                    }
+                }
+            }
+        });
+        self.tasks.lock().await.push(pulse_task);
+
+        // 2. Runtime completion feedback: finished external actions are fed
+        // back as observations so the companion proactively reports them.
+        if let Some(mut completion_rx) = self.runtime_completion_rx.lock().await.take() {
+            let comp_loop_svc = self.loop_svc.clone();
+            let comp_ui = self.ui.clone();
+            let comp_notif = self.notification_cb.clone();
+            let comp_audit = self.audit_log.clone();
+            let comp_telegram = self.telegram.clone();
+            let comp_policy = policy.clone();
+            let comp_deferred = deferred.clone();
+            let mut comp_stop_rx = loop_rx.clone();
+            let completion_task = tokio::spawn(async move {
+                loop {
+                    tokio::select! {
+                        Some(observation) = completion_rx.recv() => {
+                            let decision =
+                                comp_loop_svc.lock().await.cycle(&observation).await;
+                            let verdict = dispatch_proactive_decision(
+                                &decision,
+                                MessageOrigin::Proactive,
+                                &comp_ui,
+                                &comp_notif,
+                                &comp_audit,
+                                &comp_telegram,
+                                &comp_policy,
+                            )
+                            .await;
+                            if verdict == PolicyVerdict::Defer {
+                                if let Decision::Communicate { message, .. } = &decision {
+                                    if let Ok(mut g) = comp_deferred.lock() {
+                                        g.push(message.clone());
+                                    }
+                                }
+                            }
+                        }
+                        _ = comp_stop_rx.changed() => {
+                            if !*comp_stop_rx.borrow() {
+                                tracing::info!("runtime completion worker stopping");
+                                return;
+                            }
+                        }
+                    }
+                }
+            });
+            self.tasks.lock().await.push(completion_task);
+        }
+
         *self.stop_tx.lock().await = Some(stop_tx);
         tracing::info!("Companion Host started");
         Ok(())
@@ -532,5 +724,217 @@ impl CompanionHost {
         } else {
             None
         }
+    }
+}
+
+/// Apply the communication policy to a self-initiated decision and dispatch
+/// it through every active channel (audit log, UI, native notification,
+/// Telegram). Non-communicate decisions are only recorded to the UI and audit
+/// log and are never dispatched.
+///
+/// Returns the policy verdict so callers can decide whether to queue a
+/// deferred message for the next morning bundle.
+async fn dispatch_proactive_decision(
+    decision: &Decision,
+    origin: MessageOrigin,
+    ui: &Arc<Mutex<Option<CompanionUi>>>,
+    notif_cb: &Arc<Mutex<Option<NotificationCallback>>>,
+    audit_log: &Arc<StdMutex<AuditLog>>,
+    telegram: &Arc<Mutex<Option<TelegramAdapter>>>,
+    policy: &CommunicationPolicy,
+) -> PolicyVerdict {
+    // The UI shows every decision, proactive or not.
+    if let Ok(guard) = ui.try_lock() {
+        if let Some(ref ui_svc) = *guard {
+            ui_svc.record_decision(decision);
+        }
+    }
+
+    let Decision::Communicate {
+        message, reason, ..
+    } = decision
+    else {
+        if let Ok(mut guard) = audit_log.lock() {
+            guard.record(
+                ActivityCategory::Observation,
+                "self-initiated reflection (no communication)".to_string(),
+                "",
+            );
+        }
+        return PolicyVerdict::Store;
+    };
+
+    let hour = CommunicationPolicy::now_hour();
+    let verdict = policy.evaluate(origin, NotificationPriority::Normal, hour);
+
+    match verdict {
+        PolicyVerdict::Allow | PolicyVerdict::AllowCritical => {
+            tracing::info!(message = %message, "companion: proactive communicate");
+            if let Ok(mut guard) = audit_log.lock() {
+                let summary = if message.len() > 80 {
+                    format!("{}...", &message[..77])
+                } else {
+                    message.clone()
+                };
+                guard.record(
+                    ActivityCategory::Notification,
+                    summary,
+                    format!("[proactive] {reason}"),
+                );
+            }
+            if let Ok(guard) = notif_cb.try_lock() {
+                if let Some(ref cb) = *guard {
+                    cb(message, reason);
+                }
+            }
+            if let Ok(guard) = telegram.try_lock() {
+                if let Some(ref adapter) = *guard {
+                    adapter.send_proactive(message).await;
+                }
+            }
+        }
+        PolicyVerdict::Defer => {
+            if let Ok(mut guard) = audit_log.lock() {
+                guard.record(
+                    ActivityCategory::Notification,
+                    "proactive message deferred (quiet hours)".to_string(),
+                    message.clone(),
+                );
+            }
+        }
+        PolicyVerdict::Store => {
+            tracing::debug!("proactive message stored by policy, not dispatched");
+        }
+    }
+    verdict
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::companion_host::settings::NotificationPriority;
+
+    /// A policy whose quiet window covers exactly the current hour.
+    fn quiet_now_policy() -> CommunicationPolicy {
+        let h = CommunicationPolicy::now_hour();
+        CommunicationPolicy {
+            quiet_hours_enabled: true,
+            quiet_start_hour: h,
+            quiet_end_hour: (h + 1) % 24,
+            quiet_min_priority: NotificationPriority::High,
+        }
+    }
+
+    /// A policy whose quiet window explicitly excludes the current hour.
+    fn quiet_excluding_now_policy() -> CommunicationPolicy {
+        let h = CommunicationPolicy::now_hour();
+        CommunicationPolicy {
+            quiet_hours_enabled: true,
+            quiet_start_hour: (h + 1) % 24,
+            quiet_end_hour: h,
+            quiet_min_priority: NotificationPriority::High,
+        }
+    }
+
+    fn harness(
+        sent: Arc<StdMutex<Vec<String>>>,
+    ) -> (
+        Arc<Mutex<Option<CompanionUi>>>,
+        Arc<Mutex<Option<NotificationCallback>>>,
+        Arc<StdMutex<AuditLog>>,
+        Arc<Mutex<Option<TelegramAdapter>>>,
+    ) {
+        let ui = Arc::new(Mutex::new(None));
+        let sent_cb = sent.clone();
+        let notif_cb: Arc<Mutex<Option<NotificationCallback>>> = Arc::new(Mutex::new(Some(
+            Arc::new(move |msg: &str, _reason: &str| {
+                if let Ok(mut guard) = sent_cb.lock() {
+                    guard.push(msg.to_string());
+                }
+            }),
+        )));
+        let audit_log = Arc::new(StdMutex::new(AuditLog::new(100)));
+        let telegram = Arc::new(Mutex::new(None));
+        (ui, notif_cb, audit_log, telegram)
+    }
+
+    #[tokio::test]
+    async fn proactive_message_deferred_during_quiet_hours() {
+        let sent: Arc<StdMutex<Vec<String>>> = Arc::new(StdMutex::new(Vec::new()));
+        let (ui, notif_cb, audit_log, telegram) = harness(sent.clone());
+
+        let decision = Decision::Communicate {
+            recipient: "user".into(),
+            message: "quiet-time ping".into(),
+            reason: "test".into(),
+        };
+        let verdict = dispatch_proactive_decision(
+            &decision,
+            MessageOrigin::Proactive,
+            &ui,
+            &notif_cb,
+            &audit_log,
+            &telegram,
+            &quiet_now_policy(),
+        )
+        .await;
+
+        assert_eq!(verdict, PolicyVerdict::Defer);
+        assert!(
+            sent.lock().unwrap().is_empty(),
+            "deferred message must not be dispatched"
+        );
+        assert!(
+            !audit_log.lock().unwrap().entries().is_empty(),
+            "deferral should be recorded in the audit log"
+        );
+    }
+
+    #[tokio::test]
+    async fn proactive_message_dispatched_outside_quiet_hours() {
+        let sent: Arc<StdMutex<Vec<String>>> = Arc::new(StdMutex::new(Vec::new()));
+        let (ui, notif_cb, audit_log, telegram) = harness(sent.clone());
+
+        let decision = Decision::Communicate {
+            recipient: "user".into(),
+            message: "daytime ping".into(),
+            reason: "test".into(),
+        };
+        let verdict = dispatch_proactive_decision(
+            &decision,
+            MessageOrigin::Proactive,
+            &ui,
+            &notif_cb,
+            &audit_log,
+            &telegram,
+            &quiet_excluding_now_policy(),
+        )
+        .await;
+
+        assert_eq!(verdict, PolicyVerdict::Allow);
+        let sent = sent.lock().unwrap();
+        assert_eq!(sent.len(), 1);
+        assert_eq!(sent[0], "daytime ping");
+    }
+
+    #[tokio::test]
+    async fn non_communicate_decision_never_dispatched() {
+        let sent: Arc<StdMutex<Vec<String>>> = Arc::new(StdMutex::new(Vec::new()));
+        let (ui, notif_cb, audit_log, telegram) = harness(sent.clone());
+
+        let decision = Decision::Wait;
+        let verdict = dispatch_proactive_decision(
+            &decision,
+            MessageOrigin::Proactive,
+            &ui,
+            &notif_cb,
+            &audit_log,
+            &telegram,
+            &quiet_excluding_now_policy(),
+        )
+        .await;
+
+        assert_eq!(verdict, PolicyVerdict::Store);
+        assert!(sent.lock().unwrap().is_empty());
     }
 }

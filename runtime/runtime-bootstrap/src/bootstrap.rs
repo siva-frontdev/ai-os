@@ -30,14 +30,14 @@ pub struct StartupSummary {
 #[derive(Debug)]
 pub struct RuntimeBootstrap {
     config: RuntimeBootstrapConfig,
-    manager: RuntimeManager,
+    manager: Arc<RuntimeManager>,
     runtimes: Vec<Arc<OpenClawRuntime>>,
 }
 
 impl RuntimeBootstrap {
     /// Build the runtime set from an empty manager.
     pub fn new(config: RuntimeBootstrapConfig) -> Self {
-        let manager = RuntimeManager::new();
+        let manager = Arc::new(RuntimeManager::new());
         let mut runtimes = Vec::new();
         for instance in &config.instances {
             match instance {
@@ -70,6 +70,14 @@ impl RuntimeBootstrap {
     /// dispatch capabilities and to collect observations.
     pub fn manager(&self) -> &RuntimeManager {
         &self.manager
+    }
+
+    /// A shareable handle to the runtime manager.
+    ///
+    /// Components that need to hold the manager past the bootstrap's scope
+    /// (e.g. wiring it into a cognitive loop) clone the `Arc` here.
+    pub fn manager_arc(&self) -> Arc<RuntimeManager> {
+        self.manager.clone()
     }
 
     /// The configuration this bootstrap was built from.

@@ -11,6 +11,7 @@ members = [
     "runtime/mcp-server",
     "runtime/plugins",
     "runtime/runtime-bootstrap",
+    "tools/life",
     "tests/runtime-integration",
     "tests/runtime-validation",
     "tests/cognitive-integration",

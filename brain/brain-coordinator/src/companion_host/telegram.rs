@@ -474,6 +474,28 @@ impl TelegramAdapter {
         self.running.load(Ordering::Acquire)
     }
 
+    /// Send a proactive (non-reply) message to the last known Telegram chat.
+    ///
+    /// Returns `true` if there was a known chat to send to. If the user has
+    /// never messaged the bot there is no chat id, so the message is dropped
+    /// (the desktop notification channel still covers that case).
+    pub async fn send_proactive(&self, text: &str) -> bool {
+        let chat_id = self.stats.lock().map(|s| s.current_chat_id).unwrap_or(None);
+        match chat_id {
+            Some(id) => {
+                let http = self.http.clone();
+                let api_base = self.api_base.clone();
+                let stats = self.stats.clone();
+                Self::send_reply(&http, &api_base, id, text, &stats).await;
+                true
+            }
+            None => {
+                tracing::debug!("no known Telegram chat for proactive message");
+                false
+            }
+        }
+    }
+
     pub fn signal_stop(&self) {
         self.running.store(false, Ordering::Release);
     }

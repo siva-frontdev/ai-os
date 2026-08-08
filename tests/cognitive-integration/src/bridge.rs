@@ -6,8 +6,8 @@ use ai_os_openclaw_runtime::{OpenClawRuntime, OpenClawRuntimeConfig};
 use ai_os_runtime_api::Runtime;
 use ai_os_runtime_manager::RuntimeManager;
 
-use crate::executor::RuntimeAwareExecutor;
 use crate::source::RuntimeObservationSource;
+use crate::RuntimeAwareExecutor;
 
 /// The full cognitive-runtime integration.
 ///

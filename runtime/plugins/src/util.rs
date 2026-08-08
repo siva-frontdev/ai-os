@@ -1,5 +1,10 @@
 //! Shared helpers for the plugins.
 
+use ai_os_mcp_server::ToolOutcome;
+use serde_json::json;
+
+use crate::provider::ProviderError;
+
 /// The current time as an RFC 3339 string in UTC.
 pub fn now_rfc3339() -> String {
     chrono::Utc::now().to_rfc3339()
@@ -10,6 +15,25 @@ pub fn str_arg(args: &serde_json::Value, key: &str) -> Option<String> {
     args.get(key)
         .and_then(serde_json::Value::as_str)
         .map(String::from)
+}
+
+/// Build an error outcome from a provider failure, preserving the structured
+/// error payload so the runtime can relay it verbatim to LIFE.
+pub fn provider_tool_error(err: &ProviderError) -> ToolOutcome {
+    ToolOutcome {
+        is_error: true,
+        result: err.as_json(),
+        observations: vec![],
+    }
+}
+
+/// Build an error outcome for an invalid tool argument.
+pub fn tool_error(message: &str) -> ToolOutcome {
+    ToolOutcome {
+        is_error: true,
+        result: json!({"error": message}),
+        observations: vec![],
+    }
 }
 
 #[cfg(test)]

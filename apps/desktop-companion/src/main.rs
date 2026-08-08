@@ -44,6 +44,54 @@ async fn main() -> anyhow::Result<()> {
         tracing::info!("Telegram channel configured");
     }
 
+    // ── Runtime configuration (env-gated) ──
+    // Runtime dispatch is opt-in via AI_OS_RUNTIME_ENABLED=1. When enabled,
+    // the runtime-bootstrap spawns the MCP server subprocess and the manager
+    // is wired into the cognitive loop so capabilities like email.send are
+    // actually dispatched (not silently dropped).
+    //
+    // Initialization is bounded and non-fatal: a slow, unresponsive, or
+    // crashing MCP subprocess must never block or kill the companion. The
+    // companion always proceeds to start its channels (Telegram, UI), and the
+    // runtime layer is skipped on failure.
+    let runtime_bootstrap = ai_os_runtime_bootstrap::RuntimeBootstrap::from_env();
+    let runtime_summary = match tokio::time::timeout(
+        std::time::Duration::from_secs(15),
+        runtime_bootstrap.initialize(),
+    )
+    .await
+    {
+        Ok(Ok(summary)) => summary,
+        Ok(Err(e)) => {
+            tracing::warn!(error = %e, "runtime initialization failed; continuing without runtime");
+            ai_os_runtime_bootstrap::StartupSummary {
+                runtimes: vec![],
+                capabilities: vec![],
+                health: vec![],
+            }
+        }
+        Err(_) => {
+            tracing::warn!("runtime initialization timed out; continuing without runtime");
+            ai_os_runtime_bootstrap::StartupSummary {
+                runtimes: vec![],
+                capabilities: vec![],
+                health: vec![],
+            }
+        }
+    };
+    let runtime_enabled = !runtime_summary.runtimes.is_empty();
+    if runtime_enabled {
+        tracing::info!(
+            runtimes = runtime_summary.runtimes.len(),
+            capabilities = runtime_summary.capabilities.len(),
+            "Runtime layer initialized"
+        );
+    } else {
+        tracing::info!(
+            "Runtime layer disabled — set AI_OS_RUNTIME_ENABLED=1 to enable capability dispatch"
+        );
+    }
+
     // ── Configure LLM provider env vars ──
     // The DefaultModelProvider reads these env vars at construction time.
     // Set them before any intelligence components are initialized.
@@ -109,6 +157,11 @@ async fn main() -> anyhow::Result<()> {
         if let Some(token) = telegram_token {
             host.with_telegram(token, settings.telegram.poll_interval_secs);
         }
+    }
+
+    // Wire the runtime layer into the cognitive loop (if enabled)
+    if runtime_enabled {
+        host.with_runtime(runtime_bootstrap.manager_arc()).await;
     }
 
     // ── Signal handling for graceful shutdown ──

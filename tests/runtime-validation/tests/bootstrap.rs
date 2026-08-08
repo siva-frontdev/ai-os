@@ -21,7 +21,7 @@ fn bootstrap_with_all_plugins(root: &std::path::Path) -> RuntimeBootstrap {
             command: mcp_server_bin().display().to_string(),
             args: vec![
                 "--plugins".into(),
-                "email,filesystem,github,calendar,telegram".into(),
+                "email,filesystem,github,calendar,telegram,whatsapp".into(),
                 "--root".into(),
                 root.display().to_string(),
             ],
@@ -66,6 +66,8 @@ async fn bootstrap_discovers_real_plugin_capabilities() {
         "calendar.create_event",
         "telegram.send",
         "telegram.inject_inbound",
+        "whatsapp.send",
+        "whatsapp.receive",
     ] {
         assert!(
             names.contains(&expected),
@@ -87,9 +89,10 @@ async fn bootstrap_capabilities_merge_into_external_registry() {
         .manager()
         .merge_capabilities(|c| collected.push(c.id.clone()))
         .await;
-    assert_eq!(count, 11);
+    assert_eq!(count, 13);
     assert!(collected.contains(&CapabilityId::new("email.send")));
     assert!(collected.contains(&CapabilityId::new("telegram.inject_inbound")));
+    assert!(collected.contains(&CapabilityId::new("whatsapp.send")));
 
     let _ = std::fs::remove_dir_all(&root);
 }
@@ -112,13 +115,59 @@ async fn dispatch_email_send_against_real_plugin() {
         ))
         .await
         .unwrap();
-    assert!(result.is_success(), "email.send failed: {result:#?}");
-    assert_eq!(result.status, ai_os_runtime_api::ActionStatus::Succeeded);
-    let output = result.output.unwrap();
-    let text = output["content"][0].as_str().unwrap();
-    let payload: serde_json::Value = serde_json::from_str(text).unwrap();
-    assert_eq!(payload["status"], "sent");
-    assert_eq!(payload["to"], "admin@example.com");
+    // The Gmail provider is unconfigured in the test environment. It must
+    // fail honestly with a structured error, never claim delivery.
+    assert!(
+        !result.is_success(),
+        "email.send must not succeed without Gmail credentials: {result:#?}"
+    );
+    assert_eq!(result.status, ai_os_runtime_api::ActionStatus::Failed);
+    assert_eq!(result.error_code(), Some("tool_error"));
+    assert!(
+        result
+            .error
+            .unwrap()
+            .message
+            .contains("ConfigurationMissing"),
+        "expected a structured ConfigurationMissing error"
+    );
+
+    let _ = std::fs::remove_dir_all(&root);
+}
+
+#[tokio::test]
+async fn dispatch_whatsapp_send_against_real_plugin() {
+    let root = temp_root("whatsapp");
+    let bootstrap = bootstrap_with_all_plugins(&root);
+    bootstrap.initialize().await.unwrap();
+
+    let result = bootstrap
+        .manager()
+        .dispatch(action(
+            "whatsapp.send",
+            serde_json::json!({
+                "to": "+15551234567",
+                "text": "hello from validation",
+            }),
+        ))
+        .await
+        .unwrap();
+    // The WhatsApp provider is unconfigured in the test environment. It must
+    // fail honestly with a structured error, never claim delivery.
+    assert!(
+        !result.is_success(),
+        "whatsapp.send must not succeed without credentials: {result:#?}"
+    );
+    assert_eq!(result.status, ai_os_runtime_api::ActionStatus::Failed);
+    assert_eq!(result.error_code(), Some("tool_error"));
+    assert!(
+        result
+            .error
+            .unwrap()
+            .message
+            .contains("ConfigurationMissing"),
+        "expected a structured ConfigurationMissing error"
+    );
 
     let _ = std::fs::remove_dir_all(&root);
 }

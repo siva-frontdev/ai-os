@@ -34,6 +34,11 @@ impl ActionExecutor {
     ///
     /// Each action is executed in sequence. The last action's
     /// result determines the Decision returned.
+    ///
+    /// `runtime_context` carries the confirmed results of any runtime
+    /// capabilities that were dispatched before this call. It grounds the
+    /// final `respond` step so the model never claims an external action
+    /// happened unless the runtime confirmed it.
     pub async fn execute(
         &self,
         plan: &Plan,
@@ -44,6 +49,7 @@ impl ActionExecutor {
         has_prior_knowledge: bool,
         is_duplicate: Option<String>,
         is_new_session: bool,
+        runtime_context: &str,
     ) -> Decision {
         let mut decision = Decision::Wait;
         let mut memory_result: Option<String> = None;
@@ -70,6 +76,7 @@ impl ActionExecutor {
                             is_new_session,
                             memory_result.as_deref(),
                             conversation_result.as_deref(),
+                            runtime_context,
                         )
                         .await;
                 }
@@ -221,6 +228,7 @@ impl ActionExecutor {
         is_new_session: bool,
         memory_result: Option<&str>,
         conversation_result: Option<&str>,
+        runtime_context: &str,
     ) -> Decision {
         let recent_history: Vec<String> = recent_messages
             .iter()
@@ -281,10 +289,20 @@ impl ActionExecutor {
             None => String::new(),
         };
 
+        let runtime_block = if runtime_context.trim().is_empty() {
+            String::new()
+        } else {
+            format!(
+                "\nConfirmed action results (ground truth — only these external actions actually happened):\n{runtime_context}\n"
+            )
+        };
+
         let prompt = format!(
             r#"You are a helpful companion. Respond naturally and conversationally.
 
-The user's message is below. Answer their question, acknowledge their statement, or continue the conversation naturally. Be warm, concise, and helpful. Do NOT list entities or internal state.{history_block}{context_block}{search_block}{conversation_block}{continuity_block}{duplicate_block}
+The user's message is below. Answer their question, acknowledge their statement, or continue the conversation naturally. Be warm, concise, and helpful. Do NOT list entities or internal state.{history_block}{context_block}{search_block}{conversation_block}{continuity_block}{duplicate_block}{runtime_block}
+IMPORTANT: If the user asked you to perform an external action (send an email, post a message, create a file, etc.), ONLY claim it was done if the confirmed action results above list it as SUCCEEDED. If an external action is not confirmed, or if no action results are shown, tell the user honestly that it could not be completed. Never claim an external action succeeded unless you have confirmed proof above.
+
 User message: {user_message}"#,
             history_block = history_block,
             context_block = context_block,
@@ -292,6 +310,7 @@ User message: {user_message}"#,
             conversation_block = conversation_block,
             continuity_block = continuity_block,
             duplicate_block = duplicate_block,
+            runtime_block = runtime_block,
             user_message = user_message,
         );
 

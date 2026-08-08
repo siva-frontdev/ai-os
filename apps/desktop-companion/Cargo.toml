@@ -6,6 +6,8 @@ description = "Desktop Companion — the AI-OS personal companion application"
 
 [dependencies]
 ai-os-capability-policy = { path = "../../crates/capability-policy" }
+ai-os-runtime-bootstrap = { path = "../../runtime/runtime-bootstrap" }
+ai-os-runtime-manager = { path = "../../runtime/runtime-manager" }
 brain-coordinator = { path = "../../brain/brain-coordinator" }
 tokio = { version = "1", features = ["full"] }
 tracing = "0.1"

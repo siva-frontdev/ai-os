@@ -38,11 +38,21 @@ async fn killed_runtime_is_detected_and_dispatch_fails_typed() {
     manager.register(Arc::new(runtime)).await.unwrap();
     manager.initialize().await.unwrap();
 
-    // Healthy: capabilities discovered and dispatch works.
+    // Healthy: capabilities discovered and dispatch works. `email.inject`
+    // is a self-contained tool (inbound simulation) so it succeeds without
+    // external credentials.
     let health = manager.health().await;
     assert_eq!(health[0].1, RuntimeHealth::Ready);
     let ok = manager
-        .dispatch(action("email.send", serde_json::json!({"to": "a@b.c"})))
+        .dispatch(action(
+            "email.inject",
+            serde_json::json!({
+                "from": "a@b.c",
+                "to": "x@y.z",
+                "subject": "s",
+                "body": "b",
+            }),
+        ))
         .await
         .unwrap();
     assert!(ok.is_success(), "dispatch before kill failed: {ok:#?}");
@@ -91,7 +101,15 @@ async fn replacement_runtime_restores_service() {
     assert_eq!(health[0].1, RuntimeHealth::Ready);
 
     let ok = manager
-        .dispatch(action("email.send", serde_json::json!({"to": "b@c.d"})))
+        .dispatch(action(
+            "email.inject",
+            serde_json::json!({
+                "from": "b@c.d",
+                "to": "x@y.z",
+                "subject": "s",
+                "body": "b",
+            }),
+        ))
         .await
         .unwrap();
     assert!(

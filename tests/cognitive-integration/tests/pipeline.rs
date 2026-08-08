@@ -46,7 +46,7 @@ fn mcp_config(root: &std::path::Path) -> OpenClawRuntimeConfig {
             command: mcp_bin().display().to_string(),
             args: vec![
                 "--plugins".into(),
-                "email,filesystem,github,calendar,telegram".into(),
+                "email,filesystem,github,calendar,telegram,whatsapp".into(),
                 "--root".into(),
                 root.display().to_string(),
             ],
@@ -92,7 +92,9 @@ async fn cognitive_bridge_initializes_with_real_mcp() {
     let _ = std::fs::remove_dir_all(&root);
 }
 
-/// Execute: the executor dispatches a real `email.send` through the MCP subprocess.
+/// Execute: the executor dispatches a real `email.send` through the MCP
+/// subprocess. Without Gmail credentials the provider reports a structured
+/// `ConfigurationMissing` failure rather than fabricating success.
 #[tokio::test]
 async fn cognitive_executor_dispatches_real_email() {
     let root = temp_root("email");
@@ -115,11 +117,57 @@ async fn cognitive_executor_dispatches_real_email() {
     let results = executor.execute_plan(&plan).await;
     assert_eq!(results.len(), 1);
     let (_, result) = &results[0];
-    assert_eq!(result.status, ActionStatus::Succeeded);
-    let output = result.output.as_ref().expect("output present");
-    let text = output["content"][0].as_str().expect("text content");
-    let payload: serde_json::Value = serde_json::from_str(text).expect("parse content");
-    assert_eq!(payload["status"], "sent");
+    // The provider is unconfigured in the test environment: the tool must
+    // fail honestly with a structured error, never claim delivery.
+    assert_eq!(result.status, ActionStatus::Failed);
+    assert_eq!(result.error_code(), Some("ConfigurationMissing"));
+    let message = result
+        .error
+        .as_ref()
+        .expect("error present")
+        .message
+        .clone();
+    assert!(
+        message.contains("not configured"),
+        "expected structured ConfigurationMissing error, got: {message}"
+    );
+
+    let _ = std::fs::remove_dir_all(&root);
+}
+
+/// Execute: the executor dispatches `whatsapp.send` through the MCP
+/// subprocess. Without WhatsApp credentials the provider reports a structured
+/// `ConfigurationMissing` failure rather than fabricating success.
+#[tokio::test]
+async fn cognitive_executor_dispatches_real_whatsapp() {
+    let root = temp_root("whatsapp");
+    let config = mcp_config(&root);
+    let bridge = CognitiveRuntimeBridge::with_mcp_runtime(config).await;
+    bridge.initialize().await.expect("initialize");
+
+    let executor = bridge.executor();
+
+    let plan = plan(vec![(
+        "whatsapp.send",
+        vec!["+15551234567".into(), "hello from cognitive test".into()],
+        "user requested whatsapp".into(),
+    )]);
+
+    let results = executor.execute_plan(&plan).await;
+    assert_eq!(results.len(), 1);
+    let (_, result) = &results[0];
+    assert_eq!(result.status, ActionStatus::Failed);
+    assert_eq!(result.error_code(), Some("ConfigurationMissing"));
+    let message = result
+        .error
+        .as_ref()
+        .expect("error present")
+        .message
+        .clone();
+    assert!(
+        message.contains("not configured"),
+        "expected structured ConfigurationMissing error, got: {message}"
+    );
 
     let _ = std::fs::remove_dir_all(&root);
 }
